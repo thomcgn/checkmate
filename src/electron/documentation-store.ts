@@ -134,7 +134,13 @@ export async function importOfficialPack(def:PackDefinition,report:Reporter):Pro
   await runGit(['clone','--filter=blob:none','--depth=1','--single-branch','--sparse','--no-checkout','--branch',def.ref,
    '--','https://github.com/'+def.repo+'.git',staging],os.tmpdir(),120_000);
   const folder=def.prefix==='.'?'.':def.prefix.replace(/\/$/,'');
-  await runGit(['-C',staging,'sparse-checkout','set','--cone',folder],staging,90_000);
+  if(folder==='.'){
+   // A root-scoped publication must materialize every tracked directory;
+   // cone mode with "." alone only checks out root-level files.
+   await runGit(['-C',staging,'sparse-checkout','disable'],staging,180_000);
+  }else{
+   await runGit(['-C',staging,'sparse-checkout','set','--cone',folder],staging,90_000);
+  }
   await runGit(['-C',staging,'checkout','--force'],staging,180_000);
   const commit=await runGit(['-C',staging,'rev-parse','HEAD'],staging,15000);
   if(!sha(commit))throw Error('Git hat keinen verifizierbaren Commit geliefert.');
