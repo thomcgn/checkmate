@@ -3,9 +3,11 @@ import {createRoot} from 'react-dom/client';
 import {CONCEPTS,AREAS,LANGUAGES,type Concept,type LanguageId,type ConceptArea} from '../content/concepts';
 import {searchConcepts,recommendedConcepts,compareLanguages} from '../content/concept-library';
 import type {Stage} from '../shared/types';
+import {HandbookReader} from './handbook-reader';
 import './style.css';
 
 type View='understand'|'practice';
+type LibraryMode='concepts'|'handbooks';
 type Knowledge='unknown'|'learning'|'understood';
 type StudyState={version:1;progress:Record<string,Knowledge>;notes:Record<string,string>};
 const STORAGE_KEY='checkmate:concept-library:v1';
@@ -29,6 +31,7 @@ const stages:Readonly<Record<Stage,string>>={basics:'Basics',intermediate:'Inter
 const languageIds=Object.keys(LANGUAGES) as LanguageId[];
 function App():React.JSX.Element{
  const [study,setStudy]=useState<StudyState>(loadStudy);
+ const [libraryMode,setLibraryMode]=useState<LibraryMode>('concepts');
  const [query,setQuery]=useState('');
  const [area,setArea]=useState<ConceptArea|'all'>('all');
  const [stage,setStage]=useState<Stage|'all'>('all');
@@ -63,13 +66,14 @@ function App():React.JSX.Element{
   <aside className="sidebar" aria-label="Hauptnavigation">
    <div className="brand"><span className="brand-crown">♚</span><div><strong>CHECKMATE</strong><small>learn the logic</small></div></div>
    <div className="sidebar-section"><span className="eyebrow">LEARNING OS</span>
-    <div className="active-nav">◈ <span>Konzeptbibliothek</span><small>{CONCEPTS.length}</small></div>
+    <button className={libraryMode==='concepts'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('concepts')}>◈ <span>Konzeptbibliothek</span><small>{CONCEPTS.length}</small></button>
+    <button className={libraryMode==='handbooks'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('handbooks')}>▤ <span>Sprachenhandbücher</span><small>10</small></button>
     <div className="nav-secondary">◇ <span>Lernpfad</span><small>{recommended.length} offen</small></div>
    </div>
-   <div className="sidebar-section"><span className="eyebrow">THEMEN</span>
+   {libraryMode==='concepts'&&<div className="sidebar-section"><span className="eyebrow">THEMEN</span>
     <button className={area==='all'?'filter active':'filter'} onClick={()=>setArea('all')}>Alle Konzepte <span>{CONCEPTS.length}</span></button>
     {Object.entries(AREAS).map(([id,name])=><button key={id} className={area===id?'filter active':'filter'} onClick={()=>setArea(id as ConceptArea)}>{name}<span>{CONCEPTS.filter(c=>c.area===id).length}</span></button>)}
-   </div>
+   </div>}
    <div className="side-bottom"><div className="side-bottom-top"><span>Dein Fortschritt</span><strong>{progress}%</strong></div><div className="progress-track"><div style={{width:progress+'%'}}/></div><small>{completed.size} von {CONCEPTS.length} Konzepten verstanden · lokal gespeichert</small></div>
   </aside>
   <main className="main">
@@ -78,6 +82,7 @@ function App():React.JSX.Element{
      <p>Die Idee hinter dem Code lernen – und dieselbe Lösung in unterschiedlichen Sprachen erkennen.</p></div>
     <div className="top-chip"><span className="chip-dot"/> Offline-Wissensbasis <small>Kein KI-Zugang erforderlich</small></div>
    </header>
+   {libraryMode==='concepts'?<>
    <section className="toolbar" aria-label="Konzeptbibliothek durchsuchen">
     <label className="search-wrap"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Suche: HashMap, dict, record, Streams …" aria-label="Konzept suchen"/></label>
     <select value={stage} onChange={e=>setStage(e.target.value as Stage|'all')} aria-label="Schwierigkeitsgrad"><option value="all">Alle Level</option><option value="basics">Basics</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select>
@@ -124,6 +129,9 @@ function App():React.JSX.Element{
       </>}
     </article>
    </div>
+   </>:<HandbookReader openConcept={id=>{
+    setQuery('');setArea('all');setStage('all');selectById(id);setLibraryMode('concepts');
+   }}/>}
    <footer className="footnote"><span>CHECKMATE · Die Idee verstehen, nicht die Syntax auswendig lernen.</span><span>Wissensbasis v0.1 · {languageIds.length} Sprachen · {CONCEPTS.length} Konzepte</span></footer>
   </main>
  </div>;
