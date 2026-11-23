@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rewriteRelativeImportExtensions": true,
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": [
+      "node"
+    ],
+    "outDir": "dist-electron",
+    "rootDir": "src",
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "src/electron/**/*.ts",
+    "src/shared/**/*.ts",
+    "src/content/**/*.ts"
+  ]
+}
