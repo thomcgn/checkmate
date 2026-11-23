@@ -44,11 +44,11 @@ export const LANGUAGE_SPECS:readonly LanguageSpec[]=[
   'https://go.dev/doc/'),
  spec('rust','Rust','1.100','Rust 1.100 stable, November 2026','Statisch; Ownership und Borrowing',
   'Rust fordert Wissen über Besitz, Mutierbarkeit und Lebensdauer. Erst danach wirken Traits, Iteratoren und Async verständlich.',
-  ['Clippy und rustfmt nutzen.','Result/Option statt vermeidbarem unwrap.','Ownership vor blindem clone verstehen.','Panic nicht als normale Fehlerbehandlung nutzen.'],
+  ['Clippy und rustfmt bei jeder Änderung als lokale Qualitätswerkzeuge nutzen.','Result/Option statt vermeidbarem unwrap.','Ownership vor blindem clone verstehen.','Panic nicht als normale Fehlerbehandlung nutzen.'],
   'https://doc.rust-lang.org/book/'),
  spec('kotlin','Kotlin','2.4.21','Kotlin 2.4 stable; 2.5 RC wird nicht vorausgesetzt','Statisch; Nullsicherheit',
   'Kotlin kombiniert kompakte Syntax mit Nullsicherheit und funktionalen Operationen. Vergleiche data classes bewusst mit Java records.',
-  ['val vor var bevorzugen.','!! möglichst vermeiden und null bewusst behandeln.','Read-only-Collections nicht mit tief unveränderlichen Collections verwechseln.','Coroutines strukturiert starten statt globale Jobs zu verlieren.'],
+  ['val vor var bevorzugen, solange der Wert nicht neu zugewiesen werden muss.','!! möglichst vermeiden und null bewusst behandeln.','Read-only-Collections nicht mit tief unveränderlichen Collections verwechseln.','Coroutines strukturiert starten statt globale Jobs zu verlieren.'],
   'https://kotlinlang.org/docs/home.html'),
 ];
 export type LanguageStudyPage={readonly language:LanguageSpec;readonly concept:Concept;readonly variant:LanguageVariant};
