@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentView,type DocumentPackStatus,type DocumentationBridge,type PackProgress} from '../shared/documentation';
 import {LANGUAGE_SPECS} from '../content/language-reference';
+import {OfflineMarkdown} from './offline-markdown';
 import './documentation-library.css';
 declare global{interface Window{checkmateDocs?:DocumentationBridge}}
 function RenderText({source}:{source:string}):React.JSX.Element{
@@ -88,7 +89,7 @@ export function DocumentationLibrary():React.JSX.Element{
     <div className="documentation-pack-info">
      <h3>{def?.title}</h3><p>{def?.extent}</p>
      <div className="documentation-pack-stats">{status?.installed?<>Installiert: {status.count} Textdateien · Commit {status.sourceCommit?.slice(0,12)}</>:'Offline-Paket noch nicht installiert'}</div>
-     <p className="documentation-credit">Quelle: {def?.sourceUrl} · Lizenz: {def?.license} · Lizenzinformation: {def?.licenseUrl}</p>
+     <p className="documentation-credit">Offizielle Originalpublikation · Lizenz: {def?.license} · Quellstand wird mit Commit und Prüfsummen lokal dokumentiert.</p>
      <button className="primary-btn" disabled={!api||working} onClick={()=>void install()}>{working?'Dokumentation wird vollständig importiert …':status?.installed?'Quellstand aktualisieren':'Vollständigen Quelltextbestand importieren'}</button>
      {progress&&progress.id===selected&&<p role="status" className="documentation-progress">{progress.detail} {progress.total>0?Math.min(100,Math.round(progress.done/progress.total*100))+'%':''}</p>}
      {error&&<p role="alert" className="documentation-error">{error}</p>}
@@ -98,7 +99,7 @@ export function DocumentationLibrary():React.JSX.Element{
       <small>{files.length} von {pack.documents.length} Kapiteln</small>
       <div className="documentation-toc-list">{files.map(file=><button key={file.path} className={article?.path===file.path?'selected':''} onClick={()=>setSelectedPath(file.path)}>{file.title}<small>{file.path}</small></button>)}</div>
      </aside>
-     <article className="documentation-article">{article?<><h2>{article.title}</h2><small>{article.path} · {pack.sourceCommit.slice(0,12)}</small><RenderText source={article.text}/></>:<p>Keine Treffer im Dokumentationspaket.</p>}</article>
+     <article className="documentation-article">{article?<><h2>{article.title}</h2><small>{article.path} · {pack.sourceCommit.slice(0,12)}</small>{/(\.md|\.mdx)$/i.test(article.path)?<OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setSelectedPath}/>:<RenderText source={article.text}/>} </>:<p>Keine Treffer im Dokumentationspaket.</p>}</article>
     </div>:<div className="documentation-placeholder"><strong>Die Publikation kann komplett offline installiert werden.</strong><p>Importierte Kapitel stehen anschließend ohne Netzwerk bereit. Der Import benötigt einmalig Internetzugang und kann je nach Quellgröße scheitern; Fehler werden angezeigt, statt einen unvollständigen Download als vollständig zu speichern.</p></div>}
    </main>
   </div>
