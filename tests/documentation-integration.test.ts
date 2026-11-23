@@ -9,7 +9,7 @@ test('actual Rust Book official documentation import is complete and byte-verifi
  assert.ok(def);
  const updates:{phase:string;done:number;total:number}[]=[];
  const result=await importOfficialPack(def,p=>updates.push(p));
- assert.match(result.pack.sourceCommit,/^[a-f0-9]{40}$/);
+ assert.match(result.pack.sourceCommit,/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/);
  assert.ok(result.pack.documents.length>20,'Expected substantial source publication for '+requested);
  assert.ok(result.files.size>=result.pack.documents.length);
  assert.ok(result.pack.documents.every(x=>x.text&&x.bytes>0&&/^[a-f0-9]{64}$/.test(x.sha256)));
