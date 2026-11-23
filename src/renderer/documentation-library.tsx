@@ -1,0 +1,96 @@
+import React,{useEffect,useMemo,useState} from 'react';
+import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentPackStatus,type DocumentationBridge,type PackProgress} from '../shared/documentation';
+import {LANGUAGE_SPECS} from '../content/language-reference';
+import './documentation-library.css';
+declare global{interface Window{checkmateDocs?:DocumentationBridge}}
+function RenderText({source}:{source:string}):React.JSX.Element{
+ const chunks=source.split('\n');let fenced=false;const result:React.JSX.Element[]=[];let buffer:string[]=[];
+ const flush=(id:number):void=>{if(buffer.length){result.push(<pre key={'code'+id} className="documentation-code"><code>{buffer.join('\n')}</code></pre>);buffer=[];}};
+ chunks.forEach((line,i)=>{
+  if(line.trim().startsWith('```')){if(fenced){fenced=false;flush(i);}else fenced=true;return;}
+  if(fenced){buffer.push(line);return;}
+  const title=/^#{1,5}\s+(.+)/.exec(line);
+  if(title){result.push(<h3 key={i}>{title[1]}</h3>);return;}
+  if(/^\.\. [a-z][a-z0-9_-]*::/.test(line)){result.push(<h4 key={i}>{line}</h4>);return;}
+  if(!line.trim())return;
+  result.push(<p key={i}>{line}</p>);
+ });
+ flush(chunks.length);
+ return <div className="documentation-content">{result}</div>;
+}
+export function DocumentationLibrary():React.JSX.Element{
+ const api=window.checkmateDocs;
+ const [selected,setSelected]=useState('rust-book');
+ const [statuses,setStatuses]=useState<DocumentPackStatus[]>([]);
+ const [pack,setPack]=useState<InstalledDocumentPack|null>(null);
+ const [selectedPath,setSelectedPath]=useState('');
+ const [query,setQuery]=useState('');
+ const [progress,setProgress]=useState<PackProgress|null>(null);
+ const [error,setError]=useState('');
+ const [working,setWorking]=useState(false);
+ useEffect(()=>{
+  if(!api)return;
+  void api.packs().then(setStatuses).catch(e=>setError(String(e)));
+  return api.onPackProgress(setProgress);
+ },[api]);
+ useEffect(()=>{
+  setPack(null);setSelectedPath('');setQuery('');setError('');
+  if(!api)return;
+  void api.loadPack(selected).then(value=>{setPack(value);setSelectedPath(value?.documents[0]?.path??'');}).catch(e=>setError(String(e)));
+ },[api,selected]);
+ const files=useMemo(()=>{
+  const words=query.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if(!pack)return[];
+  return pack.documents.filter(doc=>{
+   const text=(doc.title+' '+doc.path+' '+doc.text).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+   return words.every(w=>text.includes(w));
+  });
+ },[pack,query]);
+ const article=pack?.documents.find(x=>x.path===selectedPath)??files[0];
+ const install=async():Promise<void>=>{
+  if(!api)return;
+  setWorking(true);setError('');setProgress(null);
+  try{
+   const outcome=await api.installPack(selected);
+   setStatuses(old=>[...old.filter(v=>v.id!==selected),outcome]);
+   const downloaded=await api.loadPack(selected);
+   setPack(downloaded);setSelectedPath(downloaded?.documents[0]?.path??'');
+  }catch(e){setError(e instanceof Error?e.message:String(e));}
+  finally{setWorking(false);}
+ };
+ const def=OFFICIAL_PACKS.find(x=>x.id===selected);
+ const status=statuses.find(x=>x.id===selected);
+ return <section className="documentation-library" aria-label="Offizielle Offline-Dokumentationen">
+  <header className="documentation-header"><span className="eyebrow">CHECKMATE / OFFIZIELLE DOKUMENTATION</span>
+   <h2>Referenzmaterial aus Originalquellen</h2>
+   <p>Quellengetreue Textkapitel, lokal gespeichert und ohne Browser durchsuchbar. Jedes Paket umfasst den gesamten angegebenen Quellbereich. Es ersetzt nur dann ein vollständiges Sprachhandbuch, wenn genau dieser Umfang importiert wurde.</p></header>
+  <div className="documentation-shell">
+   <aside className="documentation-pack-list">
+    <strong>OFFIZIELLE PUBLIKATIONEN</strong>
+    {OFFICIAL_PACKS.map(entry=>{
+     const installed=statuses.find(s=>s.id===entry.id);
+     return <button key={entry.id} className={selected===entry.id?'documentation-pack active':'documentation-pack'} onClick={()=>setSelected(entry.id)}>
+      <b>{entry.title}</b><span>{LANGUAGE_SPECS.find(l=>l.id===entry.language)?.name} · {installed?.installed?installed.count+' Dateien gespeichert':'Noch nicht installiert'}</span>
+     </button>;
+    })}
+   </aside>
+   <main className="documentation-main">
+    <div className="documentation-pack-info">
+     <h3>{def?.title}</h3><p>{def?.extent}</p>
+     <div className="documentation-pack-stats">{status?.installed?<>Installiert: {status.count} Textdateien · Commit {status.sourceCommit?.slice(0,12)}</>:'Offline-Paket noch nicht installiert'}</div>
+     <p className="documentation-credit">Quelle: {def?.sourceUrl} · Lizenz: {def?.license} · Lizenzinformation: {def?.licenseUrl}</p>
+     <button className="primary-btn" disabled={!api||working} onClick={()=>void install()}>{working?'Dokumentation wird vollständig importiert …':status?.installed?'Quellstand aktualisieren':'Vollständigen Quelltextbestand importieren'}</button>
+     {progress&&progress.id===selected&&<p role="status" className="documentation-progress">{progress.detail} {progress.total>0?Math.min(100,Math.round(progress.done/progress.total*100))+'%':''}</p>}
+     {error&&<p role="alert" className="documentation-error">{error}</p>}
+    </div>
+    {pack?<div className="documentation-reader">
+     <aside className="documentation-toc"><input aria-label="Offline-Dokumentation durchsuchen" placeholder="Suche im vollständigen Paket…" value={query} onChange={e=>setQuery(e.target.value)}/>
+      <small>{files.length} von {pack.documents.length} Kapiteln</small>
+      <div className="documentation-toc-list">{files.map(file=><button key={file.path} className={article?.path===file.path?'selected':''} onClick={()=>setSelectedPath(file.path)}>{file.title}<small>{file.path}</small></button>)}</div>
+     </aside>
+     <article className="documentation-article">{article?<><h2>{article.title}</h2><small>{article.path} · {pack.sourceCommit.slice(0,12)}</small><RenderText source={article.text}/></>:<p>Keine Treffer im Dokumentationspaket.</p>}</article>
+    </div>:<div className="documentation-placeholder"><strong>Die Publikation kann komplett offline installiert werden.</strong><p>Importierte Kapitel stehen anschließend ohne Netzwerk bereit. Der Import benötigt einmalig Internetzugang und kann je nach Quellgröße scheitern; Fehler werden angezeigt, statt einen unvollständigen Download als vollständig zu speichern.</p></div>}
+   </main>
+  </div>
+ </section>;
+}
