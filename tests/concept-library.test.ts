@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CONCEPTS,LANGUAGES,getConcept} from '../src/content/concepts';
-import {searchConcepts,compareLanguages,recommendedConcepts,validateConceptGraph} from '../src/content/concept-library';
+import {CONCEPTS,LANGUAGES,getConcept} from '../src/content/concepts.ts';
+import {searchConcepts,compareLanguages,recommendedConcepts,validateConceptGraph} from '../src/content/concept-library.ts';
 test('Alle Konzepte sind eindeutig, belegt und bilden einen azyklischen Lernpfad',()=>{
  assert.deepEqual(validateConceptGraph(CONCEPTS),[]);
  assert.ok(CONCEPTS.length>=12);
