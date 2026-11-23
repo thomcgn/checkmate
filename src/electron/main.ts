@@ -1,24 +1,46 @@
-import {app,BrowserWindow,shell} from 'electron';
+import {app,BrowserWindow,shell,ipcMain} from 'electron';
 import path from 'node:path';
+import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
+import {fetchRepository,parseRepo,buildLearningPrompt,type RepositorySnapshot} from './repo-sources';
+import {CodexBridge} from './codex-bridge';
+import {BookStore} from './book-store';
+import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
 let window:BrowserWindow|null=null;
+const codex=new CodexBridge();
+let store:BookStore;
+let busy=false;
+let snapshot:RepositorySnapshot|null=null;
+const startedAt=()=>Date.now();
+function publish(progress:RepoProgress):void{
+ if(window&&!window.isDestroyed())window.webContents.send('checkmate:repo-progress',progress);
+}
+function guard(event:Electron.IpcMainInvokeEvent):void{
+ if(!window||event.sender!==window.webContents||event.senderFrame!==window.webContents.mainFrame)
+  throw Error('Unerlaubter Zugriff auf die Desktop-Schnittstelle.');
+ const url=event.senderFrame.url;
+ if(app.isPackaged){if(!url.startsWith('file://'))throw Error('Ungültige Renderer-Herkunft');}
+ else if(!url.startsWith('file://')&&!url.startsWith('http://localhost:5173/'))throw Error('Ungültige Renderer-Herkunft');
+}
+function handle(name:string,action:(...args:unknown[])=>unknown):void{
+ ipcMain.handle('checkmate:'+name,(event,...args:unknown[])=>{guard(event);return action(...args);});
+}
 function createWindow():void{
  window=new BrowserWindow({
-  width:1280,height:800,minWidth:800,minHeight:540,
-  title:'Checkmate – Programmieren wirklich verstehen',
+  width:1360,height:850,minWidth:800,minHeight:540,
+  title:'CHECKMATE · Understand the code',
   backgroundColor:'#100f18',
-  webPreferences:{contextIsolation:true,sandbox:true,nodeIntegration:false,
-   webSecurity:true}
+  show:false,
+  webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,sandbox:true,nodeIntegration:false,webSecurity:true}
  });
+ window.once('ready-to-show',()=>window?.show());
  window.webContents.setWindowOpenHandler(({url})=>{
   if(url.startsWith('https://'))void shell.openExternal(url);
   return {action:'deny'};
  });
  window.webContents.on('will-navigate',(event,url)=>{
-  if(!url.startsWith('file://')&&!url.startsWith('http://localhost:')){
-   event.preventDefault();
-   if(url.startsWith('https://'))void shell.openExternal(url);
-  }
+  const allowed=app.isPackaged?url.startsWith('file://'):url.startsWith('file://')||url.startsWith('http://localhost:5173/');
+  if(!allowed){event.preventDefault();if(url.startsWith('https://'))void shell.openExternal(url);}
  });
  if(!app.isPackaged&&process.env.CHECKMATE_DEV_URL){
   void window.loadURL(process.env.CHECKMATE_DEV_URL);
@@ -28,7 +50,45 @@ function createWindow():void{
  window.on('closed',()=>{window=null;});
 }
 app.whenReady().then(()=>{
+ store=new BookStore(app.getPath('userData'));
+ handle('repo:preview',async(url)=>{
+  if(typeof url!=='string'||url.length>220)throw Error('Ungültige Repository-Adresse');
+  const start=startedAt();
+  snapshot=await fetchRepository(url,(done,total,detail)=>publish({phase:'fetching',done,total,detail,startedAt:start}));
+  return snapshot.preview;
+ });
+ handle('repo:status',()=>codex.status());
+ handle('repo:signin',()=>codex.signIn(url=>shell.openExternal(url)));
+ handle('repo:saved',()=>store.list());
+ handle('repo:remove',async(id)=>{
+  if(typeof id!=='string')throw Error('Ungültige Buch-ID');
+  if(busy)throw Error('Analyse läuft bereits');
+  await store.remove(id);
+ });
+ handle('repo:analyze',async(url,consent)=>{
+  if(typeof url!=='string'||url.length>220||consent!==true)throw Error('GitHub-Quellcode darf erst nach ausdrücklicher Freigabe an ChatGPT übermittelt werden.');
+  if(busy)throw Error('Eine Analyse läuft bereits');
+  if(!snapshot||snapshot.preview.repository!==parseRepo(url))throw Error('Bitte Repository zuerst prüfen.');
+  busy=true;
+  const start=startedAt();
+  try{
+   const selected=snapshot;
+   publish({phase:'analyzing',done:0,total:1,detail:'ChatGPT erstellt dein Lernbuch',startedAt:start});
+   const result=await codex.analyze(buildLearningPrompt(selected),detail=>publish({phase:'analyzing',done:0,total:1,detail,startedAt:start}));
+   const book:RepositoryAnalysis={id:randomUUID(),repository:selected.preview.repository,head:selected.preview.head,
+    title:'Code verstehen: '+selected.preview.repository,createdAt:new Date().toISOString(),model:result.model,
+    files:selected.preview.included,includedPaths:[...selected.preview.samplePaths],markdown:result.text};
+   publish({phase:'saving',done:0,total:1,detail:'Lernbuch wird lokal gespeichert',startedAt:start});
+   await store.add(book);
+   publish({phase:'done',done:1,total:1,detail:'Lernbuch gespeichert',startedAt:start});
+   return book;
+  }catch(error){
+   publish({phase:'failed',done:0,total:1,detail:error instanceof Error?error.message:'Analyse fehlgeschlagen',startedAt:start});
+   throw error;
+  }finally{busy=false;}
+ });
  createWindow();
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
-}).catch(error=>{console.error('Checkmate could not start',error);app.quit();});
+}).catch(error=>{console.error('Checkmate konnte nicht gestartet werden',error);app.quit();});
 app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
+app.on('before-quit',()=>{void codex.stop();});
