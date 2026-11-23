@@ -6,7 +6,7 @@ import {randomUUID,createHash} from 'node:crypto';
 import {unzipSync} from 'fflate';
 import {extract as extractTar} from 'tar';
 import {NodeHtmlMarkdown} from 'node-html-markdown';
-import {decodeDocumentationText} from './documentation-encoding';
+import {decodeDocumentationText} from './documentation-encoding.ts';
 import {OFFICIAL_PACKS,type PackDefinition,type DocumentPackStatus,type PackProgress,type InstalledDocumentPack,type DocumentEntry,type DocumentView} from '../shared/documentation.ts';
 
 const MAX_FILES=40_000;
