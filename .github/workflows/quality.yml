@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pack: [rust-book, cpp-reference, php-manual]
+        pack: [rust-book, cpp-reference, php-manual, php-offline-de]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
