@@ -1,0 +1,36 @@
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@theme {
+ --color-ink: #10091d;
+ --color-panel: #1d142e;
+ --color-raised: #2f2044;
+ --color-royal: #a76cff;
+ --color-cyan: #39e1f1;
+ --color-gold: #f8c16d;
+ --font-interface: "Inter", "Segoe UI", system-ui, sans-serif;
+ --font-reading: "Georgia", "Iowan Old Style", serif;
+}
+
+/* Reference colors are sampled by eye from the supplied pixel-art artwork.
+   The backdrop stays dark; cyan and gold remain semantic highlights, not surfaces. */
+:root {
+ --cm-ink: #110b20;
+ --cm-base: #171024;
+ --cm-panel: #20152f;
+ --cm-raised: #30203f;
+ --cm-border: #513363;
+ --cm-border-strong: #745090;
+ --cm-text: #f3e9fa;
+ --cm-muted: #c2afcf;
+ --cm-violet: #c18af9;
+ --cm-lilac: #eed5ff;
+ --cm-cyan: #43e5ef;
+ --cm-gold: #f9c675;
+ --cm-glow: rgba(151,79,255,.18);
+ color-scheme: dark;
+}
+.cm-button {cursor:pointer}
+.cm-scroll-region {overflow:auto; min-height:0; overscroll-behavior:contain; scrollbar-width:none}
+.cm-scroll-region::-webkit-scrollbar {display:none}
+.cm-focus-ring:focus-visible{outline:2px solid var(--cm-cyan);outline-offset:3px}
