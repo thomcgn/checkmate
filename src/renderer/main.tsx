@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {CONCEPTS,AREAS,LANGUAGES,type Concept,type LanguageId,type ConceptArea} from '../content/concepts';
+import {AREAS,LANGUAGES,type Concept,type LanguageId,type ConceptArea} from '../content/concepts';
+import {COMPLETE_CONCEPTS as CONCEPTS} from '../content/complete-concepts';
 import {searchConcepts,recommendedConcepts,compareLanguages} from '../content/concept-library';
 import type {Stage} from '../shared/types';
 import {HandbookReader} from './handbook-reader';
