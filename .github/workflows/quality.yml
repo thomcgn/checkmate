@@ -1,12 +1,16 @@
-name: Quality Gates
+name: Checkmate Quality Gates
 on:
   pull_request:
   push:
     branches: [main]
 jobs:
   verify:
-    name: TypeScript, tests and build
-    runs-on: ubuntu-latest
+    name: TypeScript, tests and build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
