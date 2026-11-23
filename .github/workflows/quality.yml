@@ -29,3 +29,18 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: npm run test:ui
+
+  docs-integration:
+    name: Full official documentation import (Rust Book)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Import and verify full upstream documentation
+        run: node --experimental-strip-types --test tests/documentation-integration.test.ts
+        env:
+          CHECKMATE_DOCS_INTEGRATION: '1'
