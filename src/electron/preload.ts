@@ -1,4 +1,5 @@
 import {contextBridge,ipcRenderer} from 'electron';
+import type {DocumentationBridge,PackProgress} from '../shared/documentation';
 import type {RepoBridge,RepoProgress,RepositoryPreview,RepositoryAnalysis,ChatGPTStatus} from '../shared/repository';
 const api:RepoBridge={
  preview:(url:string):Promise<RepositoryPreview>=>ipcRenderer.invoke('checkmate:repo:preview',url),
@@ -16,3 +17,18 @@ const api:RepoBridge={
  },
 };
 contextBridge.exposeInMainWorld('checkmateRepos',api);
+
+const docs:DocumentationBridge={
+ packs:()=>ipcRenderer.invoke('checkmate:docs:status'),
+ loadPack:(id:string)=>ipcRenderer.invoke('checkmate:docs:load',id),
+ installPack:(id:string)=>ipcRenderer.invoke('checkmate:docs:install',id),
+ readDocument:(id:string,documentPath:string)=>ipcRenderer.invoke('checkmate:docs:read',id,documentPath),
+ searchPack:(id:string,query:string)=>ipcRenderer.invoke('checkmate:docs:search',id,query),
+ readAsset:(id:string,assetPath:string)=>ipcRenderer.invoke('checkmate:docs:asset',id,assetPath),
+ onPackProgress:(callback:(p:PackProgress)=>void)=>{
+  const listener=(_event:Electron.IpcRendererEvent,p:PackProgress):void=>callback(p);
+  ipcRenderer.on('checkmate:docs-progress',listener);
+  return ()=>ipcRenderer.removeListener('checkmate:docs-progress',listener);
+ }
+};
+contextBridge.exposeInMainWorld('checkmateDocs',docs);
