@@ -45,7 +45,6 @@ test('Concept library and language handbooks are navigable without backend',asyn
  await page.getByRole('textbox',{name:'Konzept suchen'}).fill('HashMap');
  await expect(page.getByRole('button',{name:/Schlüssel-Wert-Zuordnungen/})).toBeVisible();
  await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
- await expect(page.getByText('Wissen, das du')).toBeVisible();
- await page.getByRole('button',{name:/Rust 1.100/}).click();
- await expect(page.getByText(/Rust 1.100/).first()).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Referenzmaterial aus Originalquellen'})).toBeVisible();
+ await expect(page.getByRole('button',{name:/The Rust Programming Language/})).toBeVisible();
 });
