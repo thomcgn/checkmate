@@ -5,7 +5,9 @@ import {readFile} from 'node:fs/promises';
 test('splash contains a bundled offline illustration derived from the approved artwork',async()=>{
  const document=await readFile('splash.html','utf8');
  const image=await readFile('public/assets/checkmate-splash.svg','utf8');
- assert.match(document,/\.\/assets\/checkmate-splash\.svg/);
+ const improved=await readFile('public/assets/checkmate-splash-hq.svg','utf8');
+ assert.match(document,/\.\/assets\/checkmate-splash-hq\.svg/);
+ assert.match(document,/url\('\.\/assets\/checkmate-splash\.svg'\)/);
  assert.match(document,/object-fit:contain/);
  assert.match(document,/image-rendering:pixelated/);
  assert.doesNotMatch(document,/<script\b/i);
@@ -16,6 +18,12 @@ test('splash contains a bundled offline illustration derived from the approved a
  assert.equal(bytes.toString('ascii',0,4),'RIFF');
  assert.equal(bytes.toString('ascii',8,12),'WEBP');
  assert.match(image,/viewBox="0 0 256 144"/);
+ const avif=/data:image\/avif;base64,([A-Za-z0-9+/=]+)/.exec(improved)?.[1];
+ assert.ok(avif,'higher-quality embedded original poster required');
+ const hq=Buffer.from(avif,'base64');
+ assert.ok(hq.length>6000);
+ assert.equal(hq.toString('ascii',4,8),'ftyp');
+ assert.match(improved,/viewBox="0 0 512 288"/);
 });
 test('desktop palette and Tailwind classes are locally defined',async()=>{
  const css=await readFile('src/renderer/checkmate-theme.css','utf8');
