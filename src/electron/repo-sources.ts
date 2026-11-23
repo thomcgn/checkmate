@@ -14,9 +14,9 @@ export function parseRepo(value:string):string{
 type IndexedEntry={path:string;type:string;size:number};
 type SourceRole='manifest'|'implementation'|'test'|'other';
 function sourceRole(path:string):SourceRole{
- if(/(^|\\/)(?:README(?:\\.md)?|pom\\.xml|package\\.json|Cargo\\.toml|go\\.mod|build\\.gradle(?:\\.kts)?|settings\\.gradle(?:\\.kts)?|tsconfig(?:\\.[^.]+)?\\.json)$/i.test(path))return 'manifest';
- if(/(?:^|\\/)(?:test|tests|spec|specs|__tests__)\\/|(?:Test|Tests|Spec|Specs)\\.(?:java|kt|ts|tsx|js|jsx|py|rs|go|cs)$/i.test(path))return 'test';
- if(/(?:Controller|Service|Repository|Handler|Router|Route|Application|App|Main|Module|Index|Server|Client)\\.(?:java|kt|ts|tsx|js|jsx|py|rs|go|cs)$/i.test(path))return 'implementation';
+ if(/(^|\/)(?:README(?:\.md)?|pom\.xml|package\.json|Cargo\.toml|go\.mod|build\.gradle(?:\.kts)?|settings\.gradle(?:\.kts)?|tsconfig(?:\.[^.]+)?\.json)$/i.test(path))return 'manifest';
+ if(/(?:^|\/)(?:test|tests|spec|specs|__tests__)\/|(?:Test|Tests|Spec|Specs)\.(?:java|kt|ts|tsx|js|jsx|py|rs|go|cs)$/i.test(path))return 'test';
+ if(/(?:Controller|Service|Repository|Handler|Router|Route|Application|App|Main|Module|Index|Server|Client)\.(?:java|kt|ts|tsx|js|jsx|py|rs|go|cs)$/i.test(path))return 'implementation';
  return 'other';
 }
 /** Balanced bounded sample: documentation, implementation and tests remain visible in large repos. */
