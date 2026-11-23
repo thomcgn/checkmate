@@ -1,41 +1,39 @@
-# Repository Lab · ChatGPT-gestütztes Lernen
+# Repository Lab · Direkte ChatGPT-Anmeldung
 
 ## Zweck
+Checkmate ist eine eigenständige, nicht agentische Desktop-Lernanwendung. Das Repository Lab erklärt Quellcode, Konzepte und Architektur, führt aber keine fremden Repository-Anweisungen aus und verändert keinen Code.
 
-Repository Lab ist ein *lesendes* Lernwerkzeug, kein autonomer Coding-Agent. Die KI erklärt ausgewählte reale Codeausschnitte, inklusive Architektur, Konzepte, Trade-offs, Übungen und Musterlösungen. Die lokale Konzeptbibliothek bleibt unabhängig nutzbar.
+## Sign in with ChatGPT – ohne Codex
+Checkmate verwendet die offiziell dokumentierte **Sign in with ChatGPT**-Schnittstelle für lokale Open-Source-Anwendungen: Browser-OAuth mit dynamischer Client-Registrierung, PKCE, CSRF-State, OIDC-Nonce, JWKS-signierter ID-Token-Prüfung und ausdrücklicher Berechtigung `chatgpt.tokens.use.direct`. Danach zeigt es nur Modelle an, die über das verbundene ChatGPT-Konto ermittelt wurden, und verwendet `POST https://api.openai.com/v1/responses` mit `store:false` und `stream:true`.
 
-## ChatGPT-Login
+**Kein Codex-App-Server, kein Codex-Binary, keine ChatGPT-Konversationsübernahme, kein API-Schlüssel und keine lokale KI.** Die Nutzung eines ChatGPT-Plans ist abhängig von OpenAIs Freigabe, dem individuellen Kontingent und der ausdrücklichen Zustimmung im Anmeldedialog. Sie ist nicht unbegrenzt.
 
-In dieser ersten Integration nutzt Checkmate die **offizielle Codex-App-Server-Schnittstelle** als lokale Brücke zum cloudbasierten ChatGPT-Konto. Die CLI wird nur als Authentifizierungs- und Protokoll-Client ausgeführt, **kein KI-Modell lokal**.
+1. Checkmate starten, Repository Lab öffnen.
+2. **Mit ChatGPT anmelden** auswählen, im Systembrowser Konto und Planberechtigung bestätigen.
+3. Das verfügbare Modell auswählen. Falls kein Modell erscheint, Berechtigung oder Kontingent prüfen.
+4. Öffentliches GitHub-Repository eingeben, Dateien prüfen und vor Übermittlung ausdrücklich zustimmen.
+5. Lernanalyse starten. Das vollständige Ergebnis wird lokal gespeichert, wenn der Stream erfolgreich mit `response.completed` endet.
 
-1. Installiere die offizielle Codex CLI: https://developers.openai.com/codex/cli
-2. Starte Checkmate über `npm run desktop`.
-3. Öffne **Repository Lab** und klicke **Mit ChatGPT anmelden**.
-4. Der systemeigene Browser übernimmt den OAuth-Login. Kehre danach zurück und klicke **Prüfen**.
-5. Wähle ein *öffentliches* GitHub-Repository und klicke **Repository prüfen**.
-6. Prüfe die Dateiliste und aktiviere die ausdrückliche Zustimmung zur Codeübermittlung.
-7. Mit **Lehrkapitel erstellen** wird ChatGPT aufgerufen. Das Ergebnis bleibt lokal als Lernbuch gespeichert.
+Der erste Login erfordert eine neue Zustimmung: Frühere Codex-Anmeldungen werden aus Sicherheitsgründen nicht übernommen.
 
-Ein bereits über die Codex CLI angemeldetes ChatGPT-Konto kann erneut verwendet werden. API-Keys, Drittanbieter-Modelle oder lokale Ollama-Instanzen sind für Checkmate nicht vorgesehen.
+## Geheimnisse und sichere Speicherung
+- Host-ID getrennt von den Tokens unter Electron `userData/chatgpt`.
+- OAuth-Tokens sind ausschließlich im Electron-Hauptprozess zugänglich und werden vor dem Speichern mit Electron `safeStorage` verschlüsselt.
+- Kein Klartext-Fallback: Unter Linux wird das unsichere `basic_text`-Backend ausdrücklich abgelehnt; aktiviere einen funktionierenden Systemschlüsselbund wie KWallet oder GNOME Keyring.
+- Keine OAuth-Tokens in Renderer, LocalStorage, GitHub, Protokollen oder Diagnoseausgaben.
+- Der Redirect-Listener bindet ausschließlich an `127.0.0.1` und prüft Host, Callback-Pfad und State.
+- Sign-out löscht lokale Tokens. Nach einer Trennung über die ChatGPT-Einstellungen kann die Remote-Berechtigung ebenfalls entzogen werden.
 
-**Einschränkung:** OpenAI empfiehlt für neue Open-Source-Apps inzwischen die direkte *Sign in with ChatGPT*-Anbindung, bei der ChatGPT-Planberechtigungen ausdrücklich genehmigt und angezeigt werden. Codex-App-Server-Login ist ein dokumentierter lokaler Übergangsweg; eine spätere Migration soll den Anbieter hinter einer austauschbaren Schnittstelle ersetzen. Die Anmeldung garantiert kein unbegrenztes Inferenzkontingent.
+## Grenzen der gegenwärtigen Repository-Erfassung
+Das Analysemodul verarbeitet bisher **höchstens 16 ausgewählte Dateien** pro Anfrage, bis zu 32 KiB pro Datei und davon die ersten 5.000 Zeichen. Die Auswahl ist eine Stichprobe. Checkmate meldet diese Begrenzung und beansprucht **keine vollständige Analyse** eines großen Projekts. Der umfassende lokale Index und mehrstufige Analysen sind ein eigener ausstehender Ausbau.
 
-Quellen: https://learn.chatgpt.com/docs/app-server · https://developers.openai.com/siwc/token-sharing-open-source
+Quellcode ist nicht vertrauenswürdig; er wird als Lernmaterial interpretiert, nicht als Promptanweisung oder ausführbares Skript. Geheimnisfilter minimieren Risiken, ersetzen aber keine eigene Prüfung vor dem Senden.
 
-## Vertrauen und Datenschutz
+## Qualität und Überprüfung
+Die automatisierten Tests prüfen PKCE-nahe Protokollbausteine, Modellfilterung, Streamverarbeitung sowie die Electron-Oberfläche mit simuliertem Transport. TypeScript und Builds werden unter Linux, Windows und macOS geprüft. Die **echte OAuth-Autorisierung und Inferenz** müssen mit einem zugelassenen ChatGPT-Konto lokal getestet werden; CI kann diese persönliche Freigabe nicht simulieren.
 
-- Nur **öffentliche GitHub-Repositories**, per GitHub-API und festem Commit-SHA gelesen. Es erfolgt kein Clone, Build oder Ausführen von Quellcode.
-- Maximal **16 ausgewählte Quelldateien** pro Analyse. Jede Datei maximal 32 KiB; maximal die ersten 5.000 Zeichen werden als Text übermittelt. Eine vollständige Repository-Erfassung wird **nicht** suggeriert.
-- Lockfiles, Build-Ausgaben, .env- und typische Secret-/Key-Dateien werden herausgefiltert. Zeilen mit möglicherweise geheimen Zuweisungen werden vor dem Prompt maskiert. Diese Maßnahmen ersetzen **keine manuelle Prüfung**.
-- Die Anwendung zeigt die Dateipfade an und erfordert eine separate Zustimmung vor jeder Analyse.
-- Die App-Server-Protokollbrücke gibt **keine** Schreib- oder Ausführungsfreigaben; das Modell wird angewiesen, Quelle als unvertrauenswürdige Daten zu behandeln. Der Codex-Prozess wird in einem eigenen temporären Arbeitsverzeichnis gestartet.
-- OAuth-Tokens werden nicht in den Electron-Renderer gegeben oder von Checkmate selbst ausgelesen. Sie werden von der offiziellen Codex CLI verwaltet.
-- Bücher liegen lokal im benutzerspezifischen App-Datenordner als `repo-books.json`, nicht in einer Cloud-Datenbank. Bereits gespeicherte Bücher sind ohne Login lesbar.
-- Die erste Version besitzt noch keine Multi-Commit-Analyse, automatische semantische Vollabdeckung, KI-basierte Bewertung echter Aufgabenlösungen oder fortlaufenden Projektindex.
-
-## Funktion und Qualitätssicherung
-
-- GitHub-Repository-Parsing, Ausschlussfilter und Sampling sind eigenständig getestet.
-- Der IPC-Zugang ist an Checkmates Renderer gebunden; Node-Integration im Renderer ist deaktiviert.
-- TypeScript, Unit-Tests und Build werden durch CI unter Linux, macOS und Windows geprüft.
-- Ein wirklicher Login-/Inferenztest erfordert eine lokale Codex-Installation und Nutzerzustimmung. Ohne diese Faktoren gilt eine erfolgreiche CI nicht als bestätigte Cloud-KI-Verbindung.
+### Offizielle Referenzen
+- https://developers.openai.com/siwc/token-sharing-open-source/sign-in
+- https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference
+- https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions
+- https://developers.openai.com/siwc/token-sharing-open-source/errors-and-recovery

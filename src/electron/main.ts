@@ -3,11 +3,11 @@ import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {fetchRepository,parseRepo,buildLearningPrompt,type RepositorySnapshot} from './repo-sources';
-import {CodexBridge} from './codex-bridge';
+import {DirectChatGPT} from './direct-chatgpt';
 import {BookStore} from './book-store';
 import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
 let window:BrowserWindow|null=null;
-const codex=new CodexBridge();
+let chatgpt:DirectChatGPT;
 let store:BookStore;
 let busy=false;
 let snapshot:RepositorySnapshot|null=null;
@@ -54,22 +54,25 @@ function createWindow():void{
 }
 app.whenReady().then(()=>{
  store=new BookStore(app.getPath('userData'));
+ chatgpt=new DirectChatGPT(path.join(app.getPath('userData'),'chatgpt'));
  handle('repo:preview',async(url)=>{
   if(typeof url!=='string'||url.length>220)throw Error('Ungültige Repository-Adresse');
   const start=startedAt();
   snapshot=await fetchRepository(url,(done,total,detail)=>publish({phase:'fetching',done,total,detail,startedAt:start}));
   return snapshot.preview;
  });
- handle('repo:status',()=>codex.status());
- handle('repo:signin',()=>codex.signIn(url=>shell.openExternal(url)));
+ handle('repo:status',()=>chatgpt.status());
+ handle('repo:signin',()=>chatgpt.signIn());
+ handle('repo:signout',async()=>{await chatgpt.signOut();return chatgpt.status();});
+ handle('repo:models',()=>chatgpt.models());
  handle('repo:saved',()=>store.list());
  handle('repo:remove',async(id)=>{
   if(typeof id!=='string')throw Error('Ungültige Buch-ID');
   if(busy)throw Error('Analyse läuft bereits');
   await store.remove(id);
  });
- handle('repo:analyze',async(url,consent)=>{
-  if(typeof url!=='string'||url.length>220||consent!==true)throw Error('GitHub-Quellcode darf erst nach ausdrücklicher Freigabe an ChatGPT übermittelt werden.');
+ handle('repo:analyze',async(url,consent,model)=>{
+  if(typeof url!=='string'||url.length>220||consent!==true||typeof model!=='string'||model.length>150)throw Error('Repository, ChatGPT-Modell und ausdrückliche Codeübermittlungsfreigabe erforderlich.');
   if(busy)throw Error('Eine Analyse läuft bereits');
   if(!snapshot||snapshot.preview.repository!==parseRepo(url))throw Error('Bitte Repository zuerst prüfen.');
   busy=true;
@@ -77,7 +80,7 @@ app.whenReady().then(()=>{
   try{
    const selected=snapshot;
    publish({phase:'analyzing',done:0,total:1,detail:'ChatGPT erstellt dein Lernbuch',startedAt:start});
-   const result=await codex.analyze(buildLearningPrompt(selected),detail=>publish({phase:'analyzing',done:0,total:1,detail,startedAt:start}));
+   const result=await chatgpt.analyze(buildLearningPrompt(selected),model,detail=>publish({phase:'analyzing',done:0,total:1,detail,startedAt:start}));
    const book:RepositoryAnalysis={id:randomUUID(),repository:selected.preview.repository,head:selected.preview.head,
     title:'Code verstehen: '+selected.preview.repository,createdAt:new Date().toISOString(),model:result.model,
     files:selected.preview.included,includedPaths:[...selected.preview.samplePaths],markdown:result.text};
@@ -94,4 +97,4 @@ app.whenReady().then(()=>{
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 }).catch(error=>{console.error('Checkmate konnte nicht gestartet werden',error);app.quit();});
 app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
-app.on('before-quit',()=>{void codex.stop();});
+
