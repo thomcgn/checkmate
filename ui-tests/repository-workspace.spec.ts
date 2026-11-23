@@ -7,9 +7,9 @@ test('Repository Lab workflow with mocked desktop transport at 10-inch viewport'
   Object.defineProperty(window,'checkmateRepos',{value:{
    preview:async()=>({repository:'thomcgn/FassWerk',head:'a'.repeat(40),files:150,included:2,excluded:148,bytes:902,
     samplePaths:['README.md','src/Main.java'],source:'Public GitHub'}),
-   chatgptStatus:async()=>({available:true,connected:true,email:'account@example.invalid',plan:'plus',detail:'Verbunden'}),
-   signIn:async()=>({available:true,connected:true,email:'account@example.invalid',plan:'plus',detail:'Verbunden'}),
-   signOut:async()=>({available:true,connected:false,email:null,plan:null,detail:'Getrennt'}),
+   chatgptStatus:async()=>({available:true,connected:true,sharing:true,email:'account@example.invalid',plan:'plus',detail:'Verbunden'}),
+   signIn:async()=>({available:true,connected:true,sharing:true,email:'account@example.invalid',plan:'plus',detail:'Verbunden'}),
+   signOut:async()=>({available:true,connected:false,sharing:false,email:null,plan:null,detail:'Getrennt'}),
    models:async()=>[{slug:'gpt-checkmate-test',display_name:'Testmodell'}],
    analyze:async(_url:string,_consent:boolean,_model:string)=>{const book={id:'d50cf5c3-bd33-4b14-9974-f51c23149aaf',repository:'thomcgn/FassWerk',
     head:'a'.repeat(40),title:'Code verstehen: thomcgn/FassWerk',
