@@ -21,7 +21,7 @@ function guard(event:Electron.IpcMainInvokeEvent):void{
  const url=event.senderFrame.url;
  const trustedFile=pathToFileURL(path.join(__dirname,'../../dist-renderer/index.html')).href;
  const trustedDev=process.env.CHECKMATE_DEV_URL??'http://localhost:5173/';
- if(url!==trustedFile&&(!app.isPackaged||process.env.CHECKMATE_DEV_URL?url!==trustedDev:true))
+ if(url!==trustedFile&&(app.isPackaged||url!==trustedDev))
   throw Error('Ungültige Renderer-Herkunft');
 }
 function handle(name:string,action:(...args:unknown[])=>unknown):void{
