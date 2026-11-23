@@ -1,4 +1,4 @@
-import {CONCEPTS,LANGUAGES,AREAS,type Concept,type LanguageId,type ConceptArea,type LanguageVariant} from './concepts';
+import {CONCEPTS,LANGUAGES,AREAS,type Concept,type LanguageId,type ConceptArea,type LanguageVariant} from './concepts.ts';
 import type {Stage} from '../shared/types';
 
 export type ConceptFilters={query?:string;languages?:readonly LanguageId[];area?:ConceptArea|'all';stage?:Stage|'all'};
