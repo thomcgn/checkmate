@@ -1,5 +1,5 @@
-import {CONCEPTS,type Concept} from './concepts';
-import {EXTRA_VARIANTS} from './language-reference';
+import {CONCEPTS,type Concept} from './concepts.ts';
+import {EXTRA_VARIANTS} from './language-reference.ts';
 
 /** One canonical reading catalog: original concepts plus versioned handbook variants. */
 export const COMPLETE_CONCEPTS:readonly Concept[]=CONCEPTS.map(concept=>({
