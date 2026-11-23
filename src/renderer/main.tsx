@@ -51,7 +51,9 @@ function App():React.JSX.Element{
  const comparison=chosenLeft!==chosenRight?compareLanguages(selected,chosenLeft,chosenRight):null;
  useEffect(()=>{localStorage.setItem(STORAGE_KEY,JSON.stringify(study));},[study]);
  const updateStatus=(next:Knowledge):void=>setStudy(current=>({...current,progress:{...current.progress,[selected.id]:next}}));
- const updateNote=(next:string):void=>setStudy(current=>({...current,notes:{...current.notes,[selected.id]:next.slice(0,6000)}}}));
+ const updateNote=(next:string):void=>{
+  setStudy(current=>({...current,notes:{...current.notes,[selected.id]:next.slice(0,6000)}}));
+ };
  const select=(concept:Concept):void=>{
   setSelectedId(concept.id);setView('understand');setShowHint(false);setShowSolution(false);setAnswer('');
  };
