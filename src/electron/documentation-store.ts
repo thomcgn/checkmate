@@ -24,7 +24,7 @@ const securePath=(root:string,relative:string):string=>{
  if(!target.startsWith(path.resolve(root)+path.sep))throw Error('Pfad verlässt den Dokumentationsordner.');
  return target;
 };
-const sha=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{40}$/.test(v);
+const sha=(v:unknown):v is string=>typeof v==='string'&&/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(v);
 const decode=new TextDecoder('utf-8',{fatal:true});
 const plain=(value:string):string=>value.replace(/<!--[\s\S]*?-->/g,'')
  .replace(/<\?xml[\s\S]*?\?>/g,'')
