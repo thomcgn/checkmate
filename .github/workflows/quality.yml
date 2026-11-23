@@ -49,3 +49,4 @@ jobs:
         env:
           CHECKMATE_DOCS_INTEGRATION: '1'
           CHECKMATE_DOCS_PACK: ${{ matrix.pack }}
+          GITHUB_TOKEN: ${{ github.token }}
