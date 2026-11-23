@@ -1,142 +1,109 @@
-import React,{useEffect,useMemo,useState,useRef} from 'react';
-import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentView,type DocumentPackStatus,type DocumentationBridge,type PackProgress} from '../shared/documentation';
+import React,{useEffect,useMemo,useState} from 'react';
+import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentPackStatus,type DocumentView,type DocumentationBridge} from '../shared/documentation';
 import {LANGUAGE_SPECS} from '../content/language-reference';
 import {OfflineMarkdown} from './offline-markdown';
 import './documentation-library.css';
 declare global{interface Window{checkmateDocs?:DocumentationBridge}}
-function RenderText({source}:{source:string}):React.JSX.Element{
- const chunks=source.split('\n');let fenced=false;const result:React.JSX.Element[]=[];let buffer:string[]=[];
- const flush=(id:number):void=>{if(buffer.length){result.push(<pre key={'code'+id} className="documentation-code"><code>{buffer.join('\n')}</code></pre>);buffer=[];}};
- chunks.forEach((line,i)=>{
-  if(line.trim().startsWith('```')){if(fenced){fenced=false;flush(i);}else fenced=true;return;}
-  if(fenced){buffer.push(line);return;}
-  const title=/^#{1,5}\s+(.+)/.exec(line);
-  if(title){result.push(<h3 key={i}>{title[1]}</h3>);return;}
-  if(/^\.\. [a-z][a-z0-9_-]*::/.test(line)){result.push(<h4 key={i}>{line}</h4>);return;}
-  if(!line.trim())return;
-  result.push(<p key={i}>{line}</p>);
- });
- flush(chunks.length);
- return <div className="documentation-content">{result}</div>;
+function PlainText({source}:{source:string}):React.JSX.Element{
+ return <div className="documentation-content"><pre className="documentation-plain">{source}</pre></div>;
 }
-export function DocumentationLibrary():React.JSX.Element{
+export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX.Element{
  const api=window.checkmateDocs;
- const [selected,setSelected]=useState('rust-book');
  const [statuses,setStatuses]=useState<DocumentPackStatus[]>([]);
+ const [language,setLanguage]=useState<string|null>(null);
+ const [selected,setSelected]=useState<string|null>(null);
  const [pack,setPack]=useState<InstalledDocumentPack|null>(null);
- const [selectedPath,setSelectedPath]=useState('');
+ const [path,setPath]=useState('');
  const [article,setArticle]=useState<DocumentView|null>(null);
- const [matchPaths,setMatchPaths]=useState<readonly string[]|null>(null);
  const [query,setQuery]=useState('');
- const [progress,setProgress]=useState<PackProgress|null>(null);
+ const [matches,setMatches]=useState<readonly string[]|null>(null);
  const [error,setError]=useState('');
- const [working,setWorking]=useState(false);
- const [batch,setBatch]=useState<{done:number;total:number;name:string}|null>(null);
- const stopBatch=useRef(false);
  useEffect(()=>{
   if(!api)return;
   void api.packs().then(setStatuses).catch(e=>setError(String(e)));
-  return api.onPackProgress(setProgress);
  },[api]);
+ const available=useMemo(()=>OFFICIAL_PACKS.filter(p=>statuses.some(s=>s.id===p.id&&s.installed)),[statuses]);
+ const availableLanguages=useMemo(()=>LANGUAGE_SPECS.filter(l=>available.some(p=>p.language===l.id)),[available]);
+ const currentLanguage=language&&availableLanguages.some(l=>l.id===language)?language:availableLanguages[0]?.id??null;
+ const packs=available.filter(p=>p.language===currentLanguage);
+ const current=selected&&packs.some(p=>p.id===selected)?selected:packs[0]?.id??null;
  useEffect(()=>{
-  setPack(null);setSelectedPath('');setArticle(null);setMatchPaths(null);setQuery('');setError('');
-  if(!api)return;
-  void api.loadPack(selected).then(value=>{setPack(value);setSelectedPath(value?.documents[0]?.path??'');}).catch(e=>setError(String(e)));
- },[api,selected]);
+  setPack(null);setPath('');setArticle(null);setQuery('');setMatches(null);
+  if(!api||!current)return;
+  let alive=true;
+  void api.loadPack(current).then(data=>{
+   if(!alive)return;
+   setPack(data);setPath(data?.documents[0]?.path??'');
+  }).catch(e=>{if(alive)setError(String(e));});
+  return()=>{alive=false;};
+ },[api,current]);
  useEffect(()=>{
   if(!api||!pack)return;
-  let active=true;
+  let alive=true;
   const timer=setTimeout(()=>{
-   void api.searchPack(pack.id,query).then(paths=>{if(active)setMatchPaths(paths);}).catch(e=>{if(active)setError(String(e));});
-  },query?300:0);
-  return()=>{active=false;clearTimeout(timer);};
+   void api.searchPack(pack.id,query).then(result=>{if(alive)setMatches(result);})
+    .catch(e=>{if(alive)setError(String(e));});
+  },query?250:0);
+  return()=>{alive=false;clearTimeout(timer);};
  },[api,pack,query]);
- const files=useMemo(()=>pack?.documents.filter(doc=>matchPaths===null||matchPaths.includes(doc.path))??[],[pack,matchPaths]);
+ const documents=useMemo(()=>pack?.documents.filter(d=>matches===null||matches.includes(d.path))??[],[pack,matches]);
+ const currentPath=documents.some(d=>d.path===path)?path:documents[0]?.path??'';
  useEffect(()=>{
-  if(!api||!pack)return;
-  let active=true;
-  const path=selectedPath||files[0]?.path;
-  if(!path){setArticle(null);return;}
-  void api.readDocument(pack.id,path).then(data=>{if(active)setArticle(data);}).catch(e=>{if(active)setError(String(e));});
-  return()=>{active=false;};
- },[api,pack,selectedPath,files]);
- const install=async():Promise<void>=>{
-  if(!api)return;
-  setWorking(true);setError('');setProgress(null);
-  try{
-   const outcome=await api.installPack(selected);
-   setStatuses(old=>[...old.filter(v=>v.id!==selected),outcome]);
-   const downloaded=await api.loadPack(selected);
-   setPack(downloaded);setMatchPaths(null);setSelectedPath(downloaded?.documents[0]?.path??'');
-  }catch(e){setError(e instanceof Error?e.message:String(e));}
-  finally{setWorking(false);}
- };
- const installAll=async():Promise<void>=>{
-  if(!api||working)return;
-  stopBatch.current=false;setWorking(true);setError('');
-  const pending=OFFICIAL_PACKS.filter(def=>!statuses.some(x=>x.id===def.id&&x.installed));
-  if(!pending.length){setWorking(false);return;}
-  const failures:string[]=[];let done=0;
-  try{
-   for(const item of pending){
-    if(stopBatch.current)break;
-    setSelected(item.id);
-    setBatch({done,total:pending.length,name:item.title});
-    try{
-     const status=await api.installPack(item.id);
-     setStatuses(old=>[...old.filter(x=>x.id!==item.id),status]);
-     const saved=await api.loadPack(item.id);
-     setPack(saved);setSelectedPath(saved?.documents[0]?.path??'');
-    }catch(e){failures.push(item.title+': '+(e instanceof Error?e.message:String(e)));}
-    done++;
-    setBatch({done,total:pending.length,name:item.title});
-   }
-   setStatuses(await api.packs());
-   if(failures.length)setError('Nicht alle Offline-Dokumentationen konnten installiert werden. '+failures.slice(0,4).join(' | ')+(failures.length>4?' · weitere Fehler: '+(failures.length-4):''));
-   else if(stopBatch.current)setError('Installation nach dem aktuellen Paket abgebrochen. Bereits installierte Pakete bleiben lokal gespeichert.');
-  }finally{setWorking(false);setBatch(null);stopBatch.current=false;}
- };
- const def=OFFICIAL_PACKS.find(x=>x.id===selected);
- const status=statuses.find(x=>x.id===selected);
- return <section className="documentation-library" aria-label="Offizielle Offline-Dokumentationen">
-  <header className="documentation-header"><span className="eyebrow">CHECKMATE / OFFIZIELLE DOKUMENTATION</span>
-   <h2>Referenzmaterial aus Originalquellen</h2>
-   <p>Quellengetreue Textkapitel, lokal gespeichert und ohne Browser durchsuchbar. Jedes Paket umfasst den gesamten angegebenen Quellbereich. Es ersetzt nur dann ein vollständiges Sprachhandbuch, wenn genau dieser Umfang importiert wurde.</p></header>
-  <div className="documentation-batch">
-   <div><strong>{statuses.filter(x=>x.installed).length} / {OFFICIAL_PACKS.length} Referenzpakete lokal</strong><p>Einmal installieren, anschließend offline lesen und durchsuchen. Alle zugehörigen Quellkapitel und Medien werden lokal gespeichert.</p></div>
-   <div className="documentation-batch-actions">
-    {batch&&<span role="status">{batch.done} / {batch.total} · {batch.name}</span>}
-    {working&&batch?<button className="secondary-btn" onClick={()=>{stopBatch.current=true;}}>Nach diesem Paket stoppen</button>:
-      <button className="primary-btn" disabled={!api||working||statuses.filter(x=>x.installed).length===OFFICIAL_PACKS.length} onClick={()=>void installAll()}>Alle fehlenden Pakete installieren</button>}
-   </div>
-  </div>
-  <div className="documentation-shell">
-   <aside className="documentation-pack-list">
-    <strong>OFFIZIELLE PUBLIKATIONEN</strong>
-    {OFFICIAL_PACKS.map(entry=>{
-     const installed=statuses.find(s=>s.id===entry.id);
-     return <button key={entry.id} className={selected===entry.id?'documentation-pack active':'documentation-pack'} onClick={()=>setSelected(entry.id)}>
-      <b>{entry.title}</b><span>{LANGUAGE_SPECS.find(l=>l.id===entry.language)?.name} · {installed?.installed?installed.count+' Dateien gespeichert':'Noch nicht installiert'}</span>
-     </button>;
-    })}
-   </aside>
-   <main className="documentation-main">
-    <div className="documentation-pack-info">
-     <h3>{def?.title}</h3><p>{def?.extent}</p>
-     <div className="documentation-pack-stats">{status?.installed?<>Installiert: {status.count} Textdateien · Commit {status.sourceCommit?.slice(0,12)}</>:'Offline-Paket noch nicht installiert'}</div>
-     <p className="documentation-credit">Offizielle Originalpublikation · Lizenz: {def?.license} · Quellstand wird mit Commit und Prüfsummen lokal dokumentiert.</p>
-     <button className="primary-btn" disabled={!api||working} onClick={()=>void install()}>{working?'Dokumentation wird vollständig importiert …':status?.installed?'Quellstand aktualisieren':'Vollständigen Quelltextbestand importieren'}</button>
-     {progress&&progress.id===selected&&<p role="status" className="documentation-progress">{progress.detail} {progress.total>0?Math.min(100,Math.round(progress.done/progress.total*100))+'%':''}</p>}
-     {error&&<p role="alert" className="documentation-error">{error}</p>}
-    </div>
-    {pack?<div className="documentation-reader">
-     <aside className="documentation-toc"><input aria-label="Offline-Dokumentation durchsuchen" placeholder="Suche im vollständigen Paket…" value={query} onChange={e=>setQuery(e.target.value)}/>
-      <small>{files.length} von {pack.documents.length} Kapiteln</small>
-      <div className="documentation-toc-list">{files.map(file=><button key={file.path} className={article?.path===file.path?'selected':''} onClick={()=>setSelectedPath(file.path)}>{file.title}<small>{file.path}</small></button>)}</div>
+  setArticle(null);
+  if(!api||!pack||!currentPath)return;
+  let alive=true;
+  void api.readDocument(pack.id,currentPath).then(value=>{if(alive)setArticle(value);})
+   .catch(e=>{if(alive)setError(String(e));});
+  return()=>{alive=false;};
+ },[api,pack,currentPath]);
+ const installed=statuses.filter(s=>s.installed).length;
+ return <section className="documentation-library documentation-handbooks" aria-label="Installierte Sprachenhandbücher">
+  <header className="documentation-header">
+   <span className="eyebrow">CHECKMATE / BIBLIOTHEK</span>
+   <h2>Sprachenhandbücher</h2>
+   <p>Deine installierten Referenzwerke: Kapitel und Volltextsuche sind lokal verfügbar, ohne Browserwechsel. Weitere Sprachreferenzen fügst du über die Einrichtung hinzu.</p>
+   <div className="documentation-reader-toolbar"><span>{availableLanguages.length} Sprachen · {installed} Referenzpakete installiert</span><button className="secondary-btn" onClick={openSetup}>Dokumentationen verwalten</button></div>
+  </header>
+  {error&&<div className="documentation-error" role="alert">{error}</div>}
+  {availableLanguages.length===0?<div className="documentation-placeholder">
+    <h3>Deine Handbuchbibliothek ist noch leer</h3>
+    <p>Installiere zuerst die offiziellen Dokumentationspakete. Danach findest du sie automatisch hier als Handbücher.</p>
+    <button className="primary-btn" onClick={openSetup}>Zur Einrichtung</button>
+   </div>:
+   <>
+    <nav className="documentation-language-tabs" aria-label="Installierte Programmiersprachen">
+     {availableLanguages.map(l=><button key={l.id} className={l.id===currentLanguage?'active':''} onClick={()=>{setLanguage(l.id);setSelected(null);}}>{l.name}</button>)}
+    </nav>
+    <div className="documentation-shell">
+     <aside className="documentation-pack-list" aria-label="Handbücher der gewählten Sprache">
+      <strong>HANDBÜCHER · {LANGUAGE_SPECS.find(l=>l.id===currentLanguage)?.name}</strong>
+      {packs.map(p=>{
+       const state=statuses.find(x=>x.id===p.id);
+       return <button className={current===p.id?'documentation-pack active':'documentation-pack'} key={p.id} onClick={()=>setSelected(p.id)}>
+        <b>{p.title}</b><span>{state?.count??0} Kapitel · lokal gespeichert</span>
+       </button>;
+      })}
      </aside>
-     <article className="documentation-article">{article?<><h2>{article.title}</h2><small>{article.path} · {pack.sourceCommit.slice(0,12)}</small>{/\.(md|mdx|html|htm)$/i.test(article.path)?<OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setSelectedPath}/>:<RenderText source={article.text}/>} </>:<p>Keine Treffer im Dokumentationspaket.</p>}</article>
-    </div>:<div className="documentation-placeholder"><strong>Die Publikation kann komplett offline installiert werden.</strong><p>Importierte Kapitel stehen anschließend ohne Netzwerk bereit. Der Import benötigt einmalig Internetzugang und kann je nach Quellgröße scheitern; Fehler werden angezeigt, statt einen unvollständigen Download als vollständig zu speichern.</p></div>}
-   </main>
-  </div>
+     <div className="documentation-main">
+      {pack?<div className="documentation-reader documentation-reader-standalone">
+       <aside className="documentation-toc">
+        <label className="documentation-toc-label" htmlFor="offline-search">IN DIESEM HANDBUCH SUCHEN</label>
+        <input id="offline-search" aria-label="Offline-Dokumentation durchsuchen" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Begriff, API, Klasse, Funktion …"/>
+        <small>{documents.length} / {pack.documents.length} Kapitel</small>
+        <div className="documentation-toc-list">{documents.map(doc=><button className={doc.path===currentPath?'selected':''} key={doc.path} onClick={()=>setPath(doc.path)}>
+         {doc.title}<small>{doc.path}</small>
+        </button>)}</div>
+       </aside>
+       <article className="documentation-article">
+        {article?<><h2>{article.title}</h2><small>{article.path} · Version {pack.sourceCommit.slice(0,12)}</small>
+         {/\.(md|mdx|html|htm)$/i.test(article.path)?
+          <OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setPath}/>:
+          <PlainText source={article.text}/>}
+        </>:<p>{documents.length===0?'Keine Treffer im Handbuch.':'Kapitel wird geöffnet …'}</p>}
+       </article>
+      </div>:<div className="documentation-placeholder">Handbuch wird geladen …</div>}
+     </div>
+    </div>
+   </>}
  </section>;
 }

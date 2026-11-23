@@ -27,11 +27,44 @@ test('official documentation is searched and navigated without opening a browser
  });
  await page.goto('/');
  await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
- await expect(page.getByRole('heading',{name:'Referenzmaterial aus Originalquellen'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Sprachenhandbücher'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Rust',exact:true})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Willkommen'})).toBeVisible();
  await page.getByRole('button',{name:'Zur zweiten Lektion'}).click();
  await expect(page.getByRole('heading',{name:'Ownership Grundlagen'}).first()).toBeVisible();
  await expect(page.getByText('Ein Besitzer verwaltet einen Wert.')).toBeVisible();
  await expect(page.getByRole('button',{name:'Website (nicht öffnen)'})).toHaveCount(0);
  expect(external).toHaveLength(0);
+});
+
+test('successful setup import moves into installed-language handbooks and is not searched in setup',async({page})=>{
+ await page.addInitScript(()=>{
+  const pack={
+   id:'rust-book',language:'rust',title:'The Rust Programming Language',sourceCommit:'b'.repeat(40),
+   sourceUrl:'source',license:'MIT',licenseUrl:'license',installedAt:'2026-11-23T16:00:00Z',
+   extent:'Das vollständige Rust-Buch',documents:[{path:'src/chapter.md',title:'Ownership',bytes:54,sha256:'a'.repeat(64),text:true}],assets:[]
+  };
+  let installed=false;
+  Object.defineProperty(window,'checkmateDocs',{value:{
+   packs:async()=>installed?[{id:'rust-book',installed:true,count:1,sourceCommit:pack.sourceCommit,installedAt:pack.installedAt}]:[],
+   loadPack:async(id:string)=>installed&&id==='rust-book'?pack:null,
+   installPack:async(id:string)=>{installed=true;return{id,installed:true,count:1,sourceCommit:pack.sourceCommit,installedAt:pack.installedAt};},
+   readDocument:async()=>({path:'src/chapter.md',title:'Ownership',text:'# Ownership\n\nRust besitzt Werte.'}),
+   readAsset:async()=>'',searchPack:async()=>['src/chapter.md'],onPackProgress:()=>()=>{}
+  }});
+ });
+ await page.goto('/');
+ await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
+ await expect(page.getByRole('heading',{name:'Deine Handbuchbibliothek ist noch leer'})).toBeVisible();
+ await page.getByRole('button',{name:'Zur Einrichtung'}).click();
+ await expect(page.getByRole('heading',{name:'Sprachreferenzen installieren'})).toBeVisible();
+ await expect(page.getByLabel('Offline-Dokumentation durchsuchen')).toHaveCount(0);
+ const card=page.locator('.documentation-install-card').filter({hasText:'The Rust Programming Language'});
+ await card.getByRole('button',{name:'Paket installieren'}).click();
+ await expect(card.getByText('Importiert',{exact:false})).toBeVisible();
+ await page.getByRole('button',{name:'Zu den Handbüchern'}).click();
+ await expect(page.getByRole('button',{name:'Rust',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Ownership'}).first()).toBeVisible();
+ await expect(page.getByText('Rust besitzt Werte.')).toBeVisible();
+ await expect(page.getByLabel('Offline-Dokumentation durchsuchen')).toBeVisible();
 });

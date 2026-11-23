@@ -5,13 +5,14 @@ import {COMPLETE_CONCEPTS as CONCEPTS} from '../content/complete-concepts';
 import {searchConcepts,recommendedConcepts,compareLanguages} from '../content/concept-library';
 import type {Stage} from '../shared/types';
 import {DocumentationLibrary} from './documentation-library';
+import {DocumentationInstaller} from './documentation-installer';
 import {RepositoryWorkspace} from './repository-workspace';
 import {TextbookReader} from './textbook-reader';
 import {useRef} from 'react';
 import './style.css';
 
 type View='textbook'|'compare'|'practice';
-type LibraryMode='concepts'|'handbooks'|'repositories';
+type LibraryMode='concepts'|'handbooks'|'repositories'|'setup';
 type Knowledge='unknown'|'learning'|'understood';
 type StudyState={version:1;progress:Record<string,Knowledge>;notes:Record<string,string>};
 const STORAGE_KEY='checkmate:concept-library:v1';
@@ -73,7 +74,8 @@ function App():React.JSX.Element{
    <div className="brand"><span className="brand-crown">♚</span><div><strong>CHECKMATE</strong><small>learn the logic</small></div></div>
    <div className="sidebar-section"><span className="eyebrow">LEARNING OS</span>
     <button className={libraryMode==='concepts'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('concepts')}>◈ <span>Konzeptbibliothek</span><small>{CONCEPTS.length}</small></button>
-    <button className={libraryMode==='handbooks'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('handbooks')}>▤ <span>Sprachenhandbücher</span><small>10</small></button>
+    <button className={libraryMode==='handbooks'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('handbooks')}>▤ <span>Sprachenhandbücher</span></button>
+    <button className={libraryMode==='setup'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('setup')}>↓ <span>Dokumentationen einrichten</span></button>
     <button className={libraryMode==='repositories'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('repositories')}>⌘ <span>Repository Lab</span><small>AI</small></button>
     <div className="nav-secondary">◇ <span>Lernpfad</span><small>{recommended.length} offen</small></div>
    </div>
@@ -136,7 +138,7 @@ function App():React.JSX.Element{
       </>}
     </article>
    </div>
-   </>:libraryMode==='handbooks'?<DocumentationLibrary/>:<RepositoryWorkspace/>}
+   </>:libraryMode==='handbooks'?<DocumentationLibrary openSetup={()=>setLibraryMode('setup')}/>:libraryMode==='setup'?<DocumentationInstaller openLibrary={()=>setLibraryMode('handbooks')}/>:<RepositoryWorkspace/>}
    <footer className="footnote"><span>CHECKMATE · Die Idee verstehen, nicht die Syntax auswendig lernen.</span><span>Wissensbasis v0.1 · {languageIds.length} Sprachen · {CONCEPTS.length} Konzepte</span></footer>
   </main>
  </div>;

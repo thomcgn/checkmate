@@ -6,11 +6,12 @@ import {randomUUID,createHash} from 'node:crypto';
 import {unzipSync} from 'fflate';
 import {extract as extractTar} from 'tar';
 import {NodeHtmlMarkdown} from 'node-html-markdown';
+import {decodeDocumentationText} from './documentation-encoding.ts';
 import {OFFICIAL_PACKS,type PackDefinition,type DocumentPackStatus,type PackProgress,type InstalledDocumentPack,type DocumentEntry,type DocumentView} from '../shared/documentation.ts';
 
 const MAX_FILES=40_000;
-const MAX_FILE=10*1024*1024;
-const MAX_TOTAL=450*1024*1024;
+const MAX_FILE=128*1024*1024;
+const MAX_TOTAL=2*1024*1024*1024;
 const digest=(data:Buffer):string=>createHash('sha256').update(data).digest('hex');
 const valid=(s:string):boolean=>!!s&&s.length<440&&!s.includes('\0')&&!s.includes('\\')&&!s.startsWith('/')&&!s.split('/').includes('..');
 const lookup=(id:string):PackDefinition=>{
@@ -25,7 +26,7 @@ const securePath=(root:string,relative:string):string=>{
  return target;
 };
 const sha=(v:unknown):v is string=>typeof v==='string'&&/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(v);
-const decode=new TextDecoder('utf-8',{fatal:true});
+const decode=decodeDocumentationText;
 const plain=(value:string):string=>value.replace(/<!--[\s\S]*?-->/g,'')
  .replace(/<\?xml[\s\S]*?\?>/g,'')
  .replace(/<\/?(?:para|section|chapter|refsect\d|title|listitem|programlisting|screen|simpara|example|varlistentry|entry|row)\b[^>]*>/gi,'\n')
@@ -98,9 +99,9 @@ export async function importCompiledTarPack(def:PackDefinition,report:Reporter):
     const entryType='type' in entry?entry.type:(entry.isDirectory()?'Directory':entry.isFile()?'File':'Other');
     if(entryType==='Directory')return true;
     if(entryType!=='File')throw Error('Nicht unterstützter Dateityp im Archiv: '+entryType);
-    if(entry.size>MAX_FILE)throw Error('Dokumentationsdatei überschreitet 10 MB.');
+    if(entry.size>MAX_FILE)throw Error('Dokumentationsdatei überschreitet 128 MB.');
     total+=entry.size;
-    if(total>MAX_TOTAL)throw Error('PHP-Handbuch überschreitet 450 MB entpackt.');
+    if(total>MAX_TOTAL)throw Error('PHP-Handbuch überschreitet 2 GB entpackt.');
     if(++count>MAX_FILES)throw Error('PHP-Handbuch enthält zu viele Dateien.');
     return true;
    }});
@@ -112,7 +113,7 @@ export async function importCompiledTarPack(def:PackDefinition,report:Reporter):
   for(let i=0;i<paths.length;i++){
    const relative=paths[i],data=await fs.readFile(securePath(staging,relative));
    const text=def.extensions.some(ext=>relative.toLowerCase().endsWith(ext));
-   const contents=text?decode.decode(data):'';
+   const contents=text?decode(data):'';
    const entry:DocumentEntry={path:relative,title:text?titleFor(relative,contents):path.posix.basename(relative),
     bytes:data.length,sha256:digest(data),text};
    files.set(relative,data);
@@ -159,9 +160,9 @@ export async function importArchivePack(def:PackDefinition,report:Reporter):Prom
  const archive=unzipSync(buffer,{filter:file=>{
   if(!valid(file.name))throw Error('Archiv enthält ungültige Pfade.');
   if(file.name.endsWith('/'))return false;
-  if(file.originalSize>MAX_FILE)throw Error('Ein Archivbestandteil überschreitet 10 MB.');
+  if(file.originalSize>MAX_FILE)throw Error('Ein Archivbestandteil überschreitet 128 MB.');
   total+=file.originalSize;
-  if(total>MAX_TOTAL)throw Error('Entpacktes Archiv überschreitet 450 MB.');
+  if(total>MAX_TOTAL)throw Error('Entpacktes Archiv überschreitet 2 GB.');
   if(++count>MAX_FILES)throw Error('Archiv enthält mehr als 40.000 Dateien.');
   return true;
  }});
@@ -171,7 +172,7 @@ export async function importArchivePack(def:PackDefinition,report:Reporter):Prom
  for(const [relative,raw] of Object.entries(archive)){
   const data=Buffer.from(raw);
   const isText=def.extensions.some(ext=>relative.toLowerCase().endsWith(ext));
-  const content=isText?decode.decode(data):'';
+  const content=isText?decode(data):'';
   const entry:DocumentEntry={path:relative,title:isText?titleFor(relative,content):path.posix.basename(relative),bytes:data.length,sha256:digest(data),text:isText};
   files.set(relative,data);
   if(isText)documents.push(entry);else assets.push(entry);
@@ -223,11 +224,11 @@ export async function importOfficialPack(def:PackDefinition,report:Reporter):Pro
    const relative=selected[i];
    const full=securePath(staging,relative);
    const stat=await fs.stat(full);
-   if(stat.size>MAX_FILE)throw Error('Originaldatei zu groß: '+relative);
-   used+=stat.size;if(used>MAX_TOTAL)throw Error('Quellpublikation überschreitet 450 MB Text.');
+   if(stat.size>MAX_FILE)throw Error('Originaldatei überschreitet 128 MB: '+relative);
+   used+=stat.size;if(used>MAX_TOTAL)throw Error('Quellpublikation überschreitet 2 GB Text.');
    const data=await fs.readFile(full);
    const isText=def.extensions.some(ext=>relative.toLowerCase().endsWith(ext));
-   const contents=isText?decode.decode(data):'';
+   const contents=isText?decode(data):'';
    files.set(relative,data);
    const entry:DocumentEntry={path:relative,title:isText?titleFor(relative,contents):path.posix.basename(relative),bytes:data.length,sha256:digest(data),text:isText};
    if(isText)documents.push(entry);else assets.push(entry);
@@ -273,7 +274,7 @@ export class DocumentationStore{
   const file=securePath(path.join(this.directoryFor(id),'files'),relative);
   const raw=await fs.readFile(file);
   if(raw.length!==entry.bytes||digest(raw)!==entry.sha256)throw Error('Offline-Dokumentation beschädigt: '+entry.path);
-  const content=decode.decode(raw);
+  const content=decode(raw);
   return{path:entry.path,title:entry.title,text:/\.html?$/i.test(entry.path)?NodeHtmlMarkdown.translate(content):entry.path.endsWith('.xml')?plain(content):content};
  }
  async readAsset(id:string,relative:string):Promise<string>{
