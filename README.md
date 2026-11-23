@@ -1,22 +1,43 @@
-# CHECKMATE
+# CHECKMATE ♚
 
 **Understand the code. Master the craft.**
 
-Checkmate ist eine eigenständige Desktop-Lernsoftware, um Programmierung systematisch zu verstehen, praktisch zu üben und Konzepte langfristig zu verinnerlichen.
+Checkmate ist eine eigenständige Desktop-Lernsoftware, mit der man Programmierkonzepte verstehen, selbst anwenden und dauerhaft verinnerlichen kann.
 
-## Was Checkmate auszeichnet
+## Heute im Entwicklungsstand vorhanden
 
-- **Konzeptbibliothek:** Programmierkonzepte unabhängig von einer bestimmten Sprache verstehen – von Variablen und Collections bis zu Generics, Nebenläufigkeit, Architektur und Tests.
-- **Sprachübergreifende Vergleiche:** Ähnliche Lösungsansätze in Java, Python, Rust, TypeScript und weiteren Sprachen entdecken, inklusive wichtiger semantischer Unterschiede.
-- **Didaktische Lernpfade:** Vom Grundlagenwissen über fortgeschrittene Themen bis zur selbstständigen Umsetzung.
-- **Verständnis statt Copy-and-paste:** Erklärungen, durchgearbeitete Beispiele, Übungen, Musterlösungen und Wiederholung.
-- **Persönliche Bibliothek:** Lernfortschritt, Notizen und eigene Lehrbücher dauerhaft lokal speichern.
-- **ChatGPT-Unterstützung:** Optionaler KI-Tutor über eine offiziell unterstützte und freigegebene ChatGPT-Anbindung. Die Verfügbarkeit der Anmeldung hängt von der Freischaltung der Integration ab.
+- **Sprachübergreifende Konzeptbibliothek:** Von Variablen, Listen und Maps bis Generics, Records, Streams, Ownership, Fehlerbehandlung und Nebenläufigkeit.
+- **Zehn offline lesbare Sprachhandbücher:** Python, JavaScript, TypeScript, Java, C#, C++, PHP, Go, Rust und Kotlin – jeweils mit festgelegter Sprachversion, Erklärung, Beispielcode, Fallstricken, Best Practices und Übung.
+- **Vergleich statt bloßer Syntaxübersetzung:** Beispielsweise Java `HashMap`, Python `dict`, Rust `HashMap` und JavaScript `Map` – mit ausdrücklichen Unterschieden bei Semantik und Laufzeitverhalten.
+- **Suche und Lernpfad:** Konzeptfilter, Suchbegriffe, Voraussetzungen und Lernstufen.
+- **Offline-Nachschlagen:** Die benötigten Erklärungen stehen in Checkmate selbst. Externe Dokumentationen sind nur redaktionelle Quellen, keine Voraussetzung zum Lernen.
+- **Eigene Notizen und Lernstand:** Werden in der Desktop-Anwendung lokal gespeichert.
 
-## Technologie
+Die Kapiteltexte sind eigenständig für Checkmate geschrieben und keine vollständigen Kopien fremder Sprachreferenzen. Das erste Release bildet einen wachsenden, **kuratierten Lehrbuchkern**, noch nicht jede Standardbibliothek und jeden Spezialfall jeder Sprache ab.
 
-Electron · React · TypeScript. Desktop-First für Linux, Windows und macOS. Lernmaterialien und persönliche Daten werden lokal gespeichert.
+## Installation aus dem Quellcode
 
-## Projektstatus
+Voraussetzung: Node.js 22 oder höher und npm.
 
-Checkmate befindet sich im Aufbau. Die Wissensbasis ist bewusst **konzeptorientiert**: Programmiersprachen sind verschiedene Ausdrucksformen für vergleichbare Probleme, aber keine Garantie für identisches Verhalten.
+```bash
+npm install
+npm run desktop
+```
+
+`npm run desktop` baut die Electron-Anwendung und startet sie lokal. Die Bedienoberfläche und die gebündelten Lehrtexte benötigen keinen laufenden Webserver und keine Cloud-KI.
+
+## Entwicklung und Qualität
+
+```bash
+npm run check
+```
+
+Dieser Aufruf prüft TypeScript, die Inhaltstests und den Renderer-/Electron-Build. Die CI führt diese Prüfungen auf **Linux, Windows und macOS** aus.
+
+Technologie: **Electron · React · TypeScript**, streng typisiert. Die Handbuchinhalte sind versionierte Projektdateien, persönliche Notizen und Lernstände liegen derzeit im lokalen App-Speicher. Eine zusätzliche Datenbank ist für die gebündelte Wissensbasis nicht nötig.
+
+## Weitere Entwicklung
+
+Eine dauerhafte Bibliothek selbst erzeugter Bücher, eine lokale SQLite-Datenbank für umfangreiche Nutzerdaten, ein interaktiver Code-Editor mit Übungsprüfungen sowie eine offizielle ChatGPT-Anmeldung mit KI-Tutor werden als **separate Funktionen** aufgebaut. Diese Bestandteile werden nicht als bereits implementiert ausgegeben.
+
+Mehr zum redaktionellen Anspruch: [Sprachversionen und Abdeckung](docs/LANGUAGE_COVERAGE.md) · [Qualität und Quellen](docs/CONTENT_REVIEW.md).
