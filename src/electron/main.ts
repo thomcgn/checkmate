@@ -1,4 +1,4 @@
-import {app,BrowserWindow,shell,ipcMain} from 'electron';
+import {app,BrowserWindow,shell,ipcMain,screen} from 'electron';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
@@ -9,6 +9,27 @@ import {DocumentationStore} from './documentation-store';
 import type {PackProgress} from '../shared/documentation';
 import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
 let window:BrowserWindow|null=null;
+let splashWindow:BrowserWindow|null=null;
+function closeSplash():void{
+ if(splashWindow&&!splashWindow.isDestroyed())splashWindow.close();
+ splashWindow=null;
+}
+function createSplashWindow():void{
+ const {width:workWidth,height:workHeight}=screen.getPrimaryDisplay().workAreaSize;
+ const width=Math.min(980,Math.max(540,Math.floor(workWidth*.84)));
+ const height=Math.min(Math.floor(workHeight*.82),Math.round(width*9/16)+34);
+ splashWindow=new BrowserWindow({
+  width,height,center:true,frame:false,resizable:false,movable:true,skipTaskbar:true,
+  alwaysOnTop:false,backgroundColor:'#10091d',show:false,
+  webPreferences:{contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}
+ });
+ splashWindow.once('ready-to-show',()=>splashWindow?.show());
+ splashWindow.webContents.setWindowOpenHandler(()=>({action:'deny'}));
+ void splashWindow.loadFile(path.join(__dirname,'../../dist-renderer/splash.html')).catch(error=>{
+  console.error('Splashscreen konnte nicht geladen werden',error);closeSplash();
+ });
+}
+
 let chatgpt:DirectChatGPT;
 let store:BookStore;
 let documentation:DocumentationStore;
@@ -34,11 +55,14 @@ function createWindow():void{
  window=new BrowserWindow({
   width:1360,height:850,minWidth:800,minHeight:540,
   title:'CHECKMATE · Understand the code',
-  backgroundColor:'#100f18',
+  backgroundColor:'#110b20',
   show:false,
   webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,sandbox:true,nodeIntegration:false,webSecurity:true}
  });
- window.once('ready-to-show',()=>window?.show());
+ window.once('ready-to-show',()=>{
+  if(window&&!window.isDestroyed())window.show();
+  closeSplash();
+ });
  window.webContents.setWindowOpenHandler(({url})=>{
   if(url.startsWith('https://'))void shell.openExternal(url);
   return {action:'deny'};
@@ -105,6 +129,7 @@ app.whenReady().then(()=>{
    throw error;
   }finally{busy=false;}
  });
+ createSplashWindow();
  createWindow();
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});
 }).catch(error=>{console.error('Checkmate konnte nicht gestartet werden',error);app.quit();});
