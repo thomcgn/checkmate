@@ -97,3 +97,28 @@ body{background:var(--cm-ink);color:var(--cm-text);font-family:Inter,"DM Sans",s
  .main{padding:12px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:0s!important}}
+
+/* Shadcn-style overlay is intentionally app-specific, not a stock Electron dialog. */
+.cm-dialog-overlay{position:fixed;inset:0;background:rgba(6,4,12,.8);z-index:999;backdrop-filter:blur(5px)}
+.cm-dialog-content{position:fixed;z-index:1000;top:min(18vh,130px);left:50%;transform:translateX(-50%);
+ width:min(calc(100vw - 26px),560px);max-height:min(72vh,540px);
+ overflow:hidden;border-radius:14px;border:1px solid var(--cm-border-strong);
+ background:linear-gradient(155deg,#30203f,#160e24);box-shadow:0 24px 90px rgba(0,0,0,.7),0 0 40px rgba(146,73,255,.13);
+ color:var(--cm-text)}
+.cm-dialog-heading{padding:20px 21px 15px;display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.cm-dialog-heading [data-radix-dialog-title]{font-size:19px;font-weight:750;line-height:1.4}
+.cm-dialog-heading [data-radix-dialog-description]{font-size:12px;color:var(--cm-muted);margin-top:4px}
+.cm-command-search{height:48px;margin:0 18px;border:1px solid var(--cm-border-strong);border-radius:10px;
+ display:flex;align-items:center;gap:12px;padding:0 14px;color:var(--cm-cyan);background:#181022}
+.cm-command-search input{flex:1;background:none;border:0;outline:0;color:var(--cm-text);min-width:0}
+.cm-command-results{max-height:260px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:11px}
+.cm-command-results::-webkit-scrollbar{display:none}
+.cm-command-results button{width:100%;display:flex;align-items:center;gap:14px;text-align:left;
+ border:1px solid transparent;background:none;color:var(--cm-text);border-radius:10px;padding:11px 13px}
+.cm-command-results button:hover,.cm-command-results button:focus-visible{background:var(--cm-raised);border-color:var(--cm-violet)}
+.cm-command-results button span:nth-child(2){display:flex;flex-direction:column;gap:4px;min-width:0}
+.cm-command-results strong{font-size:13px}
+.cm-command-results small{font-size:11px;color:var(--cm-muted)}
+.cm-command-icon{color:var(--cm-gold)}
+.cm-command-results p{padding:14px;color:var(--cm-muted)}
+.cm-command-footer{border-top:1px solid var(--cm-border);padding:12px 20px;font-size:10px;color:var(--cm-muted)}
