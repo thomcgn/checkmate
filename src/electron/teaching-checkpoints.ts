@@ -26,7 +26,8 @@ const isValid=(v:unknown):v is TeachingCheckpoint=>{
    x.sourcePaths.every(p=>typeof p==='string'));
 };
 export class TeachingCheckpointStore{
- constructor(private readonly root:string){}
+ private readonly root:string;
+ constructor(root:string){this.root=root;}
  private location(key:string):string{
   if(!/^[0-9a-f]{64}$/.test(key))throw Error('Ungültiger Checkpoint-Schlüssel.');
   return path.join(this.root,key+'.json');
