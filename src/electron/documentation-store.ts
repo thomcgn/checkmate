@@ -1,110 +1,180 @@
 import {promises as fs} from 'node:fs';
 import path from 'node:path';
-import {unzipSync} from 'fflate';
-import {OFFICIAL_PACKS,type PackDefinition,type DocumentPackStatus,type PackProgress,type InstalledDocumentPack,type DocumentEntry} from '../shared/documentation';
+import os from 'node:os';
+import {spawn} from 'node:child_process';
+import {randomUUID} from 'node:crypto';
+import {OFFICIAL_PACKS,type PackDefinition,type DocumentPackStatus,type PackProgress,type InstalledDocumentPack,type DocumentEntry,type DocumentView} from '../shared/documentation';
 
-const ZIP_LIMIT=60*1024*1024;
-const UNPACK_LIMIT=180*1024*1024;
-const FILE_LIMIT=10*1024*1024;
-const TEXT=/\.(md|mdx|rst|txt)$/i;
-const safePath=(s:string):boolean=>s.length<=380&&!s.startsWith('/')&&!s.includes('\\')&&!s.includes('\0')&&!s.split('/').includes('..');
-const definition=(id:string):PackDefinition=>{
- const item=OFFICIAL_PACKS.find(p=>p.id===id);
- if(!item)throw Error('Unbekanntes Dokumentationspaket.');
- return item;
+const MAX_FILES=40_000;
+const MAX_FILE=10*1024*1024;
+const MAX_TOTAL=450*1024*1024;
+const valid=(s:string):boolean=>!!s&&s.length<440&&!s.includes('\0')&&!s.includes('\\')&&!s.startsWith('/')&&!s.split('/').includes('..');
+const lookup=(id:string):PackDefinition=>{
+ const found=OFFICIAL_PACKS.find(p=>p.id===id);
+ if(!found)throw Error('Unbekanntes Dokumentationspaket.');
+ return found;
 };
-const shaValid=(s:unknown):s is string=>typeof s==='string'&&/^[a-f0-9]{40}$/.test(s);
-const decoder=new TextDecoder('utf-8',{fatal:true});
-type Fetcher=(url:string,options?:RequestInit)=>Promise<Response>;
-export async function fetchOfficialPack(def:PackDefinition,progress:(p:PackProgress)=>void,
- fetcher:Fetcher=fetch):Promise<InstalledDocumentPack>{
- const api='https://api.github.com/repos/'+def.repo+'/commits/'+encodeURIComponent(def.ref);
- const meta=await fetcher(api,{redirect:'error',headers:{Accept:'application/vnd.github+json','User-Agent':'Checkmate-Documentation'},signal:AbortSignal.timeout(25000)});
- if(!meta.ok)throw Error('Offizieller Commit nicht erreichbar (HTTP '+meta.status+').');
- const result:unknown=await meta.json();
- const sha=result&&typeof result==='object'&&'sha' in result?result.sha:null;
- if(!shaValid(sha))throw Error('GitHub hat keinen gültigen Commit geliefert.');
- const url='https://codeload.github.com/'+def.repo+'/zip/'+sha;
- const response=await fetcher(url,{redirect:'error',signal:AbortSignal.timeout(120000)});
- if(!response.ok||!response.body)throw Error('Quellarchiv konnte nicht geladen werden (HTTP '+response.status+').');
- const declared=Number(response.headers.get('content-length')??'0');
- if(declared>ZIP_LIMIT)throw Error('Archiv überschreitet 60 MB.');
- const parts:Uint8Array[]=[];let size=0;
- for await(const part of response.body){
-  const data=part instanceof Uint8Array?part:new Uint8Array(part);
-  size+=data.length;
-  if(size>ZIP_LIMIT)throw Error('Archiv überschreitet 60 MB.');
-  parts.push(data);
-  progress({id:def.id,phase:'downloading',detail:'Offizielles Archiv herunterladen',done:size,total:declared||ZIP_LIMIT});
+const securePath=(root:string,relative:string):string=>{
+ if(!valid(relative))throw Error('Unsicherer Pfad.');
+ const target=path.resolve(root,relative);
+ if(!target.startsWith(path.resolve(root)+path.sep))throw Error('Pfad verlässt den Dokumentationsordner.');
+ return target;
+};
+const sha=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{40}$/.test(v);
+const decode=new TextDecoder('utf-8',{fatal:true});
+const plain=(value:string):string=>value.replace(/<!--[\s\S]*?-->/g,'')
+ .replace(/<\?xml[\s\S]*?\?>/g,'')
+ .replace(/<\/?(?:para|section|chapter|refsect\d|title|listitem|programlisting|screen|simpara|example|varlistentry|entry|row)\b[^>]*>/gi,'\n')
+ .replace(/<[^>]+>/g,' ')
+ .replace(/&(lt|gt|amp|quot|apos);/g,(_match,name:string)=>({lt:'<',gt:'>',amp:'&',quot:'"',apos:"'"} as Record<string,string>)[name])
+ .replace(/\n{3,}/g,'\n\n');
+function titleFor(relative:string,text:string):string{
+ const xml=/<title(?:\s[^>]*)?>([^<]{2,180})<\/title>/i.exec(text);
+ const md=/^#{1,3}\s+(.+)$/m.exec(text);
+ const match=xml?.[1]??md?.[1];
+ return match?match.replace(/[*\`]/g,'').trim():path.posix.basename(relative).replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+}
+type Reporter=(p:PackProgress)=>void;
+function runGit(args:string[],cwd:string,timeoutMs:number):Promise<string>{
+ return new Promise((resolve,reject)=>{
+  const child=spawn('git',args,{cwd,shell:false,windowsHide:true,
+   env:{...process.env,GIT_TERMINAL_PROMPT:'0',GCM_INTERACTIVE:'never',GIT_CONFIG_NOSYSTEM:'1'},
+   stdio:['ignore','pipe','pipe']});
+  let stdout='',stderr='';
+  child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');
+  child.stdout.on('data',(part:string)=>{stdout+=part.slice(0,100_000);if(stdout.length>100_000)stdout=stdout.slice(-100_000);});
+  child.stderr.on('data',(part:string)=>{stderr+=part.slice(0,100_000);if(stderr.length>100_000)stderr=stderr.slice(-100_000);});
+  const timer=setTimeout(()=>child.kill(),timeoutMs);
+  child.once('error',error=>{clearTimeout(timer);reject(Error('Git konnte nicht gestartet werden: '+error.message));});
+  child.once('close',code=>{
+   clearTimeout(timer);
+   if(code===0)resolve(stdout.trim());
+   else reject(Error('Git-Import fehlgeschlagen ('+String(code)+'): '+stderr.slice(-300)));
+  });
+ });
+}
+async function walk(root:string,directory:string,result:string[],allowed:readonly string[]):Promise<void>{
+ for(const entry of await fs.readdir(directory,{withFileTypes:true})){
+  if(entry.isSymbolicLink())continue;
+  const target=path.join(directory,entry.name);
+  if(entry.isDirectory()){await walk(root,target,result,allowed);continue;}
+  if(!entry.isFile())continue;
+  const relative=path.relative(root,target).replace(/\\/g,'/');
+  if(!valid(relative))throw Error('Unsicherer Dokumentationspfad');
+  if(allowed.some(ext=>relative.toLowerCase().endsWith(ext)))result.push(relative);
+  if(result.length>MAX_FILES)throw Error('Mehr als 40.000 Dokumentationsdateien; Import abgebrochen.');
  }
- const archive=new Uint8Array(size);let offset=0;
- for(const part of parts){archive.set(part,offset);offset+=part.length;}
- progress({id:def.id,phase:'extracting',detail:'Dokumentation überprüfen',done:0,total:1});
- let unpacked=0,matched=0;
- const extracted=unzipSync(archive,{filter:file=>{
-  if(!safePath(file.name))throw Error('Unsicherer Archivpfad.');
-  const i=file.name.indexOf('/');
-  const relative=i<0?'':file.name.slice(i+1);
-  if(!relative.startsWith(def.prefix)||file.name.endsWith('/'))return false;
-  if(file.originalSize>FILE_LIMIT)throw Error('Offizielle Datei größer als 10 MB.');
-  unpacked+=file.originalSize;
-  if(unpacked>UNPACK_LIMIT)throw Error('Quelltext überschreitet 180 MB.');
-  if(TEXT.test(relative)){matched++;return true;}
-  return false;
- }});
- const documents:DocumentEntry[]=[];
- for(const [name,bytes] of Object.entries(extracted)){
-  const relative=name.slice(name.indexOf('/')+1);
-  if(!relative.startsWith(def.prefix))continue;
-  const docPath=relative.slice(def.prefix.length);
-  if(!safePath(docPath)||!docPath)throw Error('Unsicherer Dokumentpfad.');
-  const text=decoder.decode(bytes);
-  const heading=/^#{1,2}\s+(.+)$/m.exec(text);
-  const title=heading?heading[1].replace(/[*\`]/g,'').trim():path.posix.basename(docPath).replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
-  documents.push({path:docPath,title,text});
- }
- if(!matched||documents.length!==matched)throw Error('Dokumentationsarchiv unvollständig.');
- documents.sort((a,b)=>a.path.localeCompare(b.path,'en'));
- if(new Set(documents.map(x=>x.path)).size!==documents.length)throw Error('Dokumentationspfade sind nicht eindeutig.');
- return {id:def.id,language:def.language,title:def.title,sourceCommit:sha,
-  sourceUrl:def.sourceUrl,license:def.license,licenseUrl:def.licenseUrl,
-  extent:def.extent,installedAt:new Date().toISOString(),documents};
+}
+/** Sparse git fetch downloads the complete requested source subtree, NOT a small preview. */
+export async function importOfficialPack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,string>}>{
+ const staging=await fs.mkdtemp(path.join(os.tmpdir(),'checkmate-docs-'));
+ try{
+  report({id:def.id,phase:'downloading',detail:'Offizielle Dokumentationsquelle vorbereiten',done:0,total:1});
+  await runGit(['clone','--filter=blob:none','--depth=1','--single-branch','--sparse','--no-checkout','--branch',def.ref,
+   '--','https://github.com/'+def.repo+'.git',staging],os.tmpdir(),120_000);
+  const folder=def.prefix==='.'?'.':def.prefix.replace(/\/$/,'');
+  await runGit(['-C',staging,'sparse-checkout','set','--cone',folder],staging,90_000);
+  await runGit(['-C',staging,'checkout','--force'],staging,180_000);
+  const commit=await runGit(['-C',staging,'rev-parse','HEAD'],staging,15000);
+  if(!sha(commit))throw Error('Git hat keinen verifizierbaren Commit geliefert.');
+  const directory=folder==='.'?staging:path.join(staging,folder);
+  const selected:string[]=[];
+  await walk(staging,directory,selected,def.extensions);
+  if(!selected.length)throw Error('Keine Dokumentationskapitel in der ausgewählten Originalquelle gefunden.');
+  selected.sort();
+  const files=new Map<string,string>();
+  const documents:DocumentEntry[]=[];let used=0;
+  for(let i=0;i<selected.length;i++){
+   const relative=selected[i];
+   const full=securePath(staging,relative);
+   const stat=await fs.stat(full);
+   if(stat.size>MAX_FILE)throw Error('Originaldatei zu groß: '+relative);
+   used+=stat.size;if(used>MAX_TOTAL)throw Error('Quellpublikation überschreitet 450 MB Text.');
+   const data=await fs.readFile(full);
+   const contents=decode.decode(data);
+   files.set(relative,contents);
+   documents.push({path:relative,title:titleFor(relative,contents),bytes:data.length});
+   if(i%25===0||i===selected.length-1)report({id:def.id,phase:'extracting',detail:'Kapitel erfassen: '+relative,done:i+1,total:selected.length});
+  }
+  const pack:InstalledDocumentPack={id:def.id,title:def.title,language:def.language,sourceCommit:commit,
+   sourceUrl:def.sourceUrl,license:def.license,licenseUrl:def.licenseUrl,extent:def.extent,
+   installedAt:new Date().toISOString(),documents};
+  return {pack,files};
+ }finally{await fs.rm(staging,{recursive:true,force:true}).catch(()=>{});}
 }
 export class DocumentationStore{
- private busy=new Set<string>();
+ private active=new Set<string>();
  constructor(private readonly directory:string){}
- private file(id:string):string{return path.join(this.directory,definition(id).id+'.json');}
+ private directoryFor(id:string):string{return path.join(this.directory,lookup(id).id);}
+ private index(id:string):string{return path.join(this.directoryFor(id),'index.json');}
  async load(id:string):Promise<InstalledDocumentPack|null>{
-  definition(id);
+  lookup(id);
   try{
-   const data:unknown=JSON.parse(await fs.readFile(this.file(id),'utf8'));
-   if(!data||typeof data!=='object')throw Error('Dokumentationspaket beschädigt.');
+   const data:unknown=JSON.parse(await fs.readFile(this.index(id),'utf8'));
+   if(!data||typeof data!=='object')throw Error('Dokumentationsindex beschädigt.');
    const pack=data as InstalledDocumentPack;
-   if(pack.id!==id||!shaValid(pack.sourceCommit)||!Array.isArray(pack.documents)||
-     pack.documents.some(d=>!safePath(d.path)||typeof d.text!=='string'||typeof d.title!=='string'))
-    throw Error('Dokumentationspaket beschädigt.');
+   if(pack.id!==id||!sha(pack.sourceCommit)||!Array.isArray(pack.documents)||
+    !pack.documents.length||pack.documents.some(d=>!valid(d.path)||typeof d.title!=='string'||typeof d.bytes!=='number'))
+    throw Error('Dokumentationsindex beschädigt.');
    return pack;
-  }catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')return null;throw e;}
+  }catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return null;throw error;}
  }
  async statuses():Promise<DocumentPackStatus[]>{
   return Promise.all(OFFICIAL_PACKS.map(async item=>{
-   const pack=await this.load(item.id);
-   return {id:item.id,installed:pack!==null,count:pack?.documents.length??0,
-    sourceCommit:pack?.sourceCommit??null,installedAt:pack?.installedAt??null};
+   const existing=await this.load(item.id);
+   return{id:item.id,installed:existing!==null,count:existing?.documents.length??0,
+    sourceCommit:existing?.sourceCommit??null,installedAt:existing?.installedAt??null};
   }));
  }
- async install(id:string,report:(v:PackProgress)=>void):Promise<DocumentPackStatus>{
-  if(this.busy.has(id))throw Error('Import wird bereits ausgeführt.');
-  this.busy.add(id);
+ async readDocument(id:string,relative:string):Promise<DocumentView>{
+  const pack=await this.load(id);
+  const entry=pack?.documents.find(d=>d.path===relative);
+  if(!entry)throw Error('Dokumentationseintrag ist nicht installiert.');
+  const file=securePath(path.join(this.directoryFor(id),'files'),relative);
+  const content=await fs.readFile(file,'utf8');
+  return{path:entry.path,title:entry.title,text:entry.path.endsWith('.xml')||entry.path.endsWith('.html')?plain(content):content};
+ }
+ async searchPack(id:string,query:string):Promise<readonly string[]>{
+  const pack=await this.load(id);
+  if(!pack)return [];
+  const words=query.trim().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/\s+/).filter(Boolean);
+  if(!words.length)return pack.documents.map(d=>d.path);
+  const matches:string[]=[];
+  for(const doc of pack.documents){
+   const text=(doc.path+' '+doc.title+' '+await fs.readFile(securePath(path.join(this.directoryFor(id),'files'),doc.path),'utf8'))
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+   if(words.every(w=>text.includes(w)))matches.push(doc.path);
+  }
+  return matches;
+ }
+ async install(id:string,report:Reporter):Promise<DocumentPackStatus>{
+  if(this.active.has(id))throw Error('Installation bereits aktiv.');
+  this.active.add(id);
+  let temp:string|null=null;
   try{
-   const pack=await fetchOfficialPack(definition(id),report);
-   report({id,phase:'saving',detail:pack.documents.length+' Dokumente lokal speichern',done:0,total:1});
+   const {pack,files}=await importOfficialPack(lookup(id),report);
    await fs.mkdir(this.directory,{recursive:true,mode:0o700});
-   const tmp=path.join(this.directory,id+'.'+pack.sourceCommit+'.tmp');
-   await fs.writeFile(tmp,JSON.stringify(pack),{encoding:'utf8',mode:0o600,flag:'wx'});
-   await fs.rename(tmp,this.file(id));
-   report({id,phase:'finished',detail:'Kompletter Quelltextbestand dieses Pakets gespeichert',done:1,total:1});
-   return {id,installed:true,count:pack.documents.length,sourceCommit:pack.sourceCommit,installedAt:pack.installedAt};
-  }finally{this.busy.delete(id);}
+   temp=path.join(this.directory,id+'.'+randomUUID()+'.tmp');
+   await fs.mkdir(temp,{recursive:true,mode:0o700});
+   for(const [relative,text] of files){
+    const file=securePath(path.join(temp,'files'),relative);
+    await fs.mkdir(path.dirname(file),{recursive:true});
+    await fs.writeFile(file,text,'utf8');
+   }
+   report({id,phase:'saving',detail:'Vollständigkeit der lokalen Dateisammlung prüfen',done:0,total:1});
+   for(const doc of pack.documents){
+    const stat=await fs.stat(securePath(path.join(temp,'files'),doc.path));
+    if(stat.size!==doc.bytes)throw Error('Unvollständige importierte Datei: '+doc.path);
+   }
+   await fs.writeFile(path.join(temp,'index.json'),JSON.stringify(pack),{mode:0o600});
+   const dest=this.directoryFor(id);
+   const old=dest+'.old-'+randomUUID();
+   let existed=false;
+   try{await fs.rename(dest,old);existed=true;}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+   try{await fs.rename(temp,dest);temp=null;}catch(e){if(existed)await fs.rename(old,dest);throw e;}
+   if(existed)await fs.rm(old,{recursive:true,force:true});
+   report({id,phase:'finished',detail:pack.documents.length+' Kapitel vollständig gespeichert',done:1,total:1});
+   return{id,installed:true,count:pack.documents.length,sourceCommit:pack.sourceCommit,installedAt:pack.installedAt};
+  }finally{if(temp)await fs.rm(temp,{recursive:true,force:true}).catch(()=>{});this.active.delete(id);}
  }
 }
