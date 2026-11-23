@@ -12,6 +12,7 @@ export type RepoBridge={
  signOut():Promise<ChatGPTStatus>;
  models():Promise<ChatGPTModel[]>;
  analyze(url:string,consent:boolean,model:string):Promise<RepositoryAnalysis>;
+ analyzeDocument(packId:string,documentPath:string,consent:boolean,model:string):Promise<RepositoryAnalysis>;
  saved():Promise<RepositoryAnalysis[]>;
  remove(id:string):Promise<void>;
  onProgress(callback:(value:RepoProgress)=>void):()=>void;
