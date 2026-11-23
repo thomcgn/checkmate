@@ -7,12 +7,12 @@ export type PackDefinition={
  readonly extent:string;readonly sourceUrl:string;
  readonly extensions:readonly string[];
 };
-export type DocumentEntry={readonly path:string;readonly title:string;readonly bytes:number};
+export type DocumentEntry={readonly path:string;readonly title:string;readonly bytes:number;readonly sha256:string;readonly text:boolean};
 export type DocumentView={readonly path:string;readonly title:string;readonly text:string};
 export type InstalledDocumentPack={
  readonly id:string;readonly language:LanguageId;readonly title:string;readonly sourceCommit:string;
  readonly sourceUrl:string;readonly license:string;readonly licenseUrl:string;
- readonly installedAt:string;readonly extent:string;readonly documents:readonly DocumentEntry[];
+ readonly installedAt:string;readonly extent:string;readonly documents:readonly DocumentEntry[];readonly assets:readonly DocumentEntry[];
 };
 export type DocumentPackStatus={id:string;installed:boolean;count:number;sourceCommit:string|null;installedAt:string|null};
 export type PackProgress={id:string;phase:'downloading'|'extracting'|'saving'|'finished';detail:string;done:number;total:number};
