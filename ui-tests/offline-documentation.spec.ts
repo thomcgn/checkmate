@@ -30,7 +30,7 @@ test('official documentation is searched and navigated without opening a browser
  await expect(page.getByRole('heading',{name:'Referenzmaterial aus Originalquellen'})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Willkommen'})).toBeVisible();
  await page.getByRole('button',{name:'Zur zweiten Lektion'}).click();
- await expect(page.getByRole('heading',{name:'Ownership Grundlagen'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Ownership Grundlagen'}).first()).toBeVisible();
  await expect(page.getByText('Ein Besitzer verwaltet einen Wert.')).toBeVisible();
  await expect(page.getByRole('button',{name:'Website (nicht öffnen)'})).toHaveCount(0);
  expect(external).toHaveLength(0);
