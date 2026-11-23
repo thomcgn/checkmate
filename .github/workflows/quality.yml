@@ -31,7 +31,11 @@ jobs:
       - run: npm run test:ui
 
   docs-integration:
-    name: Full official documentation import (Rust Book)
+    name: Full official documentation import (${{ matrix.pack }})
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: [rust-book, cpp-reference, php-manual]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -44,3 +48,4 @@ jobs:
         run: node --experimental-strip-types --test tests/documentation-integration.test.ts
         env:
           CHECKMATE_DOCS_INTEGRATION: '1'
+          CHECKMATE_DOCS_PACK: ${{ matrix.pack }}
