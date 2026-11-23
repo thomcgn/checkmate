@@ -74,19 +74,20 @@ export async function generateTeachingBook(snapshot:RepositorySnapshot,model:str
   outline=validateOutline(JSON.stringify({title:previous.outline.title,learningGoals:previous.outline.goals,chapters:previous.outline.topics}));
   if(previous.chapters.length>outline.topics.length)throw Error('Checkpoint besitzt mehr Kapitel als der Lehrplan.');
   usedModel=model;
-  progress(previous.chapters.length,outline.topics.length+2,'Gespeicherten Lehrplan und geprüfte Kapitel wiederherstellen');
+  progress(1+previous.chapters.length,outline.topics.length+2,'Gespeicherten Lehrplan und geprüfte Kapitel wiederherstellen');
  }else{
   progress(0,5,'Didaktischen Lehrplan erstellen');
   const response=await generate(context+'\n\nErstelle zuerst den didaktischen Lehrplan. Antworte ausschließlich mit JSON {"title":"...","learningGoals":["..."],"chapters":[{"title":"...","objective":"..."}]}. Plane zwischen 2 und 4 Kapitel; Grundlagen und Voraussetzungen vor fortgeschrittenen Themen. Keine Markdown-Codeblöcke.',model,()=>{});
   outline=validateOutline(response.text);
   usedModel=response.model;
   await options.saveCheckpoint?.({version:1,fingerprint,model,outline,chapters:[],savedAt:new Date().toISOString()});
+  progress(1,outline.topics.length+2,'Lehrplan abgeschlossen');
  }
  const chapters:LessonSection[]=previous?.fingerprint===fingerprint&&previous.model===model
   ?previous.chapters.map(c=>validateLesson(JSON.stringify(c),paths,snapshot.sources)):[];
  for(let i=chapters.length;i<outline.topics.length;i++){
   const topic=outline.topics[i];
-  progress(i+1,outline.topics.length+2,'Kapitel '+(i+1)+'/'+outline.topics.length+': '+topic.title);
+  progress(1+chapters.length,outline.topics.length+2,'Kapitel '+(i+1)+'/'+outline.topics.length+': '+topic.title);
   const instruction='\n\nSchreibe genau ein didaktisches Kapitel zum Thema '+JSON.stringify(topic.title)+' und Lernziel '+JSON.stringify(topic.objective)+'. Andere Kapitel des Lehrplans: '+outline.topics.map(t=>t.title).join(', ')+'. Liefere ausschließlich JSON mit den STRING-Feldern "title", "explanation" (mindestens 300 Zeichen Markdown: Problem, Grundlagen, anhand der Quellen erklärte Codebeispiele, Grenzen), "exercise" (konkrete Übungsaufgabe), "solution" (begründete Musterlösung) und "sourcePaths" (Array der EXAKTEN Quellpfade) sowie "evidence" (Array mit 1 bis 12 Objekten: path, startLine, endLine, quote). quote ist der exakte Originaltext einer zusammenhängenden Passage von höchstens 15 Zeilen, OHNE vorangestellte Zeilennummern. Keine erfundenen Zitate. Ein gültiges Zitat beweist nicht automatisch deine Interpretation. Verwende nur diese gültigen Quellpfade: '+JSON.stringify(paths)+'. Keine erfundenen Codezitate. Keine Markdown-Fences um die JSON-Antwort.';
   let verified:LessonSection|null=null;
   for(let attempt=0;attempt<2&&!verified;attempt++){
@@ -95,12 +96,13 @@ export async function generateTeachingBook(snapshot:RepositorySnapshot,model:str
    try{verified=validateLesson(response.text,paths,snapshot.sources);}
    catch(error){
     if(attempt===1)throw error;
-    progress(i+1,outline.topics.length+2,'Quellbelege erneut prüfen: '+topic.title);
+    progress(1+chapters.length,outline.topics.length+2,'Quellbelege erneut prüfen: '+topic.title);
    }
   }
   if(!verified)throw Error('Kapitel konnte nicht verifiziert werden.');
   chapters.push(verified);
   await options.saveCheckpoint?.({version:1,fingerprint,model,outline,chapters:[...chapters],savedAt:new Date().toISOString()});
+  progress(1+chapters.length,outline.topics.length+2,'Kapitel geprüft: '+topic.title);
  }
  const book:TeachingBook={version:1,title:outline.title,learningGoals:outline.goals,chapters,coverage:{included:paths.length,total:snapshot.preview.files,limited:paths.length<snapshot.preview.files}};
  progress(outline.topics.length+1,outline.topics.length+2,'Kapitel und Quellpfade geprüft');
