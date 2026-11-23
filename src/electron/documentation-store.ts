@@ -109,7 +109,8 @@ export async function importOfficialPack(def:PackDefinition,report:Reporter):Pro
 }
 export class DocumentationStore{
  private active=new Set<string>();
- constructor(private readonly directory:string){}
+ private readonly directory:string;
+ constructor(directory:string){this.directory=directory;}
  private directoryFor(id:string):string{return path.join(this.directory,lookup(id).id);}
  private index(id:string):string{return path.join(this.directoryFor(id),'index.json');}
  async load(id:string):Promise<InstalledDocumentPack|null>{
