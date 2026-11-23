@@ -5,7 +5,7 @@ export type PackDefinition={
  readonly repo:string;readonly ref:string;readonly prefix:string;
  readonly license:string;readonly licenseUrl:string;
  readonly extent:string;readonly sourceUrl:string;
- readonly extensions:readonly string[];
+ readonly extensions:readonly string[];readonly archiveUrl?:string;
 };
 export type DocumentEntry={readonly path:string;readonly title:string;readonly bytes:number;readonly sha256:string;readonly text:boolean};
 export type DocumentView={readonly path:string;readonly title:string;readonly text:string};
@@ -44,8 +44,12 @@ export const OFFICIAL_PACKS:readonly PackDefinition[]=[
  pack('csharp-dotnet','csharp','Microsoft C# Documentation','dotnet/docs','main','docs/csharp/',
   'CC BY 4.0; Codebeispiele MIT','Alle offiziellen C#-Lern- und Referenzquellen unter docs/csharp, mit Quellstand statt unbelegter Sprachversionsbehauptung.',['.md','.mdx']),
  pack('cpp-guidelines','cpp','C++ Core Guidelines','isocpp/CppCoreGuidelines','master','.',
-  'CC BY 4.0','Vollständige öffentlich verfügbare C++ Core Guidelines aus dem Quellrepository; keine Behauptung, damit sei cppreference oder ISO C++ vollständig enthalten.',['.md','.markdown']),
- pack('php-manual','php','PHP Manual · English Source','php/doc-en','master','.',
+  'Standard C++ Foundation: persönliche/interne Verwendung','Vollständige öffentlich verfügbare C++ Core Guidelines aus dem Quellrepository; keine Behauptung, damit sei cppreference oder ISO C++ vollständig enthalten.',['.md','.markdown']),
+ {...pack('cpp-reference','cpp','C++ Sprach- und Standardbibliotheksreferenz (cppreference)','PeterFeicht/cppreference-doc',
+   'v20250209','.',
+   'CC BY-SA 3.0 / GFDL','Vollständiges C++-Offline-HTML-Handbuch des cppreference-Archivstands vom 09.02.2025, einschließlich Sprach- und Standardbibliotheksseiten sowie Medien.',['.html','.htm','.md','.txt']),
+   archiveUrl:'https://github.com/PeterFeicht/cppreference-doc/releases/download/v20250209/html-book-20250209.zip'},
+  pack('php-manual','php','PHP Manual · English Source','php/doc-en','master','.',
   'CC BY 3.0 (Handbuchtext)','Offizielle vollständige englische DocBook-XML-Quellsammlung des PHP Manuals. XML wird als lesbarer Text aufbereitet; externe Entity-Referenzen werden nicht nachgeladen.',['.xml']),
  pack('go-documentation','go','Go Official Documentation','golang/website','master','_content/doc/',
   'BSD 3-Clause','Alle offiziell gepflegten Go-Webdokumentationsquellen unter _content/doc einschließlich Tutorials und Referenzartikel.',['.md','.html','.txt']),
