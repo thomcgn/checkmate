@@ -9,10 +9,11 @@ import {DocumentationInstaller} from './documentation-installer';
 import {RepositoryWorkspace} from './repository-workspace';
 import {TextbookReader} from './textbook-reader';
 import {useRef} from 'react';
-import {BookOpenText,Boxes,Download,GraduationCap,LibraryBig,Search,Command,Settings2} from 'lucide-react';
+import {BookOpenText,Boxes,Download,GraduationCap,Search,Command,Settings2} from 'lucide-react';
 import {Button} from './ui/primitives';
 import './checkmate-theme.css';
 import './style.css';
+import './checkmate-desktop.css';
 
 type View='textbook'|'compare'|'practice';
 type LibraryMode='concepts'|'handbooks'|'repositories'|'setup';
