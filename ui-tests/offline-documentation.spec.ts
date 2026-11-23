@@ -26,7 +26,7 @@ test('official documentation is searched and navigated without opening a browser
   }});
  });
  await page.goto('/');
- await page.getByRole('button',{name:/Originaldokumentationen/}).click();
+ await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
  await expect(page.getByRole('heading',{name:'Referenzmaterial aus Originalquellen'})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Willkommen'})).toBeVisible();
  await page.getByRole('button',{name:'Zur zweiten Lektion'}).click();
