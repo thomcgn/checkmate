@@ -18,6 +18,8 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
  const [query,setQuery]=useState('');
  const [matches,setMatches]=useState<readonly string[]|null>(null);
  const [error,setError]=useState('');
+ const [creating,setCreating]=useState(false);
+ const [created,setCreated]=useState('');
  useEffect(()=>{
   if(!api)return;
   void api.packs().then(setStatuses).catch(e=>setError(String(e)));
@@ -56,6 +58,23 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
    .catch(e=>{if(alive)setError(String(e));});
   return()=>{alive=false;};
  },[api,pack,currentPath]);
+ const createLesson=async():Promise<void>=>{
+  const teaching=window.checkmateRepos;
+  if(!teaching||!pack||!article||creating)return;
+  setError('');setCreated('');
+  try{
+   const account=await teaching.chatgptStatus();
+   if(!account.connected||!account.sharing)throw Error('Bitte zuerst im Repository Lab mit ChatGPT anmelden.');
+   const models=await teaching.models();
+   const model=models[0]?.slug;
+   if(!model)throw Error('Für das verbundene ChatGPT-Konto ist kein Modell verfügbar.');
+   if(!window.confirm('Aus dem angezeigten Dokumentationskapitel ein deutsches Lehrbuch erstellen? Dazu wird der Kapiteltext (maximal 12.000 Zeichen) nach deiner Zustimmung an ChatGPT übermittelt.'))return;
+   setCreating(true);
+   const book=await teaching.analyzeDocument(pack.id,article.path,true,model);
+   setCreated('Lehrbuch „'+book.title+'“ gespeichert. Du findest es im Repository Lab.');
+  }catch(e){setError(e instanceof Error?e.message:String(e));}
+  finally{setCreating(false);}
+ };
  const installed=statuses.filter(s=>s.installed).length;
  return <section className="documentation-library documentation-handbooks" aria-label="Installierte Sprachenhandbücher">
   <header className="documentation-header">
@@ -96,6 +115,7 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
        </aside>
        <article className="documentation-article">
         {article?<><h2>{article.title}</h2><small>{article.path} · Version {pack.sourceCommit.slice(0,12)}</small>
+         <div className="documentation-reader-toolbar"><button className="secondary-btn" disabled={creating||!window.checkmateRepos} onClick={()=>void createLesson()}>{creating?'Lehrbuch wird erstellt …':'Aus Kapitel ein Lehrbuch erstellen'}</button>{created&&<small role="status">{created}</small>}</div>
          {/\.(md|mdx|html|htm)$/i.test(article.path)?
           <OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setPath}/>:
           <PlainText source={article.text}/>}

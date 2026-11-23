@@ -131,7 +131,7 @@ export async function importCompiledTarPack(def:PackDefinition,report:Reporter):
 export async function importArchivePack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,Buffer>}>{
  if(!def.archiveUrl)throw Error('Kein vollständiges Archiv für diese Publikation hinterlegt.');
  const tag=await fetch('https://api.github.com/repos/'+def.repo+'/git/ref/tags/'+def.ref,{
-  headers:{Accept:'application/vnd.github+json','User-Agent':'Checkmate-Documentation'},signal:AbortSignal.timeout(20000)});
+  headers:{Accept:'application/vnd.github+json','User-Agent':'Checkmate-Documentation',...(process.env.GITHUB_TOKEN?{Authorization:'Bearer '+process.env.GITHUB_TOKEN}:{})},signal:AbortSignal.timeout(20000)});
  if(!tag.ok)throw Error('Archiv-Version kann nicht bestätigt werden (HTTP '+tag.status+').');
  const metadata:unknown=await tag.json();
  const object=metadata&&typeof metadata==='object'&&'object'in metadata?metadata.object:null;

@@ -8,6 +8,7 @@ const api:RepoBridge={
  signOut:():Promise<ChatGPTStatus>=>ipcRenderer.invoke('checkmate:repo:signout'),
  models:()=>ipcRenderer.invoke('checkmate:repo:models'),
  analyze:(url:string,consent:boolean,model:string):Promise<RepositoryAnalysis>=>ipcRenderer.invoke('checkmate:repo:analyze',url,consent,model),
+ analyzeDocument:(packId:string,documentPath:string,consent:boolean,model:string):Promise<RepositoryAnalysis>=>ipcRenderer.invoke('checkmate:repo:analyze-document',packId,documentPath,consent,model),
  saved:():Promise<RepositoryAnalysis[]>=>ipcRenderer.invoke('checkmate:repo:saved'),
  remove:(id:string):Promise<void>=>ipcRenderer.invoke('checkmate:repo:remove',id),
  onProgress:(callback:(progress:RepoProgress)=>void):(()=>void)=>{

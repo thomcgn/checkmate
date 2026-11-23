@@ -2,9 +2,10 @@ import {app,BrowserWindow,shell,ipcMain,screen} from 'electron';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {fetchRepository,parseRepo,buildLearningPrompt,type RepositorySnapshot} from './repo-sources';
+import {fetchRepository,parseRepo,type RepositorySnapshot} from './repo-sources';
 import {DirectChatGPT} from './direct-chatgpt';
 import {BookStore} from './book-store';
+import {generateTeachingBook,renderTeachingBook} from './teaching-engine';
 import {DocumentationStore} from './documentation-store';
 import type {PackProgress} from '../shared/documentation';
 import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
@@ -107,6 +108,36 @@ app.whenReady().then(()=>{
   if(busy)throw Error('Analyse läuft bereits');
   await store.remove(id);
  });
+ handle('repo:analyze-document',async(packId,documentPath,consent,model)=>{
+  if(typeof packId!=='string'||typeof documentPath!=='string'||consent!==true||typeof model!=='string'||model.length>150)throw Error('Dokumentation, ChatGPT-Modell und ausdrückliche Freigabe erforderlich.');
+  if(busy)throw Error('Eine Lehrbuchgenerierung läuft bereits');
+  const pack=await documentation.load(packId);
+  const entry=pack?.documents.find(d=>d.path===documentPath);
+  if(!pack||!entry)throw Error('Gewähltes Dokumentationskapitel ist nicht installiert.');
+  busy=true;
+  const start=startedAt();
+  try{
+   const article=await documentation.readDocument(pack.id,entry.path);
+   const content=article.text.slice(0,12000);
+   const selected:RepositorySnapshot={preview:{repository:'documentation/'+pack.id,head:pack.sourceCommit,
+    files:pack.documents.length,included:1,bytes:Buffer.byteLength(content),samplePaths:[entry.path],
+    excluded:pack.documents.length-1,source:'Installierte Dokumentation: '+pack.title},
+    sources:[{path:entry.path,content}]};
+   publish({phase:'analyzing',done:0,total:5,detail:'Didaktischen Lehrplan für '+article.title+' erstellen',startedAt:start});
+   const result=await generateTeachingBook(selected,model,(prompt,chosen,onProgress)=>chatgpt.analyze(prompt,chosen,onProgress),
+    (done,total,detail)=>publish({phase:'analyzing',done,total,detail,startedAt:start}));
+   const book:RepositoryAnalysis={id:randomUUID(),repository:selected.preview.repository,head:selected.preview.head,
+    title:result.book.title,createdAt:new Date().toISOString(),model:result.model,files:1,
+    includedPaths:[entry.path],markdown:renderTeachingBook(result.book),teachingBook:result.book};
+   publish({phase:'saving',done:0,total:1,detail:'Didaktisches Kapitel lokal speichern',startedAt:start});
+   await store.add(book);
+   publish({phase:'done',done:1,total:1,detail:'Lehrbuch gespeichert',startedAt:start});
+   return book;
+  }catch(error){
+   publish({phase:'failed',done:0,total:1,detail:error instanceof Error?error.message:'Lehrbuchgenerierung fehlgeschlagen',startedAt:start});
+   throw error;
+  }finally{busy=false;}
+ });
  handle('repo:analyze',async(url,consent,model)=>{
   if(typeof url!=='string'||url.length>220||consent!==true||typeof model!=='string'||model.length>150)throw Error('Repository, ChatGPT-Modell und ausdrückliche Codeübermittlungsfreigabe erforderlich.');
   if(busy)throw Error('Eine Analyse läuft bereits');
@@ -115,11 +146,11 @@ app.whenReady().then(()=>{
   const start=startedAt();
   try{
    const selected=snapshot;
-   publish({phase:'analyzing',done:0,total:1,detail:'ChatGPT erstellt dein Lernbuch',startedAt:start});
-   const result=await chatgpt.analyze(buildLearningPrompt(selected),model,detail=>publish({phase:'analyzing',done:0,total:1,detail,startedAt:start}));
+   publish({phase:'analyzing',done:0,total:1,detail:'Lehrplan wird erstellt',startedAt:start});
+   const result=await generateTeachingBook(selected,model,(prompt,chosen,onProgress)=>chatgpt.analyze(prompt,chosen,onProgress),(done,total,detail)=>publish({phase:'analyzing',done,total,detail,startedAt:start}));
    const book:RepositoryAnalysis={id:randomUUID(),repository:selected.preview.repository,head:selected.preview.head,
-    title:'Code verstehen: '+selected.preview.repository,createdAt:new Date().toISOString(),model:result.model,
-    files:selected.preview.included,includedPaths:[...selected.preview.samplePaths],markdown:result.text};
+    title:result.book.title,createdAt:new Date().toISOString(),model:result.model,
+    files:selected.preview.included,includedPaths:[...selected.preview.samplePaths],markdown:renderTeachingBook(result.book),teachingBook:result.book};
    publish({phase:'saving',done:0,total:1,detail:'Lernbuch wird lokal gespeichert',startedAt:start});
    await store.add(book);
    publish({phase:'done',done:1,total:1,detail:'Lernbuch gespeichert',startedAt:start});
