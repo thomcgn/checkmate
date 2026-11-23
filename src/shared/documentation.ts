@@ -5,7 +5,7 @@ export type PackDefinition={
  readonly repo:string;readonly ref:string;readonly prefix:string;
  readonly license:string;readonly licenseUrl:string;
  readonly extent:string;readonly sourceUrl:string;
- readonly extensions:readonly string[];readonly archiveUrl?:string;
+ readonly extensions:readonly string[];readonly archiveUrl?:string;readonly archiveFormat?:'zip'|'tar.gz';
 };
 export type DocumentEntry={readonly path:string;readonly title:string;readonly bytes:number;readonly sha256:string;readonly text:boolean};
 export type DocumentView={readonly path:string;readonly title:string;readonly text:string};
@@ -49,6 +49,9 @@ export const OFFICIAL_PACKS:readonly PackDefinition[]=[
    'v20250209','.',
    'CC BY-SA 3.0 / GFDL','Vollständiges C++-Offline-HTML-Handbuch des cppreference-Archivstands vom 09.02.2025, einschließlich Sprach- und Standardbibliotheksseiten sowie Medien.',['.html','.htm','.md','.txt']),
    archiveUrl:'https://github.com/PeterFeicht/cppreference-doc/releases/download/v20250209/html-book-20250209.zip'},
+  {...pack('php-offline-de','php','PHP 8 – vollständiges deutsches Offline-Handbuch','php/doc-de','master','.',
+   'CC BY 3.0','Offizielles deutsches PHP-Handbuch als vollständige kompilierte Mehrdateien-HTML-Ausgabe mit Inhaltsverzeichnis, API-Referenz und Medien.',['.html','.htm']),
+   archiveUrl:'https://www.php.net/distributions/manual/php_manual_de.tar.gz',archiveFormat:'tar.gz'},
   pack('php-manual','php','PHP Manual · English Source','php/doc-en','master','.',
   'CC BY 3.0 (Handbuchtext)','Offizielle vollständige englische DocBook-XML-Quellsammlung des PHP Manuals. XML wird als lesbarer Text aufbereitet; externe Entity-Referenzen werden nicht nachgeladen.',['.xml']),
  pack('go-documentation','go','Go Official Documentation','golang/website','master','_content/doc/',
