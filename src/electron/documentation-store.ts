@@ -81,13 +81,18 @@ export async function importArchivePack(def:PackDefinition,report:Reporter):Prom
  if(!response.ok||!response.body)throw Error('Offline-Archiv kann nicht geladen werden (HTTP '+response.status+').');
  let received=0;
  const parts:Uint8Array[]=[];
- for await(const chunk of response.body){
-  const item=chunk instanceof Uint8Array?chunk:new Uint8Array(chunk);
-  received+=item.length;
-  if(received>75*1024*1024)throw Error('Offline-Archiv größer als 75 MB.');
-  parts.push(item);
-  report({id:def.id,phase:'downloading',detail:'Vollständiges C++-Offline-Archiv herunterladen',done:received,total:Number(response.headers.get('content-length')??0)||75*1024*1024});
- }
+ const reader=response.body.getReader();
+ try{
+  while(true){
+   const next=await reader.read();
+   if(next.done)break;
+   const item=next.value;
+   received+=item.length;
+   if(received>75*1024*1024)throw Error('Offline-Archiv größer als 75 MB.');
+   parts.push(item);
+   report({id:def.id,phase:'downloading',detail:'Vollständiges C++-Offline-Archiv herunterladen',done:received,total:Number(response.headers.get('content-length')??0)||75*1024*1024});
+  }
+ }finally{reader.releaseLock();}
  const buffer=new Uint8Array(received);let cursor=0;
  for(const part of parts){buffer.set(part,cursor);cursor+=part.length;}
  let total=0,count=0;
