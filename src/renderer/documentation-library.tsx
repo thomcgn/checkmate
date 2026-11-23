@@ -1,4 +1,4 @@
-import React,{useEffect,useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useState,useRef} from 'react';
 import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentView,type DocumentPackStatus,type DocumentationBridge,type PackProgress} from '../shared/documentation';
 import {LANGUAGE_SPECS} from '../content/language-reference';
 import {OfflineMarkdown} from './offline-markdown';
@@ -31,6 +31,8 @@ export function DocumentationLibrary():React.JSX.Element{
  const [progress,setProgress]=useState<PackProgress|null>(null);
  const [error,setError]=useState('');
  const [working,setWorking]=useState(false);
+ const [batch,setBatch]=useState<{done:number;total:number;name:string}|null>(null);
+ const stopBatch=useRef(false);
  useEffect(()=>{
   if(!api)return;
   void api.packs().then(setStatuses).catch(e=>setError(String(e)));
@@ -69,12 +71,45 @@ export function DocumentationLibrary():React.JSX.Element{
   }catch(e){setError(e instanceof Error?e.message:String(e));}
   finally{setWorking(false);}
  };
+ const installAll=async():Promise<void>=>{
+  if(!api||working)return;
+  stopBatch.current=false;setWorking(true);setError('');
+  const pending=OFFICIAL_PACKS.filter(def=>!statuses.some(x=>x.id===def.id&&x.installed));
+  if(!pending.length){setWorking(false);return;}
+  const failures:string[]=[];let done=0;
+  try{
+   for(const item of pending){
+    if(stopBatch.current)break;
+    setSelected(item.id);
+    setBatch({done,total:pending.length,name:item.title});
+    try{
+     const status=await api.installPack(item.id);
+     setStatuses(old=>[...old.filter(x=>x.id!==item.id),status]);
+     const saved=await api.loadPack(item.id);
+     setPack(saved);setSelectedPath(saved?.documents[0]?.path??'');
+    }catch(e){failures.push(item.title+': '+(e instanceof Error?e.message:String(e)));}
+    done++;
+    setBatch({done,total:pending.length,name:item.title});
+   }
+   setStatuses(await api.packs());
+   if(failures.length)setError('Nicht alle Offline-Dokumentationen konnten installiert werden. '+failures.slice(0,4).join(' | ')+(failures.length>4?' · weitere Fehler: '+(failures.length-4):''));
+   else if(stopBatch.current)setError('Installation nach dem aktuellen Paket abgebrochen. Bereits installierte Pakete bleiben lokal gespeichert.');
+  }finally{setWorking(false);setBatch(null);stopBatch.current=false;}
+ };
  const def=OFFICIAL_PACKS.find(x=>x.id===selected);
  const status=statuses.find(x=>x.id===selected);
  return <section className="documentation-library" aria-label="Offizielle Offline-Dokumentationen">
   <header className="documentation-header"><span className="eyebrow">CHECKMATE / OFFIZIELLE DOKUMENTATION</span>
    <h2>Referenzmaterial aus Originalquellen</h2>
    <p>Quellengetreue Textkapitel, lokal gespeichert und ohne Browser durchsuchbar. Jedes Paket umfasst den gesamten angegebenen Quellbereich. Es ersetzt nur dann ein vollständiges Sprachhandbuch, wenn genau dieser Umfang importiert wurde.</p></header>
+  <div className="documentation-batch">
+   <div><strong>{statuses.filter(x=>x.installed).length} / {OFFICIAL_PACKS.length} Referenzpakete lokal</strong><p>Einmal installieren, anschließend offline lesen und durchsuchen. Alle zugehörigen Quellkapitel und Medien werden lokal gespeichert.</p></div>
+   <div className="documentation-batch-actions">
+    {batch&&<span role="status">{batch.done} / {batch.total} · {batch.name}</span>}
+    {working&&batch?<button className="secondary-btn" onClick={()=>{stopBatch.current=true;}}>Nach diesem Paket stoppen</button>:
+      <button className="primary-btn" disabled={!api||working||statuses.filter(x=>x.installed).length===OFFICIAL_PACKS.length} onClick={()=>void installAll()}>Alle fehlenden Pakete installieren</button>}
+   </div>
+  </div>
   <div className="documentation-shell">
    <aside className="documentation-pack-list">
     <strong>OFFIZIELLE PUBLIKATIONEN</strong>
