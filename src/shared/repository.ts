@@ -2,7 +2,7 @@ export type RepositoryPreview={repository:string;head:string;files:number;includ
 export type RepositoryAnalysis={id:string;repository:string;head:string;title:string;createdAt:string;model:string;files:number;includedPaths:string[];markdown:string};
 export type RepoProgress={phase:'fetching'|'analyzing'|'saving'|'done'|'failed';done:number;total:number;detail:string;startedAt:number};
 export type ChatGPTModel={slug:string;display_name:string};
-export type ChatGPTStatus={available:boolean;connected:boolean;email:string|null;plan:string|null;detail:string};
+export type ChatGPTStatus={available:boolean;connected:boolean;sharing:boolean;email:string|null;plan:string|null;detail:string};
 export type RepoBridge={
  preview(url:string):Promise<RepositoryPreview>;
  chatgptStatus():Promise<ChatGPTStatus>;
