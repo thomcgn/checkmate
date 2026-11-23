@@ -15,7 +15,7 @@ export function selectedPaths(entries:readonly {path:string;type:string;size:num
  const list=entries.filter(e=>e.type==='blob');
  const eligible=list.filter(e=>e.size>0&&e.size<=32_000&&validPath(e.path)&&!secret.test(e.path)&&!exclude.test(e.path)&&source.test(e.path))
   .sort((a,b)=>priority(a.path)-priority(b.path)||a.path.localeCompare(b.path));
- return {paths:eligible.slice(0,32).map(e=>e.path),bytes:eligible.slice(0,32).reduce((s,e)=>s+e.size,0),excluded:list.length-Math.min(eligible.length,32)};
+ return {paths:eligible.slice(0,16).map(e=>e.path),bytes:eligible.slice(0,32).reduce((s,e)=>s+e.size,0),excluded:list.length-Math.min(eligible.length,16)};
 }
 function priority(path:string):number{
  if(/(?:README\.md|package\.json|pom\.xml|Cargo\.toml|go\.mod)$/i.test(path))return 0;
@@ -59,7 +59,7 @@ export async function fetchRepository(input:string,onProgress?:(done:number,tota
   const decoded=bytes.toString('utf8');
   if(!Buffer.from(decoded,'utf8').equals(bytes))throw Error('Ungültiger UTF-8-Quelltext');
   const cleaned=decoded.split('\n').map(line=>/(?:secret|password|api[_-]?key|access[_-]?token|private[_-]?key)\s*[:=]/i.test(line)?'[POTENZIELLES GEHEIMNIS ENTFERNT]':line).join('\n');
-  sources.push({path,content:cleaned.slice(0,12_000)});
+  sources.push({path,content:cleaned.slice(0,5_000)});
   onProgress?.(sources.length,chosen.paths.length,path);
  }
  return {preview:{repository,head:sha,files:entries.filter(e=>e.type==='blob').length,included:sources.length,bytes:chosen.bytes,samplePaths:chosen.paths,excluded:chosen.excluded,source:'Öffentliches GitHub-Repository · HEAD '+sha.slice(0,12)},sources};
