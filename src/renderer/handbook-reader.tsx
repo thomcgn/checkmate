@@ -40,7 +40,7 @@ export function HandbookReader({openConcept}:{openConcept:(id:string)=>void}):Re
    </nav>
    <div className="handbook-overview">
     <div><span className="mini-label">SPRACHE & VERWENDETE VERSION</span><h3>{handbook.name} <span>{handbook.version}</span></h3>
-     <p>{handbook.learningAdvice}</p><p className="helper">{handbook.versionNote||handbook.platform}</p>
+     <p>{handbook.learningAdvice}</p><p className="helper">{handbook.platform}</p>
     </div>
     <div className="handbook-stat"><strong>{total}</strong><small>direkt lesbare Konzeptseiten</small><small>Quellenstand: {handbook.updatedAt}</small></div>
    </div>
