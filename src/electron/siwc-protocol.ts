@@ -1,3 +1,5 @@
+const asObject=(value:unknown):Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
+const string=(value:unknown):string=>typeof value==='string'?value:'';
 export type Model={slug:string;display_name:string};
 export function parseModelCatalog(input:unknown):Model[]{
  const collection=asObject(input).models;
