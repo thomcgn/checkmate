@@ -6,9 +6,11 @@ import {searchConcepts,recommendedConcepts,compareLanguages} from '../content/co
 import type {Stage} from '../shared/types';
 import {HandbookReader} from './handbook-reader';
 import {RepositoryWorkspace} from './repository-workspace';
+import {TextbookReader} from './textbook-reader';
+import {useRef} from 'react';
 import './style.css';
 
-type View='understand'|'practice';
+type View='textbook'|'compare'|'practice';
 type LibraryMode='concepts'|'handbooks'|'repositories';
 type Knowledge='unknown'|'learning'|'understood';
 type StudyState={version:1;progress:Record<string,Knowledge>;notes:Record<string,string>};
@@ -40,7 +42,8 @@ function App():React.JSX.Element{
  const [selectedId,setSelectedId]=useState(CONCEPTS[0].id);
  const [left,setLeft]=useState<LanguageId>('java');
  const [right,setRight]=useState<LanguageId>('python');
- const [view,setView]=useState<View>('understand');
+ const [view,setView]=useState<View>('textbook');
+ const readerRef=useRef<HTMLElement>(null);
  const [showHint,setShowHint]=useState(false);
  const [showSolution,setShowSolution]=useState(false);
  const [answer,setAnswer]=useState('');
@@ -60,10 +63,11 @@ function App():React.JSX.Element{
   setStudy(current=>({...current,notes:{...current.notes,[selected.id]:next.slice(0,6000)}}));
  };
  const select=(concept:Concept):void=>{
-  setSelectedId(concept.id);setView('understand');setShowHint(false);setShowSolution(false);setAnswer('');
+  setSelectedId(concept.id);setView('textbook');setShowHint(false);setShowSolution(false);setAnswer('');
  };
  const selectById=(id:string):void=>{const match=CONCEPTS.find(c=>c.id===id);if(match)select(match);};
  const progress=Math.round(completed.size/CONCEPTS.length*100);
+ useEffect(()=>{if(readerRef.current)readerRef.current.scrollTop=0;},[selectedId,view,libraryMode]);
  return <div className="shell">
   <aside className="sidebar" aria-label="Hauptnavigation">
    <div className="brand"><span className="brand-crown">♚</span><div><strong>CHECKMATE</strong><small>learn the logic</small></div></div>
@@ -79,7 +83,7 @@ function App():React.JSX.Element{
    </div>}
    <div className="side-bottom"><div className="side-bottom-top"><span>Dein Fortschritt</span><strong>{progress}%</strong></div><div className="progress-track"><div style={{width:progress+'%'}}/></div><small>{completed.size} von {CONCEPTS.length} Konzepten verstanden · lokal gespeichert</small></div>
   </aside>
-  <main className="main">
+  <main className={"main mode-"+libraryMode}>
    <header className="topbar">
     <div><span className="eyebrow">DEINE WISSENSZENTRALE</span><h1>Code verstehen. <em>Konzepte meistern.</em></h1>
      <p>Die Idee hinter dem Code lernen – und dieselbe Lösung in unterschiedlichen Sprachen erkennen.</p></div>
@@ -100,14 +104,14 @@ function App():React.JSX.Element{
      </button>)}
      {results.length===0&&<div className="empty"><strong>Kein passendes Konzept</strong><p>Versuche eine andere Bezeichnung oder entferne die Filter.</p><button onClick={()=>{setQuery('');setArea('all');setStage('all');}}>Filter zurücksetzen</button></div>}
     </section>
-    <article className="reader" aria-labelledby="concept-title">
+    <article className="reader" ref={readerRef} aria-labelledby="concept-title">
      <div className="reader-header"><div className="breadcrumbs">{AREAS[selected.area]} <span>›</span> {stages[selected.stage]}</div>
       <span className={'study-pill '+status}>{status==='understood'?'✓ Verstanden':status==='learning'?'◐ In Bearbeitung':'○ Noch offen'}</span>
      </div>
      <h2 id="concept-title">{selected.title}</h2><p className="lead">{selected.question}</p>
-     <nav className="reader-tabs" aria-label="Lernmodus"><button className={view==='understand'?'current':''} onClick={()=>setView('understand')}>◈ Verstehen & Vergleichen</button><button className={view==='practice'?'current':''} onClick={()=>setView('practice')}>⌘ Üben & Verinnerlichen</button></nav>
-     {view==='understand'?<>
-      <div className="teaching-card"><div className="mini-label">DAS PRINZIP</div><p className="intuition">{selected.intuition}</p><p>{selected.mentalModel}</p></div>
+     <nav className="reader-tabs" aria-label="Lernmodus"><button className={view==='textbook'?'current':''} onClick={()=>setView('textbook')}>▤ Lehrbuchkapitel</button><button className={view==='compare'?'current':''} onClick={()=>setView('compare')}>◇ Sprachvergleich</button><button className={view==='practice'?'current':''} onClick={()=>setView('practice')}>⌘ Üben & Verinnerlichen</button></nav>
+     {view==='textbook'?<TextbookReader key={selected.id} conceptId={selected.id}/>:view==='compare'?<>
+      <div className="teaching-card"><div className="mini-label">DAS PRINZIP</div><p className="intuition">{selected.intuition}</p><p>{selected.mentalModel}</p><p>Das vollständige, ausführliche Kapitel findest du im Reiter „Lehrbuchkapitel“.</p></div>
       <section className="article-section"><h3>Schritt für Schritt</h3><ol className="steps">{selected.walkthrough.map((line,i)=><li key={i}><span>{i+1}</span><p>{line}</p></li>)}</ol></section>
       <section className="article-section"><div className="section-heading"><div><span className="mini-label">DASSELBE PROBLEM, ANDERE SPRACHE</span><h3>Syntax & Semantik vergleichen</h3></div></div>
        <p className="helper">Nicht jede ähnliche Schreibweise bedeutet dasselbe Verhalten. Die Unterschiede stehen direkt unter dem Code.</p>
