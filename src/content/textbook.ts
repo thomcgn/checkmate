@@ -1,4 +1,4 @@
-import {CONCEPTS} from './concepts';
+import {CONCEPTS} from './concepts.ts';
 
 export interface ChapterSection {
  readonly id:string;
