@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Understand the code. Master the craft.",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "vite",
     "desktop": "npm run build && electron .",
