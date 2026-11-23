@@ -89,10 +89,10 @@ export class DirectChatGPT{
  async status():Promise<ChatGPTStatus>{
   try{
    const state=await this.load();const account=state.credentials;
-   if(!account)return{available:true,connected:false,email:null,plan:null,detail:'Direkte ChatGPT-Anmeldung verfügbar. Kein Codex benötigt.'};
-   return {available:true,connected:true,email:account.email,plan:null,
+   if(!account)return{available:true,connected:false,sharing:false,email:null,plan:null,detail:'Direkte ChatGPT-Anmeldung verfügbar. Keine zusätzliche CLI erforderlich.'};
+   return {available:true,connected:true,sharing:account.scopes.includes(SCOPE),email:account.email,plan:null,
     detail:account.scopes.includes(SCOPE)?'ChatGPT verbunden · Plannutzung freigegeben':'ChatGPT verbunden · Plannutzung nicht freigegeben'};
-  }catch(error){return{available:false,connected:false,email:null,plan:null,detail:error instanceof Error?error.message:'ChatGPT-Anmeldung nicht verfügbar'};}
+  }catch(error){return{available:false,connected:false,sharing:false,email:null,plan:null,detail:error instanceof Error?error.message:'ChatGPT-Anmeldung nicht verfügbar'};}
  }
  async signIn():Promise<ChatGPTStatus>{
   if(this.busy)throw Error('Eine ChatGPT-Anmeldung läuft bereits.');
@@ -141,7 +141,13 @@ export class DirectChatGPT{
    if(!prior)login.searchParams.set('agent_name_hint','Checkmate');
    else {login.searchParams.set('id_token_hint',prior.idToken);if(prior.email)login.searchParams.set('login_hint',prior.email);}
    await shell.openExternal(login.href);
-   const received=await Promise.race([callback.result,new Promise<never>((_,reject)=>setTimeout(()=>reject(Error('ChatGPT-Anmeldung wurde nach fünf Minuten beendet.')),300_000))]);
+   let timeout:NodeJS.Timeout|undefined;
+   let received:URL;
+   try{
+    received=await Promise.race([callback.result,new Promise<never>((_,reject)=>{
+     timeout=setTimeout(()=>reject(Error('ChatGPT-Anmeldung wurde nach fünf Minuten beendet.')),300_000);
+    })]);
+   }finally{if(timeout)clearTimeout(timeout);}
    const rejected=received.searchParams.get('error');
    if(rejected)throw Error('ChatGPT-Anmeldung abgelehnt: '+rejected);
    const code=received.searchParams.get('code');
@@ -240,7 +246,22 @@ export class DirectChatGPT{
  }
  async signOut():Promise<void>{
   const state=await this.load();
+  const old=state.credentials;
   state.credentials=null;
   await this.persist();
+  if(!old)return;
+  try{
+   const configuration=await fetch(AUTH+'/.well-known/openid-configuration',{signal:AbortSignal.timeout(10000)});
+   const metadata=await readJSON(configuration);
+   const endpoint=string(metadata.revocation_endpoint);
+   const url=new URL(endpoint);
+   if(url.protocol!=='https:'||url.hostname!=='auth.openai.com')throw Error('Ungültiger Revocation-Endpunkt.');
+   const result=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({token:old.refreshToken,token_type_hint:'refresh_token',client_id:old.clientId}),
+    signal:AbortSignal.timeout(10000)});
+   if(!result.ok)throw Error('OpenAI hat den Widerruf nicht bestätigt.');
+  }catch{
+   throw Error('Lokal abgemeldet. Der serverseitige Widerruf konnte nicht bestätigt werden. Trenne Checkmate bei Bedarf zusätzlich in den ChatGPT-Einstellungen.');
+  }
  }
 }
