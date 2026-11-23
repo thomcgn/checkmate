@@ -64,7 +64,7 @@ test('successful setup import moves into installed-language handbooks and is not
  await expect(card.getByText('Importiert',{exact:false})).toBeVisible();
  await page.getByRole('button',{name:'Zu den Handbüchern'}).click();
  await expect(page.getByRole('button',{name:'Rust',exact:true})).toBeVisible();
- await expect(page.getByRole('heading',{name:'Ownership'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Ownership'}).first()).toBeVisible();
  await expect(page.getByText('Rust besitzt Werte.')).toBeVisible();
  await expect(page.getByLabel('Offline-Dokumentation durchsuchen')).toBeVisible();
 });
