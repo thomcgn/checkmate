@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentPackStatus,type DocumentationBridge,type PackProgress} from '../shared/documentation';
+import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentView,type DocumentPackStatus,type DocumentationBridge,type PackProgress} from '../shared/documentation';
 import {LANGUAGE_SPECS} from '../content/language-reference';
 import './documentation-library.css';
 declare global{interface Window{checkmateDocs?:DocumentationBridge}}
@@ -24,6 +24,8 @@ export function DocumentationLibrary():React.JSX.Element{
  const [statuses,setStatuses]=useState<DocumentPackStatus[]>([]);
  const [pack,setPack]=useState<InstalledDocumentPack|null>(null);
  const [selectedPath,setSelectedPath]=useState('');
+ const [article,setArticle]=useState<DocumentView|null>(null);
+ const [matchPaths,setMatchPaths]=useState<readonly string[]|null>(null);
  const [query,setQuery]=useState('');
  const [progress,setProgress]=useState<PackProgress|null>(null);
  const [error,setError]=useState('');
@@ -34,19 +36,27 @@ export function DocumentationLibrary():React.JSX.Element{
   return api.onPackProgress(setProgress);
  },[api]);
  useEffect(()=>{
-  setPack(null);setSelectedPath('');setQuery('');setError('');
+  setPack(null);setSelectedPath('');setArticle(null);setMatchPaths(null);setQuery('');setError('');
   if(!api)return;
   void api.loadPack(selected).then(value=>{setPack(value);setSelectedPath(value?.documents[0]?.path??'');}).catch(e=>setError(String(e)));
  },[api,selected]);
- const files=useMemo(()=>{
-  const words=query.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if(!pack)return[];
-  return pack.documents.filter(doc=>{
-   const text=(doc.title+' '+doc.path+' '+doc.text).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-   return words.every(w=>text.includes(w));
-  });
- },[pack,query]);
- const article=pack?.documents.find(x=>x.path===selectedPath)??files[0];
+ useEffect(()=>{
+  if(!api||!pack)return;
+  let active=true;
+  const timer=setTimeout(()=>{
+   void api.searchPack(pack.id,query).then(paths=>{if(active)setMatchPaths(paths);}).catch(e=>{if(active)setError(String(e));});
+  },query?300:0);
+  return()=>{active=false;clearTimeout(timer);};
+ },[api,pack,query]);
+ const files=useMemo(()=>pack?.documents.filter(doc=>matchPaths===null||matchPaths.includes(doc.path))??[],[pack,matchPaths]);
+ useEffect(()=>{
+  if(!api||!pack)return;
+  let active=true;
+  const path=selectedPath||files[0]?.path;
+  if(!path){setArticle(null);return;}
+  void api.readDocument(pack.id,path).then(data=>{if(active)setArticle(data);}).catch(e=>{if(active)setError(String(e));});
+  return()=>{active=false;};
+ },[api,pack,selectedPath,files]);
  const install=async():Promise<void>=>{
   if(!api)return;
   setWorking(true);setError('');setProgress(null);
@@ -54,7 +64,7 @@ export function DocumentationLibrary():React.JSX.Element{
    const outcome=await api.installPack(selected);
    setStatuses(old=>[...old.filter(v=>v.id!==selected),outcome]);
    const downloaded=await api.loadPack(selected);
-   setPack(downloaded);setSelectedPath(downloaded?.documents[0]?.path??'');
+   setPack(downloaded);setMatchPaths(null);setSelectedPath(downloaded?.documents[0]?.path??'');
   }catch(e){setError(e instanceof Error?e.message:String(e));}
   finally{setWorking(false);}
  };
