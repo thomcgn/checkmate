@@ -37,14 +37,14 @@ function titleFor(relative:string,text:string):string{
  return match?match.replace(/[*\`]/g,'').trim():path.posix.basename(relative).replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
 }
 type Reporter=(p:PackProgress)=>void;
-function runGit(args:string[],cwd:string,timeoutMs:number):Promise<string>{
+function runGit(args:string[],cwd:string,timeoutMs:number,maxOutput=100_000):Promise<string>{
  return new Promise((resolve,reject)=>{
   const child=spawn('git',args,{cwd,shell:false,windowsHide:true,
    env:{...process.env,GIT_TERMINAL_PROMPT:'0',GCM_INTERACTIVE:'never',GIT_CONFIG_NOSYSTEM:'1'},
    stdio:['ignore','pipe','pipe']});
   let stdout='',stderr='';
   child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');
-  child.stdout.on('data',(part:string)=>{stdout+=part.slice(0,100_000);if(stdout.length>100_000)stdout=stdout.slice(-100_000);});
+  child.stdout.on('data',(part:string)=>{stdout+=part.slice(0,100_000);if(stdout.length>maxOutput){child.kill();reject(Error('Git-Dateiliste überschreitet das Größenlimit.'));}});
   child.stderr.on('data',(part:string)=>{stderr+=part.slice(0,100_000);if(stderr.length>100_000)stderr=stderr.slice(-100_000);});
   const timer=setTimeout(()=>child.kill(),timeoutMs);
   child.once('error',error=>{clearTimeout(timer);reject(Error('Git konnte nicht gestartet werden: '+error.message));});
@@ -147,6 +147,13 @@ export async function importOfficialPack(def:PackDefinition,report:Reporter):Pro
   const directory=folder==='.'?staging:path.join(staging,folder);
   const selected:string[]=[];
   await walk(staging,directory,selected);
+  // Cross-check the materialized directory against Git's tracked source tree;
+  // a sparse checkout must never silently omit documentation.
+  const listed=await runGit(['-C',staging,'ls-files','-z','--',folder],staging,40_000,16_000_000);
+  const tracked=listed.split('\0').filter(Boolean);
+  const materialized=new Set(selected);
+  if(tracked.length!==selected.length||tracked.some(file=>!materialized.has(file)))
+   throw Error('Der ausgecheckte Dokumentationsbestand ist unvollständig ('+selected.length+'/'+tracked.length+' Dateien).');
   if(!selected.length)throw Error('Keine Dokumentationskapitel in der ausgewählten Originalquelle gefunden.');
   selected.sort();
   const files=new Map<string,Buffer>();
