@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import type {ChatGPTModel,ChatGPTStatus,RepoBridge,RepoProgress,RepositoryAnalysis,RepositoryPreview} from '../shared/repository';
 import './repository-workspace.css';
+import {estimateRemainingSeconds,formatDuration} from '../shared/teaching-progress';
 declare global{interface Window{checkmateRepos?:RepoBridge}}
 function elapse(start:number):string{
  const elapsed=Math.floor((Date.now()-start)/1000);
@@ -135,9 +136,9 @@ export function RepositoryWorkspace():React.JSX.Element{
     <div className="repo-reader-head"><div><span className="repo-overline">LIVE LEARNING / DEIN STUDIERZIMMER</span><h3>{book?book.title:'Dein nächstes Aha-Erlebnis'}</h3></div><span className="repo-status">{progress?.phase==='done'?'✓ Gespeichert':busy?'● In Arbeit':'Bereit'}</span></div>
     {error&&<div className="repo-error" role="alert">{error}</div>}
     {progress&&<div className="repo-progress">
-     <div><strong>{progress.detail}</strong><span>{progress.phase==='fetching'?progress.done+'/'+progress.total:progress.phase}</span></div>
+     <div><strong>{progress.detail}</strong><span>{progress.phase==='fetching'||progress.phase==='analyzing'?progress.done+'/'+progress.total:progress.phase}</span></div>
      <div className="repo-track"><span style={{width:(progress.total?Math.round(progress.done/progress.total*100):0)+'%'}}/></div>
-     <small>Verstrichen: {elapse(progress.startedAt)} {busy?'· Die Modellzeit hängt von Codeumfang und Kontingent ab.':''}</small>
+     <small>Verstrichen: {elapse(progress.startedAt)}{estimateRemainingSeconds(progress,Date.now())!==null?' · ETA ca. '+formatDuration(estimateRemainingSeconds(progress,Date.now())!):''}{busy?' · Schätzung abhängig von Modell und Kontingent.':''}</small>
     </div>}
     {book?<><div className="repo-book-meta">{book.model} · Commit {book.head.slice(0,12)} · {book.files} Quelldateien</div><TeachingMarkdown value={book.markdown}/></>:
      <div className="repo-empty-state">
