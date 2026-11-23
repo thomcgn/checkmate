@@ -77,7 +77,7 @@ export async function generateTeachingBook(snapshot:RepositorySnapshot,model:str
   progress(previous.chapters.length,outline.topics.length+2,'Gespeicherten Lehrplan und geprüfte Kapitel wiederherstellen');
  }else{
   progress(0,5,'Didaktischen Lehrplan erstellen');
-  const response=await generate(context+'\\n\\nErstelle zuerst den didaktischen Lehrplan. Antworte ausschließlich mit JSON {"title":"...","learningGoals":["..."],"chapters":[{"title":"...","objective":"..."}]}. Plane zwischen 2 und 4 Kapitel; Grundlagen und Voraussetzungen vor fortgeschrittenen Themen. Keine Markdown-Codeblöcke.',model,()=>{});
+  const response=await generate(context+'\n\nErstelle zuerst den didaktischen Lehrplan. Antworte ausschließlich mit JSON {"title":"...","learningGoals":["..."],"chapters":[{"title":"...","objective":"..."}]}. Plane zwischen 2 und 4 Kapitel; Grundlagen und Voraussetzungen vor fortgeschrittenen Themen. Keine Markdown-Codeblöcke.',model,()=>{});
   outline=validateOutline(response.text);
   usedModel=response.model;
   await options.saveCheckpoint?.({version:1,fingerprint,model,outline,chapters:[],savedAt:new Date().toISOString()});
