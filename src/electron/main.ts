@@ -5,10 +5,13 @@ import {pathToFileURL} from 'node:url';
 import {fetchRepository,parseRepo,buildLearningPrompt,type RepositorySnapshot} from './repo-sources';
 import {DirectChatGPT} from './direct-chatgpt';
 import {BookStore} from './book-store';
+import {DocumentationStore} from './documentation-store';
+import type {PackProgress} from '../shared/documentation';
 import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
 let window:BrowserWindow|null=null;
 let chatgpt:DirectChatGPT;
 let store:BookStore;
+let documentation:DocumentationStore;
 let busy=false;
 let snapshot:RepositorySnapshot|null=null;
 const startedAt=()=>Date.now();
@@ -54,7 +57,13 @@ function createWindow():void{
 }
 app.whenReady().then(()=>{
  store=new BookStore(app.getPath('userData'));
+ documentation=new DocumentationStore(path.join(app.getPath('userData'),'offline-documentation'));
  chatgpt=new DirectChatGPT(path.join(app.getPath('userData'),'chatgpt'));
+ handle('docs:status',()=>documentation.statuses());
+ handle('docs:load',(id)=>{if(typeof id!=='string')throw Error('Ungültiges Dokumentationspaket');return documentation.load(id);});
+ handle('docs:install',(id)=>{if(typeof id!=='string')throw Error('Ungültiges Dokumentationspaket');return documentation.install(id,(progress:PackProgress)=>{
+  if(window&&!window.isDestroyed())window.webContents.send('checkmate:docs-progress',progress);
+ });});
  handle('repo:preview',async(url)=>{
   if(typeof url!=='string'||url.length>220)throw Error('Ungültige Repository-Adresse');
   const start=startedAt();
