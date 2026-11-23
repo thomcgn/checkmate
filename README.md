@@ -7,14 +7,14 @@ Checkmate ist eine eigenständige Desktop-Lernsoftware, mit der man Programmierk
 ## Heute im Entwicklungsstand vorhanden
 
 - **Sprachübergreifende Konzeptbibliothek:** Von Variablen, Listen und Maps bis Generics, Records, Streams, Ownership, Fehlerbehandlung und Nebenläufigkeit.
-- **Zehn offline lesbare Sprachhandbücher:** Python, JavaScript, TypeScript, Java, C#, C++, PHP, Go, Rust und Kotlin – jeweils mit festgelegter Sprachversion, Erklärung, Beispielcode, Fallstricken, Best Practices und Übung.
+- **Offline-Sprachenhandbücher:** Bereits importierte Originalreferenzen für Python, JavaScript, TypeScript, Java, C#, C++, PHP, Go, Rust und Kotlin erscheinen in der Handbuchbibliothek. Dort sind sie ohne Browserwechsel lesbar und durchsuchbar.
 - **Vergleich statt bloßer Syntaxübersetzung:** Beispielsweise Java `HashMap`, Python `dict`, Rust `HashMap` und JavaScript `Map` – mit ausdrücklichen Unterschieden bei Semantik und Laufzeitverhalten.
 - **Suche und Lernpfad:** Konzeptfilter, Suchbegriffe, Voraussetzungen und Lernstufen.
 - **Offline-Nachschlagen:** Die benötigten Erklärungen stehen in Checkmate selbst. Externe Dokumentationen sind nur redaktionelle Quellen, keine Voraussetzung zum Lernen.
 - **Eigene Notizen und Lernstand:** Werden in der Desktop-Anwendung lokal gespeichert.
 - **Repository Lab:** Öffentliche GitHub-Repositories gezielt prüfen, per ChatGPT-Login begrenzt analysieren und die didaktischen Ergebnisse als lokale Lernbücher wieder öffnen. Die Übertragung erfolgt ausschließlich nach sichtbarer Zustimmung.
 
-Die Kapiteltexte sind eigenständig für Checkmate geschrieben und keine vollständigen Kopien fremder Sprachreferenzen. Das erste Release bildet einen wachsenden, **kuratierten Lehrbuchkern**, noch nicht jede Standardbibliothek und jeden Spezialfall jeder Sprache ab.
+**Konzeptlektionen** und **importierte Originaldokumentationen** sind getrennte Inhaltsarten. Die Originalreferenzen werden vollständig pro definiertem Quellpaket offline übernommen; zusätzliche Sprach- und Standardbibliothekspakete lassen sich im Einrichtungsbereich installieren. Die inhaltliche Vollständigkeit je Sprache muss paketübergreifend geprüft werden.
 
 ## Installation aus dem Quellcode
 
@@ -26,6 +26,10 @@ npm run desktop
 ```
 
 `npm run desktop` baut die Electron-Anwendung und startet sie lokal. Die Bedienoberfläche und die gebündelten Lehrtexte benötigen keinen laufenden Webserver und keine Cloud-KI.
+
+## Offline-Dokumentationsbibliothek
+
+Unter **Dokumentationen einrichten** verwaltest du ausschließlich Downloads und Aktualisierungen. Erfolgreich installierte Dokumentationspakete erscheinen automatisch unter **Sprachenhandbücher**. Die Handbuchansicht gruppiert sie nach Sprache und bietet Kapitel-Navigation sowie Suche im lokal gespeicherten Volltext. Der Import speichert Quellstände und prüft Dateien mit SHA-256. Zum Installieren ist Git für Quellarchive und einmalig eine Netzwerkverbindung nötig; die Handbücher sind danach offline nutzbar.
 
 ## Repository Lab mit ChatGPT
 
