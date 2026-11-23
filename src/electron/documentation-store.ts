@@ -95,8 +95,9 @@ export async function importCompiledTarPack(def:PackDefinition,report:Reporter):
   await extractTar({file:archiveFile,cwd:staging,strict:true,preservePaths:false,
    filter:(name,entry)=>{
     if(!valid(name)&&name!=='./')throw Error('Unsicherer Pfad im Originalhandbuch.');
-    if(entry.type==='Directory')return true;
-    if(entry.type!=='File')throw Error('Nicht unterstützter Dateityp im Archiv: '+entry.type);
+    const entryType='type' in entry?entry.type:(entry.isDirectory()?'Directory':entry.isFile()?'File':'Other');
+    if(entryType==='Directory')return true;
+    if(entryType!=='File')throw Error('Nicht unterstützter Dateityp im Archiv: '+entryType);
     if(entry.size>MAX_FILE)throw Error('Dokumentationsdatei überschreitet 10 MB.');
     total+=entry.size;
     if(total>MAX_TOTAL)throw Error('PHP-Handbuch überschreitet 450 MB entpackt.');
