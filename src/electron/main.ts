@@ -61,6 +61,8 @@ app.whenReady().then(()=>{
  chatgpt=new DirectChatGPT(path.join(app.getPath('userData'),'chatgpt'));
  handle('docs:status',()=>documentation.statuses());
  handle('docs:load',(id)=>{if(typeof id!=='string')throw Error('Ungültiges Dokumentationspaket');return documentation.load(id);});
+ handle('docs:read',(id,docPath)=>{if(typeof id!=='string'||typeof docPath!=='string')throw Error('Ungültiger Dokumentationspfad');return documentation.readDocument(id,docPath);});
+ handle('docs:search',(id,query)=>{if(typeof id!=='string'||typeof query!=='string'||query.length>300)throw Error('Ungültiger Suchbegriff');return documentation.searchPack(id,query);});
  handle('docs:install',(id)=>{if(typeof id!=='string')throw Error('Ungültiges Dokumentationspaket');return documentation.install(id,(progress:PackProgress)=>{
   if(window&&!window.isDestroyed())window.webContents.send('checkmate:docs-progress',progress);
  });});
