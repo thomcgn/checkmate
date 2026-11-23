@@ -1,6 +1,5 @@
 import type {RepositorySnapshot} from './repo-sources';
-export type LessonSection={title:string;explanation:string;sourcePaths:string[];exercise:string;solution:string};
-export type TeachingBook={version:1;title:string;learningGoals:string[];chapters:LessonSection[];coverage:{included:number;total:number;limited:boolean}};
+import type {LessonSection,TeachingBook} from '../shared/repository';
 export type TeachingProgress=(done:number,total:number,detail:string)=>void;
 export type TeachingModel=(prompt:string,model:string,onProgress:(detail:string)=>void)=>Promise<{text:string;model:string}>;
 const record=(value:unknown):Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
