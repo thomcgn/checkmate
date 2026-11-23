@@ -134,7 +134,7 @@ export function DocumentationLibrary():React.JSX.Element{
       <small>{files.length} von {pack.documents.length} Kapiteln</small>
       <div className="documentation-toc-list">{files.map(file=><button key={file.path} className={article?.path===file.path?'selected':''} onClick={()=>setSelectedPath(file.path)}>{file.title}<small>{file.path}</small></button>)}</div>
      </aside>
-     <article className="documentation-article">{article?<><h2>{article.title}</h2><small>{article.path} · {pack.sourceCommit.slice(0,12)}</small>{/(\.md|\.mdx)$/i.test(article.path)?<OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setSelectedPath}/>:<RenderText source={article.text}/>} </>:<p>Keine Treffer im Dokumentationspaket.</p>}</article>
+     <article className="documentation-article">{article?<><h2>{article.title}</h2><small>{article.path} · {pack.sourceCommit.slice(0,12)}</small>{/\.(md|mdx|html|htm)$/i.test(article.path)?<OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setSelectedPath}/>:<RenderText source={article.text}/>} </>:<p>Keine Treffer im Dokumentationspaket.</p>}</article>
     </div>:<div className="documentation-placeholder"><strong>Die Publikation kann komplett offline installiert werden.</strong><p>Importierte Kapitel stehen anschließend ohne Netzwerk bereit. Der Import benötigt einmalig Internetzugang und kann je nach Quellgröße scheitern; Fehler werden angezeigt, statt einen unvollständigen Download als vollständig zu speichern.</p></div>}
    </main>
   </div>
