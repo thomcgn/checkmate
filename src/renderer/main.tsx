@@ -5,10 +5,11 @@ import {COMPLETE_CONCEPTS as CONCEPTS} from '../content/complete-concepts';
 import {searchConcepts,recommendedConcepts,compareLanguages} from '../content/concept-library';
 import type {Stage} from '../shared/types';
 import {HandbookReader} from './handbook-reader';
+import {RepositoryWorkspace} from './repository-workspace';
 import './style.css';
 
 type View='understand'|'practice';
-type LibraryMode='concepts'|'handbooks';
+type LibraryMode='concepts'|'handbooks'|'repositories';
 type Knowledge='unknown'|'learning'|'understood';
 type StudyState={version:1;progress:Record<string,Knowledge>;notes:Record<string,string>};
 const STORAGE_KEY='checkmate:concept-library:v1';
@@ -69,6 +70,7 @@ function App():React.JSX.Element{
    <div className="sidebar-section"><span className="eyebrow">LEARNING OS</span>
     <button className={libraryMode==='concepts'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('concepts')}>◈ <span>Konzeptbibliothek</span><small>{CONCEPTS.length}</small></button>
     <button className={libraryMode==='handbooks'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('handbooks')}>▤ <span>Sprachenhandbücher</span><small>10</small></button>
+    <button className={libraryMode==='repositories'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('repositories')}>⌘ <span>Repository Lab</span><small>AI</small></button>
     <div className="nav-secondary">◇ <span>Lernpfad</span><small>{recommended.length} offen</small></div>
    </div>
    {libraryMode==='concepts'&&<div className="sidebar-section"><span className="eyebrow">THEMEN</span>
@@ -130,9 +132,9 @@ function App():React.JSX.Element{
       </>}
     </article>
    </div>
-   </>:<HandbookReader openConcept={id=>{
+   </>:libraryMode==='handbooks'?<HandbookReader openConcept={id=>{
     setQuery('');setArea('all');setStage('all');selectById(id);setLibraryMode('concepts');
-   }}/>}
+   }}/>:<RepositoryWorkspace/>}
    <footer className="footnote"><span>CHECKMATE · Die Idee verstehen, nicht die Syntax auswendig lernen.</span><span>Wissensbasis v0.1 · {languageIds.length} Sprachen · {CONCEPTS.length} Konzepte</span></footer>
   </main>
  </div>;
