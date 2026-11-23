@@ -27,7 +27,8 @@ test('official documentation is searched and navigated without opening a browser
  });
  await page.goto('/');
  await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
- await expect(page.getByRole('heading',{name:'Referenzmaterial aus Originalquellen'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Sprachenhandbücher'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Rust',exact:true})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Willkommen'})).toBeVisible();
  await page.getByRole('button',{name:'Zur zweiten Lektion'}).click();
  await expect(page.getByRole('heading',{name:'Ownership Grundlagen'}).first()).toBeVisible();
