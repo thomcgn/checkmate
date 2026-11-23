@@ -26,6 +26,7 @@ test('Repository Lab workflow with mocked desktop transport at 10-inch viewport'
  await expect(page.getByText('account@example.invalid')).toBeVisible();
  await page.getByRole('button',{name:'Repository prüfen'}).click();
  await expect(page.getByText('150',{exact:true})).toBeVisible();
+ await page.getByText('Analysierte Dateipfade ansehen').click();
  await expect(page.getByText('src/Main.java')).toBeVisible();
  const action=page.getByRole('button',{name:/Lehrkapitel mit ChatGPT erstellen/});
  await expect(action).toBeDisabled();
