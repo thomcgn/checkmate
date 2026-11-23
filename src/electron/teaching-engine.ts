@@ -72,8 +72,18 @@ export async function generateTeachingBook(snapshot:RepositorySnapshot,model:str
   const topic=outline.topics[i];
   progress(i+1,outline.topics.length+2,'Kapitel '+(i+1)+'/'+outline.topics.length+': '+topic.title);
   const instruction='\n\nSchreibe genau ein didaktisches Kapitel zum Thema '+JSON.stringify(topic.title)+' und Lernziel '+JSON.stringify(topic.objective)+'. Andere Kapitel des Lehrplans: '+outline.topics.map(t=>t.title).join(', ')+'. Liefere ausschließlich JSON mit den STRING-Feldern "title", "explanation" (mindestens 300 Zeichen Markdown: Problem, Grundlagen, anhand der Quellen erklärte Codebeispiele, Grenzen), "exercise" (konkrete Übungsaufgabe), "solution" (begründete Musterlösung) und "sourcePaths" (Array der EXAKTEN Quellpfade) sowie "evidence" (Array mit 1 bis 12 Objekten: path, startLine, endLine, quote). quote ist der exakte Originaltext einer zusammenhängenden Passage von höchstens 15 Zeilen, OHNE vorangestellte Zeilennummern. Keine erfundenen Zitate. Ein gültiges Zitat beweist nicht automatisch deine Interpretation. Verwende nur diese gültigen Quellpfade: '+JSON.stringify(paths)+'. Keine erfundenen Codezitate. Keine Markdown-Fences um die JSON-Antwort.';
-  const response=await generate(context+instruction,model,()=>{});
-  chapters.push(validateLesson(response.text,paths,snapshot.sources));
+  let verified:LessonSection|null=null;
+  for(let attempt=0;attempt<2&&!verified;attempt++){
+   const retry=attempt===0?'':'\n\nWICHTIG: Vorheriges Kapitel wurde abgelehnt. Prüfe wortgetreue Zitate, Zeilennummern und alle Pflichtfelder erneut. Liefere ausschließlich gültiges JSON.';
+   const response=await generate(context+instruction+retry,model,()=>{});
+   try{verified=validateLesson(response.text,paths,snapshot.sources);}
+   catch(error){
+    if(attempt===1)throw error;
+    progress(i+1,outline.topics.length+2,'Quellbelege erneut prüfen: '+topic.title);
+   }
+  }
+  if(!verified)throw Error('Kapitel konnte nicht verifiziert werden.');
+  chapters.push(verified);
  }
  const book:TeachingBook={version:1,title:outline.title,learningGoals:outline.goals,chapters,coverage:{included:paths.length,total:snapshot.preview.files,limited:paths.length<snapshot.preview.files}};
  progress(outline.topics.length+1,outline.topics.length+2,'Kapitel und Quellpfade geprüft');
