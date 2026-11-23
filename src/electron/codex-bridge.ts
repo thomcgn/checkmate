@@ -35,6 +35,10 @@ export class CodexBridge{
   let raw:unknown;
   try{raw=JSON.parse(line);}catch{return;}
   const data=obj(raw);
+  if((typeof data.id==='number'||typeof data.id==='string')&&typeof data.method==='string'){
+   this.send({id:data.id,error:{code:-32601,message:'Checkmate erlaubt keine Werkzeuge oder Dateizugriffe.'}});
+   return;
+  }
   if(typeof data.id==='number'){
    const pending=this.pending.get(data.id);
    if(!pending)return;
