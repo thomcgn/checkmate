@@ -21,6 +21,7 @@ export type DocumentationBridge={
  installPack(id:string):Promise<DocumentPackStatus>;
  loadPack(id:string):Promise<InstalledDocumentPack|null>;
  readDocument(id:string,documentPath:string):Promise<DocumentView>;
+ readAsset(id:string,assetPath:string):Promise<string>;
  searchPack(id:string,query:string):Promise<readonly string[]>;
  onPackProgress(callback:(v:PackProgress)=>void):()=>void;
 };
