@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {spawn} from 'node:child_process';
 import {randomUUID,createHash} from 'node:crypto';
+import {unzipSync} from 'fflate';
 import {OFFICIAL_PACKS,type PackDefinition,type DocumentPackStatus,type PackProgress,type InstalledDocumentPack,type DocumentEntry,type DocumentView} from '../shared/documentation.ts';
 
 const MAX_FILES=40_000;
@@ -66,8 +67,62 @@ async function walk(root:string,directory:string,result:string[]):Promise<void>{
   if(result.length>MAX_FILES)throw Error('Mehr als 40.000 Dokumentationsdateien; Import abgebrochen.');
  }
 }
+/** Official, version-pinned C++ HTML-book release; every document and asset is preserved. */
+export async function importArchivePack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,Buffer>}>{
+ if(!def.archiveUrl)throw Error('Kein vollständiges Archiv für diese Publikation hinterlegt.');
+ const tag=await fetch('https://api.github.com/repos/'+def.repo+'/git/ref/tags/'+def.ref,{
+  headers:{Accept:'application/vnd.github+json','User-Agent':'Checkmate-Documentation'},signal:AbortSignal.timeout(20000)});
+ if(!tag.ok)throw Error('Archiv-Version kann nicht bestätigt werden (HTTP '+tag.status+').');
+ const metadata:unknown=await tag.json();
+ const object=metadata&&typeof metadata==='object'&&'object'in metadata?metadata.object:null;
+ const id=object&&typeof object==='object'&&'sha'in object?object.sha:null;
+ if(!sha(id))throw Error('Archiv-Quellversion ist nicht prüfbar.');
+ const response=await fetch(def.archiveUrl,{signal:AbortSignal.timeout(150_000)});
+ if(!response.ok||!response.body)throw Error('Offline-Archiv kann nicht geladen werden (HTTP '+response.status+').');
+ let received=0;
+ const parts:Uint8Array[]=[];
+ for await(const chunk of response.body){
+  const item=chunk instanceof Uint8Array?chunk:new Uint8Array(chunk);
+  received+=item.length;
+  if(received>75*1024*1024)throw Error('Offline-Archiv größer als 75 MB.');
+  parts.push(item);
+  report({id:def.id,phase:'downloading',detail:'Vollständiges C++-Offline-Archiv herunterladen',done:received,total:Number(response.headers.get('content-length')??0)||75*1024*1024});
+ }
+ const buffer=new Uint8Array(received);let cursor=0;
+ for(const part of parts){buffer.set(part,cursor);cursor+=part.length;}
+ let total=0,count=0;
+ report({id:def.id,phase:'extracting',detail:'Originalkapitel und Ressourcen prüfen',done:0,total:1});
+ const archive=unzipSync(buffer,{filter:file=>{
+  if(!valid(file.name))throw Error('Archiv enthält ungültige Pfade.');
+  if(file.name.endsWith('/'))return false;
+  if(file.originalSize>MAX_FILE)throw Error('Ein Archivbestandteil überschreitet 10 MB.');
+  total+=file.originalSize;
+  if(total>MAX_TOTAL)throw Error('Entpacktes Archiv überschreitet 450 MB.');
+  if(++count>MAX_FILES)throw Error('Archiv enthält mehr als 40.000 Dateien.');
+  return true;
+ }});
+ const files=new Map<string,Buffer>();
+ const documents:DocumentEntry[]=[],assets:DocumentEntry[]=[];
+ let done=0;
+ for(const [relative,raw] of Object.entries(archive)){
+  const data=Buffer.from(raw);
+  const isText=def.extensions.some(ext=>relative.toLowerCase().endsWith(ext));
+  const content=isText?decode.decode(data):'';
+  const entry:DocumentEntry={path:relative,title:isText?titleFor(relative,content):path.posix.basename(relative),bytes:data.length,sha256:digest(data),text:isText};
+  files.set(relative,data);
+  if(isText)documents.push(entry);else assets.push(entry);
+  if(++done%250===0)report({id:def.id,phase:'extracting',detail:'Archivkapitel erfassen',done,total:count});
+ }
+ if(!documents.length||files.size!==count)throw Error('Offline-Archiv konnte nicht vollständig übernommen werden.');
+ documents.sort((a,b)=>a.path.localeCompare(b.path));
+ return{pack:{id:def.id,language:def.language,title:def.title,sourceCommit:id,
+  sourceUrl:def.sourceUrl,license:def.license,licenseUrl:def.licenseUrl,
+  extent:def.extent,installedAt:new Date().toISOString(),documents,assets},files};
+}
+
 /** Sparse git fetch downloads the complete requested source subtree, NOT a small preview. */
 export async function importOfficialPack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,Buffer>}>{
+ if(def.archiveUrl)return importArchivePack(def,report);
  const staging=await fs.mkdtemp(path.join(os.tmpdir(),'checkmate-docs-'));
  try{
   report({id:def.id,phase:'downloading',detail:'Offizielle Dokumentationsquelle vorbereiten',done:0,total:1});
