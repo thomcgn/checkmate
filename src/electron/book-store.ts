@@ -20,7 +20,8 @@ const isNotFound=(e:unknown):boolean=>(e as NodeJS.ErrnoException).code==='ENOEN
 /** Atomic per-book storage, with a one-time non-destructive migration from repo-books.json. */
 export class BookStore{
  private initialization:Promise<void>|null=null;
- constructor(private readonly directory:string){}
+ private readonly directory:string;
+ constructor(directory:string){this.directory=directory;}
  private get legacy():string{return path.join(this.directory,'repo-books.json');}
  private get folder():string{return path.join(this.directory,'repo-books');}
  private get marker():string{return path.join(this.folder,'migration-complete.json');}
