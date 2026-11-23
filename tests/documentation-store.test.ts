@@ -11,7 +11,7 @@ const hash=(data:Buffer):string=>createHash('sha256').update(data).digest('hex')
 
 test('Every supported language has an actual offline-source package entry',()=>{
  const languages=new Set(OFFICIAL_PACKS.map(x=>x.language));
- assert.deepEqual([...languages].sort(),['csharp','cpp','go','java','javascript','kotlin','php','python','rust','typescript']);
+ assert.deepEqual([...languages].sort(),['cpp','csharp','go','java','javascript','kotlin','php','python','rust','typescript']);
  for(const p of OFFICIAL_PACKS){
   assert.match(p.id,/^[a-z0-9-]+$/);
   assert.ok(p.extensions.length>0,p.id);
