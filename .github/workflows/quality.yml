@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pack: [rust-book, cpp-reference, php-manual, php-offline-de]
+        pack: [rust-book, cpp-reference, php-manual, php-offline-de, python-manual, typescript-manual, javascript-mdn, java-jdk-docs, csharp-dotnet, go-documentation, kotlin-docs]
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
