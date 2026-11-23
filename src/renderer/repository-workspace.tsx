@@ -45,7 +45,7 @@ export function RepositoryWorkspace():React.JSX.Element{
   if(!api)return;
   const [account,stored]=await Promise.all([api.chatgptStatus(),api.saved()]);
   setStatus(account);setBooks(stored);
-  if(account.connected){try{const available=await api.models();setModels(available);setModel(prev=>available.some(x=>x.slug===prev)?prev:available[0]?.slug??'');}catch(error){setModels([]);setModel('');setError(error instanceof Error?error.message:String(error));}}
+  if(account.connected&&account.sharing){try{const available=await api.models();setModels(available);setModel(prev=>available.some(x=>x.slug===prev)?prev:available[0]?.slug??'');}catch(error){setModels([]);setModel('');setError(error instanceof Error?error.message:String(error));}}
   else {setModels([]);setModel('');}
  },[api]);
  useEffect(()=>{void refresh().catch(e=>setError(String(e)));},[refresh]);
@@ -67,7 +67,7 @@ export function RepositoryWorkspace():React.JSX.Element{
  };
  const signOut=async():Promise<void>=>{
   if(!api||busy)return;setBusy(true);setError('');
-  try{setStatus(await api.signOut());setModels([]);setModel('');}catch(e){setError(e instanceof Error?e.message:String(e));}
+  try{setStatus(await api.signOut());setModels([]);setModel('');}catch(e){setError(e instanceof Error?e.message:String(e));setStatus(await api.chatgptStatus());setModels([]);setModel('');}
   finally{setBusy(false);}
  };
  const analyze=async():Promise<void>=>{
@@ -99,13 +99,13 @@ export function RepositoryWorkspace():React.JSX.Element{
      <div className="repo-panel-title"><span className="repo-step">01</span><div><h3>ChatGPT verbinden</h3><p>Eigener ChatGPT-Login, keine lokalen Modelle.</p></div></div>
      <div className="repo-account">
       <span className={status?.connected?'repo-led good':'repo-led'}/>
-      <div><strong>{status?.connected?'ChatGPT verbunden':status?.available?'Anmeldung erforderlich':'Anmeldung nicht verfügbar'}</strong>
+      <div><strong>{status?.connected?(status.sharing?'ChatGPT verbunden':'Berechtigung zur Plannutzung fehlt'):status?.available?'Anmeldung erforderlich':'Anmeldung nicht verfügbar'}</strong>
        <small>{status?.connected?status.email||status.plan||'ChatGPT-Konto':status?.detail||'Status wird gelesen …'}</small></div>
      </div>
      <div className="repo-actions"><button className="repo-primary" disabled={!api||busy} onClick={()=>void(status?.connected?refresh():signIn())}>{status?.connected?'Status aktualisieren':'Mit ChatGPT anmelden'}</button>
       <button className="repo-secondary" disabled={!api||busy} onClick={()=>void refresh()}>↻ Prüfen</button></div>
      <p className="repo-hint">{status?.detail??'Verbindung wird geprüft …'} Die Anmeldung erfolgt direkt mit ChatGPT. Zugangsdaten bleiben verschlüsselt im Hauptprozess und werden niemals an die Oberfläche weitergegeben.</p>
-     {status?.connected&&<div className="repo-model-select"><label htmlFor="repo-model" className="repo-label">CHATGPT-MODELL</label><select id="repo-model" aria-label="ChatGPT-Modell" value={model} onChange={e=>setModel(e.target.value)}>{models.map(m=><option key={m.slug} value={m.slug}>{m.display_name}</option>)}</select>
+     {status?.connected&&status.sharing&&<div className="repo-model-select"><label htmlFor="repo-model" className="repo-label">CHATGPT-MODELL</label><select id="repo-model" aria-label="ChatGPT-Modell" value={model} onChange={e=>setModel(e.target.value)}>{models.map(m=><option key={m.slug} value={m.slug}>{m.display_name}</option>)}</select>
        {models.length===0&&<small>Für dieses Konto wurde noch kein nutzbares Modell geladen.</small>}
        <button className="repo-secondary" disabled={busy} onClick={()=>void signOut()}>ChatGPT-Konto trennen</button></div>}
     </section>
@@ -120,7 +120,7 @@ export function RepositoryWorkspace():React.JSX.Element{
       <p>Begrenzte Stichprobe: Ausgewählte Quelldateien werden als Text analysiert. Vollständigkeit des gesamten Repositories wird nicht behauptet.</p>
       <details><summary>Analysierte Dateipfade ansehen</summary><ul>{preview.samplePaths.map(p=><li key={p}>{p}</li>)}</ul></details>
       <label className="repo-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>Ich möchte diese ausgewählten Quellcodeausschnitte an ChatGPT zur Lernanalyse senden.</span></label>
-      <button className="repo-primary repo-wide" disabled={!api||busy||!consent||!status?.connected||!model} onClick={()=>void analyze()}>♚ Lehrkapitel mit ChatGPT erstellen</button>
+      <button className="repo-primary repo-wide" disabled={!api||busy||!consent||!status?.sharing||!model} onClick={()=>void analyze()}>♚ Lehrkapitel mit ChatGPT erstellen</button>
      </div>}
     </section>
     <section className="repo-panel repo-books">
