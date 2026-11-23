@@ -35,9 +35,13 @@ Unter **Dokumentationen einrichten** verwaltest du ausschließlich Downloads und
 
 Das Repository Lab öffnest du in der Seitenleiste. Die Integration verwendet **Sign in with ChatGPT** direkt. Du benötigst keine Codex-CLI und keinen API-Schlüssel. Im Systembrowser meldest du dich an und erlaubst bei entsprechender Berechtigung ausdrücklich die ChatGPT-Plannutzung. Die KI läuft in der Cloud, **keine lokalen KI-Modelle** werden benutzt. Der Zugriff auf Quellcode ist auf öffentliche GitHub-Repositories begrenzt und bleibt lesend; vor dem Versenden siehst du die Auswahl und bestätigst ausdrücklich die Übertragung.
 
-Die erste Version analysiert pro Anfrage eine begrenzte Stichprobe statt alle Commit-Historien. Der Umfang wird sichtbar ausgewiesen. Lernbücher werden lokal im App-Datenordner gespeichert.
+Die erste Version analysiert pro Anfrage eine begrenzte Stichprobe statt alle Commit-Historien. Der Umfang wird sichtbar ausgewiesen. Die Teaching Engine erstellt zuerst Lernziele und einen Lehrplan, danach mehrere Kapitel mit Aufgaben und Musterlösungen. Quellpfade werden gegen die übermittelten Dateien geprüft; eine inhaltliche Verifikation jeder einzelnen Behauptung ist noch nicht implementiert. Lernbücher werden lokal im App-Datenordner gespeichert.
 
 Mehr Details zu Anmeldung, Datenschutz und Grenzen: [Repository Lab](docs/REPOSITORY_LAB.md).
+
+## Lehrbücher aus Offline-Dokumentationen
+
+In **Sprachenhandbücher** lässt sich aus dem jeweils geöffneten Referenzkapitel ein deutsches Lehrbuch erstellen. Vor dem Übermitteln von bis zu 12.000 Zeichen an ChatGPT wird eine ausdrückliche Bestätigung abgefragt. Das Original bleibt unverändert; das generierte Lehrbuch erscheint im Repository Lab und ist anschließend offline lesbar. Für Generierung und spätere Neugenerierung ist ein verbundenes ChatGPT-Konto mit Freigabe erforderlich. Umfangreiche Originalhandbücher werden hier noch nicht vollständig als Lehrbuch neu strukturiert.
 
 ## Entwicklung und Qualität
 
