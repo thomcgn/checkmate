@@ -2,12 +2,13 @@ import {promises as fs} from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {spawn} from 'node:child_process';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {OFFICIAL_PACKS,type PackDefinition,type DocumentPackStatus,type PackProgress,type InstalledDocumentPack,type DocumentEntry,type DocumentView} from '../shared/documentation';
 
 const MAX_FILES=40_000;
 const MAX_FILE=10*1024*1024;
 const MAX_TOTAL=450*1024*1024;
+const digest=(data:Buffer):string=>createHash('sha256').update(data).digest('hex');
 const valid=(s:string):boolean=>!!s&&s.length<440&&!s.includes('\0')&&!s.includes('\\')&&!s.startsWith('/')&&!s.split('/').includes('..');
 const lookup=(id:string):PackDefinition=>{
  const found=OFFICIAL_PACKS.find(p=>p.id===id);
@@ -53,20 +54,20 @@ function runGit(args:string[],cwd:string,timeoutMs:number):Promise<string>{
   });
  });
 }
-async function walk(root:string,directory:string,result:string[],allowed:readonly string[]):Promise<void>{
+async function walk(root:string,directory:string,result:string[]):Promise<void>{
  for(const entry of await fs.readdir(directory,{withFileTypes:true})){
-  if(entry.isSymbolicLink())continue;
+  if(entry.isSymbolicLink()||entry.name==='.git')continue;
   const target=path.join(directory,entry.name);
-  if(entry.isDirectory()){await walk(root,target,result,allowed);continue;}
+  if(entry.isDirectory()){await walk(root,target,result);continue;}
   if(!entry.isFile())continue;
   const relative=path.relative(root,target).replace(/\\/g,'/');
   if(!valid(relative))throw Error('Unsicherer Dokumentationspfad');
-  if(allowed.some(ext=>relative.toLowerCase().endsWith(ext)))result.push(relative);
+  result.push(relative);
   if(result.length>MAX_FILES)throw Error('Mehr als 40.000 Dokumentationsdateien; Import abgebrochen.');
  }
 }
 /** Sparse git fetch downloads the complete requested source subtree, NOT a small preview. */
-export async function importOfficialPack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,string>}>{
+export async function importOfficialPack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,Buffer>}>{
  const staging=await fs.mkdtemp(path.join(os.tmpdir(),'checkmate-docs-'));
  try{
   report({id:def.id,phase:'downloading',detail:'Offizielle Dokumentationsquelle vorbereiten',done:0,total:1});
@@ -79,11 +80,12 @@ export async function importOfficialPack(def:PackDefinition,report:Reporter):Pro
   if(!sha(commit))throw Error('Git hat keinen verifizierbaren Commit geliefert.');
   const directory=folder==='.'?staging:path.join(staging,folder);
   const selected:string[]=[];
-  await walk(staging,directory,selected,def.extensions);
+  await walk(staging,directory,selected);
   if(!selected.length)throw Error('Keine Dokumentationskapitel in der ausgewählten Originalquelle gefunden.');
   selected.sort();
-  const files=new Map<string,string>();
-  const documents:DocumentEntry[]=[];let used=0;
+  const files=new Map<string,Buffer>();
+  const documents:DocumentEntry[]=[];
+  const assets:DocumentEntry[]=[];let used=0;
   for(let i=0;i<selected.length;i++){
    const relative=selected[i];
    const full=securePath(staging,relative);
@@ -91,14 +93,17 @@ export async function importOfficialPack(def:PackDefinition,report:Reporter):Pro
    if(stat.size>MAX_FILE)throw Error('Originaldatei zu groß: '+relative);
    used+=stat.size;if(used>MAX_TOTAL)throw Error('Quellpublikation überschreitet 450 MB Text.');
    const data=await fs.readFile(full);
-   const contents=decode.decode(data);
-   files.set(relative,contents);
-   documents.push({path:relative,title:titleFor(relative,contents),bytes:data.length});
+   const isText=def.extensions.some(ext=>relative.toLowerCase().endsWith(ext));
+   const contents=isText?decode.decode(data):'';
+   files.set(relative,data);
+   const entry:DocumentEntry={path:relative,title:isText?titleFor(relative,contents):path.posix.basename(relative),bytes:data.length,sha256:digest(data),text:isText};
+   if(isText)documents.push(entry);else assets.push(entry);
    if(i%25===0||i===selected.length-1)report({id:def.id,phase:'extracting',detail:'Kapitel erfassen: '+relative,done:i+1,total:selected.length});
   }
+  if(!documents.length)throw Error('Keine lesbaren Dokumentationskapitel im Originalbestand gefunden.');
   const pack:InstalledDocumentPack={id:def.id,title:def.title,language:def.language,sourceCommit:commit,
    sourceUrl:def.sourceUrl,license:def.license,licenseUrl:def.licenseUrl,extent:def.extent,
-   installedAt:new Date().toISOString(),documents};
+   installedAt:new Date().toISOString(),documents,assets};
   return {pack,files};
  }finally{await fs.rm(staging,{recursive:true,force:true}).catch(()=>{});}
 }
@@ -114,7 +119,8 @@ export class DocumentationStore{
    if(!data||typeof data!=='object')throw Error('Dokumentationsindex beschädigt.');
    const pack=data as InstalledDocumentPack;
    if(pack.id!==id||!sha(pack.sourceCommit)||!Array.isArray(pack.documents)||
-    !pack.documents.length||pack.documents.some(d=>!valid(d.path)||typeof d.title!=='string'||typeof d.bytes!=='number'))
+    !pack.documents.length||pack.documents.some(d=>!valid(d.path)||typeof d.title!=='string'||typeof d.bytes!=='number'||! /^[a-f0-9]{64}$/.test(d.sha256))||
+    !Array.isArray(pack.assets)||pack.assets.some(a=>!valid(a.path)||! /^[a-f0-9]{64}$/.test(a.sha256)))
     throw Error('Dokumentationsindex beschädigt.');
    return pack;
   }catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return null;throw error;}
@@ -131,7 +137,9 @@ export class DocumentationStore{
   const entry=pack?.documents.find(d=>d.path===relative);
   if(!entry)throw Error('Dokumentationseintrag ist nicht installiert.');
   const file=securePath(path.join(this.directoryFor(id),'files'),relative);
-  const content=await fs.readFile(file,'utf8');
+  const raw=await fs.readFile(file);
+  if(raw.length!==entry.bytes||digest(raw)!==entry.sha256)throw Error('Offline-Dokumentation beschädigt: '+entry.path);
+  const content=decode.decode(raw);
   return{path:entry.path,title:entry.title,text:entry.path.endsWith('.xml')||entry.path.endsWith('.html')?plain(content):content};
  }
  async searchPack(id:string,query:string):Promise<readonly string[]>{
@@ -159,12 +167,12 @@ export class DocumentationStore{
    for(const [relative,text] of files){
     const file=securePath(path.join(temp,'files'),relative);
     await fs.mkdir(path.dirname(file),{recursive:true});
-    await fs.writeFile(file,text,'utf8');
+    await fs.writeFile(file,text);
    }
    report({id,phase:'saving',detail:'Vollständigkeit der lokalen Dateisammlung prüfen',done:0,total:1});
-   for(const doc of pack.documents){
-    const stat=await fs.stat(securePath(path.join(temp,'files'),doc.path));
-    if(stat.size!==doc.bytes)throw Error('Unvollständige importierte Datei: '+doc.path);
+   for(const doc of [...pack.documents,...pack.assets]){
+    const bytes=await fs.readFile(securePath(path.join(temp,'files'),doc.path));
+    if(bytes.length!==doc.bytes||digest(bytes)!==doc.sha256)throw Error('Unvollständige importierte Datei: '+doc.path);
    }
    await fs.writeFile(path.join(temp,'index.json'),JSON.stringify(pack),{mode:0o600});
    const dest=this.directoryFor(id);
@@ -173,7 +181,7 @@ export class DocumentationStore{
    try{await fs.rename(dest,old);existed=true;}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
    try{await fs.rename(temp,dest);temp=null;}catch(e){if(existed)await fs.rename(old,dest);throw e;}
    if(existed)await fs.rm(old,{recursive:true,force:true});
-   report({id,phase:'finished',detail:pack.documents.length+' Kapitel vollständig gespeichert',done:1,total:1});
+   report({id,phase:'finished',detail:pack.documents.length+' Kapitel und '+pack.assets.length+' Begleitdateien verifiziert',done:1,total:1});
    return{id,installed:true,count:pack.documents.length,sourceCommit:pack.sourceCommit,installedAt:pack.installedAt};
   }finally{if(temp)await fs.rm(temp,{recursive:true,force:true}).catch(()=>{});this.active.delete(id);}
  }
