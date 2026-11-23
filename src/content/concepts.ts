@@ -4,7 +4,7 @@ import type {Stage} from '../shared/types';
  * Konzept zuerst, Syntax danach. Ein Vergleich kann analog sein, ohne äquivalent zu sein:
  * die Caveats sind verpflichtende Bestandteile der Anzeige.
  */
-export type LanguageId='java'|'python'|'rust'|'typescript'|'javascript'|'go'|'csharp'|'kotlin';
+export type LanguageId='java'|'python'|'rust'|'typescript'|'javascript'|'go'|'csharp'|'kotlin'|'cpp'|'php';
 export type ConceptArea='fundamentals'|'data'|'abstraction'|'flow'|'errors'|'architecture'|'concurrency';
 export type ComparisonKind='equivalent'|'similar'|'related';
 export interface LanguageVariant {
@@ -36,7 +36,7 @@ export interface Concept {
 }
 export const LANGUAGES:Readonly<Record<LanguageId,string>>={
  java:'Java',python:'Python',rust:'Rust',typescript:'TypeScript',
- javascript:'JavaScript',go:'Go',csharp:'C#',kotlin:'Kotlin',
+ javascript:'JavaScript',go:'Go',csharp:'C#',kotlin:'Kotlin',cpp:'C++',php:'PHP',
 };
 export const AREAS:Readonly<Record<ConceptArea,string>>={
  fundamentals:'Grundlagen',data:'Daten & Collections',abstraction:'Abstraktion',
