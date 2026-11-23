@@ -9,7 +9,9 @@ test('Repository Lab workflow with mocked desktop transport at 10-inch viewport'
     samplePaths:['README.md','src/Main.java'],source:'Public GitHub'}),
    chatgptStatus:async()=>({available:true,connected:true,email:'account@example.invalid',plan:'plus',detail:'Verbunden'}),
    signIn:async()=>({available:true,connected:true,email:'account@example.invalid',plan:'plus',detail:'Verbunden'}),
-   analyze:async()=>{const book={id:'d50cf5c3-bd33-4b14-9974-f51c23149aaf',repository:'thomcgn/FassWerk',
+   signOut:async()=>({available:true,connected:false,email:null,plan:null,detail:'Getrennt'}),
+   models:async()=>[{slug:'gpt-checkmate-test',display_name:'Testmodell'}],
+   analyze:async(_url:string,_consent:boolean,_model:string)=>{const book={id:'d50cf5c3-bd33-4b14-9974-f51c23149aaf',repository:'thomcgn/FassWerk',
     head:'a'.repeat(40),title:'Code verstehen: thomcgn/FassWerk',
     createdAt:'2026-11-23T12:00:00.000Z',model:'ChatGPT über Codex',files:2,
     includedPaths:['README.md','src/Main.java'],markdown:'# Analyse\n\n## Generics\n\nEin generischer Typ bewahrt Typzusammenhänge.'};
