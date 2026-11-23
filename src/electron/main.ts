@@ -6,6 +6,7 @@ import {fetchRepository,parseRepo,type RepositorySnapshot} from './repo-sources'
 import {DirectChatGPT} from './direct-chatgpt';
 import {BookStore} from './book-store';
 import {generateTeachingBook,renderTeachingBook} from './teaching-engine';
+import {TeachingCheckpointStore,teachingFingerprint} from './teaching-checkpoints';
 import {DocumentationStore} from './documentation-store';
 import type {PackProgress} from '../shared/documentation';
 import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
@@ -33,6 +34,7 @@ function createSplashWindow():void{
 
 let chatgpt:DirectChatGPT;
 let store:BookStore;
+let checkpoints:TeachingCheckpointStore;
 let documentation:DocumentationStore;
 let busy=false;
 let snapshot:RepositorySnapshot|null=null;
@@ -82,6 +84,7 @@ function createWindow():void{
 }
 app.whenReady().then(()=>{
  store=new BookStore(app.getPath('userData'));
+ checkpoints=new TeachingCheckpointStore(path.join(app.getPath('userData'),'teaching-checkpoints'));
  documentation=new DocumentationStore(path.join(app.getPath('userData'),'offline-documentation'));
  chatgpt=new DirectChatGPT(path.join(app.getPath('userData'),'chatgpt'));
  handle('docs:status',()=>documentation.statuses());
@@ -124,13 +127,17 @@ app.whenReady().then(()=>{
     excluded:pack.documents.length-1,source:'Installierte Dokumentation: '+pack.title},
     sources:[{path:entry.path,content}]};
    publish({phase:'analyzing',done:0,total:5,detail:'Didaktischen Lehrplan für '+article.title+' erstellen',startedAt:start});
+   const fingerprint=teachingFingerprint(selected,model);
+   const resume=await checkpoints.load(fingerprint);
    const result=await generateTeachingBook(selected,model,(prompt,chosen,onProgress)=>chatgpt.analyze(prompt,chosen,onProgress),
-    (done,total,detail)=>publish({phase:'analyzing',done,total,detail,startedAt:start}));
+    (done,total,detail)=>publish({phase:'analyzing',done,total,detail,startedAt:start}),
+    {resume,saveCheckpoint:next=>checkpoints.save(next)});
    const book:RepositoryAnalysis={id:randomUUID(),repository:selected.preview.repository,head:selected.preview.head,
     title:result.book.title,createdAt:new Date().toISOString(),model:result.model,files:1,
     includedPaths:[entry.path],markdown:renderTeachingBook(result.book),teachingBook:result.book};
    publish({phase:'saving',done:0,total:1,detail:'Didaktisches Kapitel lokal speichern',startedAt:start});
    await store.add(book);
+   await checkpoints.remove(fingerprint);
    publish({phase:'done',done:1,total:1,detail:'Lehrbuch gespeichert',startedAt:start});
    return book;
   }catch(error){
@@ -147,12 +154,17 @@ app.whenReady().then(()=>{
   try{
    const selected=snapshot;
    publish({phase:'analyzing',done:0,total:1,detail:'Lehrplan wird erstellt',startedAt:start});
-   const result=await generateTeachingBook(selected,model,(prompt,chosen,onProgress)=>chatgpt.analyze(prompt,chosen,onProgress),(done,total,detail)=>publish({phase:'analyzing',done,total,detail,startedAt:start}));
+   const fingerprint=teachingFingerprint(selected,model);
+   const resume=await checkpoints.load(fingerprint);
+   const result=await generateTeachingBook(selected,model,(prompt,chosen,onProgress)=>chatgpt.analyze(prompt,chosen,onProgress),
+    (done,total,detail)=>publish({phase:'analyzing',done,total,detail,startedAt:start}),
+    {resume,saveCheckpoint:next=>checkpoints.save(next)});
    const book:RepositoryAnalysis={id:randomUUID(),repository:selected.preview.repository,head:selected.preview.head,
     title:result.book.title,createdAt:new Date().toISOString(),model:result.model,
     files:selected.preview.included,includedPaths:[...selected.preview.samplePaths],markdown:renderTeachingBook(result.book),teachingBook:result.book};
    publish({phase:'saving',done:0,total:1,detail:'Lernbuch wird lokal gespeichert',startedAt:start});
    await store.add(book);
+   await checkpoints.remove(fingerprint);
    publish({phase:'done',done:1,total:1,detail:'Lernbuch gespeichert',startedAt:start});
    return book;
   }catch(error){
