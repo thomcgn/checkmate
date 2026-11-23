@@ -24,6 +24,7 @@ const docs:DocumentationBridge={
  installPack:(id:string)=>ipcRenderer.invoke('checkmate:docs:install',id),
  readDocument:(id:string,documentPath:string)=>ipcRenderer.invoke('checkmate:docs:read',id,documentPath),
  searchPack:(id:string,query:string)=>ipcRenderer.invoke('checkmate:docs:search',id,query),
+ readAsset:(id:string,assetPath:string)=>ipcRenderer.invoke('checkmate:docs:asset',id,assetPath),
  onPackProgress:(callback:(p:PackProgress)=>void)=>{
   const listener=(_event:Electron.IpcRendererEvent,p:PackProgress):void=>callback(p);
   ipcRenderer.on('checkmate:docs-progress',listener);
