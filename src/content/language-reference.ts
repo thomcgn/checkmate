@@ -1,4 +1,4 @@
-import {CONCEPTS,LANGUAGES,type Concept,type LanguageId,type LanguageVariant} from './concepts';
+import {CONCEPTS,LANGUAGES,type Concept,type LanguageId,type LanguageVariant} from './concepts.ts';
 
 export interface LanguageSpec{
  readonly id:LanguageId;readonly name:string;readonly version:string;readonly platform:string;
