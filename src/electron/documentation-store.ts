@@ -4,6 +4,8 @@ import os from 'node:os';
 import {spawn} from 'node:child_process';
 import {randomUUID,createHash} from 'node:crypto';
 import {unzipSync} from 'fflate';
+import {extract as extractTar} from 'tar';
+import {NodeHtmlMarkdown} from 'node-html-markdown';
 import {OFFICIAL_PACKS,type PackDefinition,type DocumentPackStatus,type PackProgress,type InstalledDocumentPack,type DocumentEntry,type DocumentView} from '../shared/documentation.ts';
 
 const MAX_FILES=40_000;
@@ -67,6 +69,62 @@ async function walk(root:string,directory:string,result:string[]):Promise<void>{
   if(result.length>MAX_FILES)throw Error('Mehr als 40.000 Dokumentationsdateien; Import abgebrochen.');
  }
 }
+/** Import every entry of a publisher-provided full HTML manual, including images. */
+export async function importCompiledTarPack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,Buffer>}>{
+ if(!def.archiveUrl||def.archiveFormat!=='tar.gz')throw Error('Ungültiges Dokumentationsarchiv.');
+ const staging=await fs.mkdtemp(path.join(os.tmpdir(),'checkmate-tar-'));
+ try{
+  const response=await fetch(def.archiveUrl,{signal:AbortSignal.timeout(150_000)});
+  if(!response.ok||!response.body)throw Error('PHP-Offline-Handbuch nicht erreichbar (HTTP '+response.status+').');
+  const reader=response.body.getReader();
+  const chunks:Buffer[]=[];let received=0;
+  try{
+   while(true){
+    const next=await reader.read();if(next.done)break;
+    const chunk=Buffer.from(next.value);received+=chunk.length;
+    if(received>75*1024*1024)throw Error('Offizielles Archiv überschreitet 75 MB.');
+    chunks.push(chunk);
+    report({id:def.id,phase:'downloading',detail:'Komplettes HTML-Handbuch herunterladen',done:received,total:Number(response.headers.get('content-length')??0)||75*1024*1024});
+   }
+  }finally{reader.releaseLock();}
+  const bytes=Buffer.concat(chunks,received);
+  const revision=digest(bytes);
+  const archiveFile=path.join(staging,'manual.tar.gz');
+  await fs.writeFile(archiveFile,bytes,{mode:0o600});
+  let count=0,total=0;
+  await extractTar({file:archiveFile,cwd:staging,strict:true,preservePaths:false,
+   filter:(name,entry)=>{
+    if(!valid(name)&&name!=='./')throw Error('Unsicherer Pfad im Originalhandbuch.');
+    if(entry.type==='Directory')return true;
+    if(entry.type!=='File')throw Error('Nicht unterstützter Dateityp im Archiv: '+entry.type);
+    if(entry.size>MAX_FILE)throw Error('Dokumentationsdatei überschreitet 10 MB.');
+    total+=entry.size;
+    if(total>MAX_TOTAL)throw Error('PHP-Handbuch überschreitet 450 MB entpackt.');
+    if(++count>MAX_FILES)throw Error('PHP-Handbuch enthält zu viele Dateien.');
+    return true;
+   }});
+  await fs.rm(archiveFile);
+  const paths:string[]=[];await walk(staging,staging,paths);
+  if(paths.length!==count)throw Error('PHP-Handbuch nicht vollständig entpackt ('+paths.length+'/'+count+').');
+  paths.sort();
+  const files=new Map<string,Buffer>(),documents:DocumentEntry[]=[],assets:DocumentEntry[]=[];
+  for(let i=0;i<paths.length;i++){
+   const relative=paths[i],data=await fs.readFile(securePath(staging,relative));
+   const text=def.extensions.some(ext=>relative.toLowerCase().endsWith(ext));
+   const contents=text?decode.decode(data):'';
+   const entry:DocumentEntry={path:relative,title:text?titleFor(relative,contents):path.posix.basename(relative),
+    bytes:data.length,sha256:digest(data),text};
+   files.set(relative,data);
+   (text?documents:assets).push(entry);
+   if(i%200===0)report({id:def.id,phase:'extracting',detail:'HTML und Medien überprüfen',done:i+1,total:paths.length});
+  }
+  if(documents.length<100)throw Error('Das Offline-Handbuch enthält unerwartet wenige HTML-Kapitel.');
+  return{pack:{id:def.id,language:def.language,title:def.title,sourceCommit:revision,
+   sourceUrl:def.sourceUrl,license:def.license,licenseUrl:def.licenseUrl,extent:def.extent,
+   installedAt:new Date().toISOString(),documents,assets},files};
+ }finally{await fs.rm(staging,{recursive:true,force:true}).catch(()=>{});}
+}
+
 /** Official, version-pinned C++ HTML-book release; every document and asset is preserved. */
 export async function importArchivePack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,Buffer>}>{
  if(!def.archiveUrl)throw Error('Kein vollständiges Archiv für diese Publikation hinterlegt.');
@@ -127,6 +185,7 @@ export async function importArchivePack(def:PackDefinition,report:Reporter):Prom
 
 /** Sparse git fetch downloads the complete requested source subtree, NOT a small preview. */
 export async function importOfficialPack(def:PackDefinition,report:Reporter):Promise<{pack:InstalledDocumentPack;files:Map<string,Buffer>}>{
+ if(def.archiveFormat==='tar.gz')return importCompiledTarPack(def,report);
  if(def.archiveUrl)return importArchivePack(def,report);
  const staging=await fs.mkdtemp(path.join(os.tmpdir(),'checkmate-docs-'));
  try{
@@ -214,7 +273,7 @@ export class DocumentationStore{
   const raw=await fs.readFile(file);
   if(raw.length!==entry.bytes||digest(raw)!==entry.sha256)throw Error('Offline-Dokumentation beschädigt: '+entry.path);
   const content=decode.decode(raw);
-  return{path:entry.path,title:entry.title,text:entry.path.endsWith('.xml')||entry.path.endsWith('.html')?plain(content):content};
+  return{path:entry.path,title:entry.title,text:/\.html?$/i.test(entry.path)?NodeHtmlMarkdown.translate(content):entry.path.endsWith('.xml')?plain(content):content};
  }
  async readAsset(id:string,relative:string):Promise<string>{
   const pack=await this.load(id);
