@@ -3,7 +3,7 @@ export type Source={path:string;content:string};
 export type RepositorySnapshot={preview:RepositoryPreview;sources:Source[]};
 const secret=/(^|\/)(?:\.env(?:\..*)?|\.git|\.ssh|\.npmrc|secrets?|credentials?|auth\.json|id_rsa|.*\.pem|.*\.key)(?:\/|$)/i;
 const exclude=/(^|\/)(?:node_modules|dist|build|target|vendor|\.next|coverage|\.github|__pycache__|generated)(?:\/|$)|(?:lock\.json|\.lock|\.min\.js)$/i;
-const source=/\.(?:java|kt|kts|ts|tsx|js|jsx|py|rs|go|cs|cpp|c|h|hpp|php|rb|sql|vue|svelte|md|json|toml|yaml|yml)$/i;
+const source=/\.(?:java|kt|kts|ts|tsx|js|jsx|py|rs|go|cs|cpp|c|h|hpp|php|rb|sql|vue|svelte|md|json|toml|yaml|yml|xml)$/i;
 const validPath=(p:string):boolean=>p.length<240&&!p.includes('..')&&!p.startsWith('/')&&/^[a-zA-Z0-9_./ -]+$/.test(p);
 export function parseRepo(value:string):string{
  const input=value.trim().replace(/\/$/,'');
@@ -11,17 +11,35 @@ export function parseRepo(value:string):string{
  if(!match||match[1].startsWith('.')||match[2].startsWith('.'))throw Error('Bitte ein GitHub-Repository wie owner/name oder https://github.com/owner/name eingeben.');
  return match[1]+'/'+match[2];
 }
-export function selectedPaths(entries:readonly {path:string;type:string;size:number}[]):{paths:string[];bytes:number;excluded:number}{
+type IndexedEntry={path:string;type:string;size:number};
+type SourceRole='manifest'|'implementation'|'test'|'other';
+function sourceRole(path:string):SourceRole{
+ if(/(^|\/)(?:README(?:\.md)?|pom\.xml|package\.json|Cargo\.toml|go\.mod|build\.gradle(?:\.kts)?|settings\.gradle(?:\.kts)?|tsconfig(?:\.[^.]+)?\.json)$/i.test(path))return 'manifest';
+ if(/(?:^|\/)(?:test|tests|spec|specs|__tests__)\/|(?:Test|Tests|Spec|Specs)\.(?:java|kt|ts|tsx|js|jsx|py|rs|go|cs)$/i.test(path))return 'test';
+ if(/(?:Controller|Service|Repository|Handler|Router|Route|Application|App|Main|Module|Index|Server|Client)\.(?:java|kt|ts|tsx|js|jsx|py|rs|go|cs)$/i.test(path))return 'implementation';
+ return 'other';
+}
+/** Balanced bounded sample: documentation, implementation and tests remain visible in large repos. */
+export function selectedPaths(entries:readonly IndexedEntry[]):{paths:string[];bytes:number;excluded:number}{
  const list=entries.filter(e=>e.type==='blob');
  const eligible=list.filter(e=>e.size>0&&e.size<=32_000&&validPath(e.path)&&!secret.test(e.path)&&!exclude.test(e.path)&&source.test(e.path))
-  .sort((a,b)=>priority(a.path)-priority(b.path)||a.path.localeCompare(b.path));
- return {paths:eligible.slice(0,16).map(e=>e.path),bytes:eligible.slice(0,32).reduce((s,e)=>s+e.size,0),excluded:list.length-Math.min(eligible.length,16)};
-}
-function priority(path:string):number{
- if(/(?:README\.md|package\.json|pom\.xml|Cargo\.toml|go\.mod)$/i.test(path))return 0;
- if(/(?:src|app|lib)\//i.test(path))return 1;
- if(/(?:test|spec)/i.test(path))return 4;
- return 2;
+  .sort((a,b)=>a.path.localeCompare(b.path));
+ const selected:IndexedEntry[]=[],seen=new Set<string>();
+ const choose=(role:SourceRole,limit:number):void=>{
+  for(const item of eligible){
+   if(limit<=0||selected.length>=16)break;
+   if(sourceRole(item.path)===role&&!seen.has(item.path)){selected.push(item);seen.add(item.path);limit--;}
+  }
+ };
+ choose('manifest',3);
+ choose('implementation',6);
+ choose('test',4);
+ choose('other',3);
+ for(const item of eligible){
+  if(selected.length>=16)break;
+  if(!seen.has(item.path)){selected.push(item);seen.add(item.path);}
+ }
+ return {paths:selected.map(e=>e.path),bytes:selected.reduce((sum,e)=>sum+e.size,0),excluded:list.length-selected.length};
 }
 type Fetcher=(url:string,init?:RequestInit)=>Promise<Response>;
 async function api(path:string,fetcher:Fetcher):Promise<unknown>{

@@ -39,3 +39,22 @@ test('analysis explicitly labels bounded coverage and untrusted source data',()=
  assert.match(prompt,/Erfinde keine Entwicklerabsichten/);
  assert.ok(prompt.length<110000);
 });
+
+test('large repositories keep manifests, implementation and tests in their bounded sample',()=>{
+ const files=[
+  {path:'README.md',type:'blob',size:123},
+  {path:'pom.xml',type:'blob',size:234},
+  ...Array.from({length:20},(_,i)=>({path:'src/main/java/com/example/Feature'+String(i).padStart(2,'0')+'.java',type:'blob',size:100})),
+  ...Array.from({length:10},(_,i)=>({path:'src/main/java/com/example/Event'+String(i).padStart(2,'0')+'Service.java',type:'blob',size:150})),
+  ...Array.from({length:8},(_,i)=>({path:'src/test/java/com/example/Event'+i+'Test.java',type:'blob',size:80}))
+ ];
+ const selected=selectedPaths(files);
+ assert.equal(selected.paths.length,16);
+ assert.ok(selected.paths.includes('README.md'));
+ assert.ok(selected.paths.includes('pom.xml'));
+ assert.ok(selected.paths.some(p=>p.endsWith('Service.java')));
+ assert.ok(selected.paths.some(p=>p.endsWith('Test.java')));
+ assert.equal(selected.bytes,selected.paths.reduce((sum,p)=>sum+files.find(f=>f.path===p)!.size,0));
+ assert.equal(selected.excluded,files.length-16);
+ assert.deepEqual(selectedPaths([...files].reverse()).paths,selected.paths);
+});
