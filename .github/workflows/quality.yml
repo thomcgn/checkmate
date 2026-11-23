@@ -43,7 +43,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-audit --no-fund
+      - name: Install dependencies (retry transient Electron download failures)
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if npm install --no-audit --no-fund; then exit 0; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            echo "Install attempt $attempt failed; retrying after short backoff"
+            sleep $((attempt * 5))
+          done
       - name: Import and verify full upstream documentation
         run: node --experimental-strip-types --test tests/documentation-integration.test.ts
         env:
