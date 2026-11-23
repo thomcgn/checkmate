@@ -142,6 +142,21 @@ export class DocumentationStore{
   const content=decode.decode(raw);
   return{path:entry.path,title:entry.title,text:entry.path.endsWith('.xml')||entry.path.endsWith('.html')?plain(content):content};
  }
+ async readAsset(id:string,relative:string):Promise<string>{
+  const pack=await this.load(id);
+  const entry=pack?.assets.find(d=>d.path===relative);
+  if(!entry)throw Error('Begleitdatei ist nicht im Offline-Paket enthalten.');
+  const ext=path.extname(entry.path).toLowerCase();
+  const types:Record<string,string>={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.webp':'image/webp','.svg':'image/svg+xml'};
+  const type=types[ext];
+  if(!type)throw Error('Dieser Dateityp darf nicht im Viewer dargestellt werden.');
+  const data=await fs.readFile(securePath(path.join(this.directoryFor(id),'files'),entry.path));
+  if(data.length!==entry.bytes||digest(data)!==entry.sha256)throw Error('Offline-Bild beschädigt.');
+  if(data.length>2*1024*1024)throw Error('Bild ist für die Vorschau zu groß.');
+  // SVG may embed remote resources or script content; block it instead of executing XML.
+  if(ext==='.svg')throw Error('SVG wird aus Sicherheitsgründen nicht direkt angezeigt.');
+  return 'data:'+type+';base64,'+data.toString('base64');
+ }
  async searchPack(id:string,query:string):Promise<readonly string[]>{
   const pack=await this.load(id);
   if(!pack)return [];
