@@ -5,7 +5,7 @@ import path from 'node:path';
 import {safeStorage,shell} from 'electron';
 import {createRemoteJWKSet,jwtVerify} from 'jose';
 import type {ChatGPTStatus} from '../shared/repository';
-import {parseModelCatalog,ResponseStreamParser,type Model,type StreamEvent} from './siwc-protocol';
+import {parseModelCatalog,readApiJSON,ResponseStreamParser,type Model,type StreamEvent} from './siwc-protocol';
 
 const AUTH='https://auth.openai.com';
 const RESOURCE='https://api.openai.com/v1';
@@ -26,15 +26,9 @@ type Credentials={
 };
 type Persisted={hostId:string;credentials:Credentials|null};
 async function readJSON(response:Response):Promise<Record<string,unknown>>{
- const text=(await response.text()).slice(0,350_000);
- let body:unknown;
- try{body=JSON.parse(text);}catch{throw Error('Unverständliche Antwort vom ChatGPT-Dienst (HTTP '+response.status+').');}
- if(!response.ok){
-  const error=asObject(asObject(body).error);
-  throw Error(string(error.message)||string(error.code)||'ChatGPT HTTP '+response.status);
- }
- return asObject(body);
+ return readApiJSON(response,AUTH);
 }
+
 export class DirectChatGPT{
  private current:Persisted|null=null;
  private busy=false;
@@ -210,8 +204,13 @@ export class DirectChatGPT{
  }
  async models():Promise<Model[]>{
   const access=await this.token();
-  const response=await fetch(RESOURCE+'/models',{headers:{Authorization:'Bearer '+access,Accept:'application/json'},signal:AbortSignal.timeout(20000)});
-  return parseModelCatalog(await readJSON(response));
+  const response=await fetch(RESOURCE+'/models',{
+   headers:{Authorization:'Bearer '+access,Accept:'application/json'},
+   redirect:'error',
+   signal:AbortSignal.timeout(20000)
+  });
+  const catalog=await readApiJSON(response,'https://api.openai.com');
+  return parseModelCatalog(catalog);
  }
  async analyze(prompt:string,model:string,progress:(message:string)=>void):Promise<{text:string;model:string}>{
   const access=await this.token();
@@ -221,11 +220,12 @@ export class DirectChatGPT{
   const timer=setTimeout(()=>controller.abort(),300_000);
   try{
    const response=await fetch(RESOURCE+'/responses',{
+    redirect:'error',
     method:'POST',headers:{Authorization:'Bearer '+access,'Content-Type':'application/json'},
     body:JSON.stringify({model,input:[{role:'user',content:prompt}],store:false,stream:true}),
     signal:controller.signal
    });
-   if(!response.ok){await readJSON(response);throw Error('ChatGPT-Anfrage fehlgeschlagen.');}
+   if(!response.ok){await readApiJSON(response,'https://api.openai.com');throw Error('ChatGPT-Anfrage fehlgeschlagen.');}
    if(!response.body)throw Error('ChatGPT hat keinen Antwortstream geliefert.');
    const reader=response.body.getReader(),decoder=new TextDecoder(),parser=new ResponseStreamParser();
    let output='',completed=false;
