@@ -19,8 +19,10 @@ function guard(event:Electron.IpcMainInvokeEvent):void{
  if(!window||event.sender!==window.webContents||event.senderFrame!==window.webContents.mainFrame)
   throw Error('Unerlaubter Zugriff auf die Desktop-Schnittstelle.');
  const url=event.senderFrame.url;
- if(app.isPackaged){if(!url.startsWith('file://'))throw Error('Ungültige Renderer-Herkunft');}
- else if(!url.startsWith('file://')&&!url.startsWith('http://localhost:5173/'))throw Error('Ungültige Renderer-Herkunft');
+ const trustedFile=pathToFileURL(path.join(__dirname,'../../dist-renderer/index.html')).href;
+ const trustedDev=process.env.CHECKMATE_DEV_URL??'http://localhost:5173/';
+ if(url!==trustedFile&&(!app.isPackaged||process.env.CHECKMATE_DEV_URL?url!==trustedDev:true))
+  throw Error('Ungültige Renderer-Herkunft');
 }
 function handle(name:string,action:(...args:unknown[])=>unknown):void{
  ipcMain.handle('checkmate:'+name,(event,...args:unknown[])=>{guard(event);return action(...args);});
@@ -39,7 +41,8 @@ function createWindow():void{
   return {action:'deny'};
  });
  window.webContents.on('will-navigate',(event,url)=>{
-  const allowed=app.isPackaged?url.startsWith('file://'):url.startsWith('file://')||url.startsWith('http://localhost:5173/');
+  const allowed=url===pathToFileURL(path.join(__dirname,'../../dist-renderer/index.html')).href||
+   (!app.isPackaged&&url===(process.env.CHECKMATE_DEV_URL??'http://localhost:5173/'));
   if(!allowed){event.preventDefault();if(url.startsWith('https://'))void shell.openExternal(url);}
  });
  if(!app.isPackaged&&process.env.CHECKMATE_DEV_URL){
