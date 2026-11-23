@@ -18,7 +18,7 @@ Die Kapiteltexte sind eigenständig für Checkmate geschrieben und keine vollst�
 
 ## Installation aus dem Quellcode
 
-Voraussetzung: Node.js 22 oder höher und npm.
+Voraussetzung: **Node.js 22 LTS** und npm. Unter Arch Linux gegebenenfalls über `fnm` auf Node 22 wechseln. Für die ChatGPT-Anmeldung wird ein sicherer Betriebssystem-Schlüsselbund benötigt.
 
 ```bash
 npm install
@@ -29,7 +29,7 @@ npm run desktop
 
 ## Repository Lab mit ChatGPT
 
-Das Repository Lab öffnest du in der Seitenleiste. Die Integration benötigt die **offizielle Codex-CLI** (`codex app-server`) und ein ChatGPT-Konto, über das du dich per Browser anmeldest. Die KI läuft in der Cloud, **keine lokalen KI-Modelle** werden benutzt. Der Zugriff auf Quellcode ist auf öffentliche GitHub-Repositories begrenzt und bleibt lesend; vor dem Versenden siehst du die Auswahl und bestätigst ausdrücklich die Übertragung.
+Das Repository Lab öffnest du in der Seitenleiste. Die Integration verwendet **Sign in with ChatGPT** direkt. Du benötigst keine Codex-CLI und keinen API-Schlüssel. Im Systembrowser meldest du dich an und erlaubst bei entsprechender Berechtigung ausdrücklich die ChatGPT-Plannutzung. Die KI läuft in der Cloud, **keine lokalen KI-Modelle** werden benutzt. Der Zugriff auf Quellcode ist auf öffentliche GitHub-Repositories begrenzt und bleibt lesend; vor dem Versenden siehst du die Auswahl und bestätigst ausdrücklich die Übertragung.
 
 Die erste Version analysiert pro Anfrage eine begrenzte Stichprobe statt alle Commit-Historien. Der Umfang wird sichtbar ausgewiesen. Lernbücher werden lokal im App-Datenordner gespeichert.
 
@@ -47,6 +47,6 @@ Technologie: **Electron · React · TypeScript**, streng typisiert. Die Handbuch
 
 ## Weitere Entwicklung
 
-Das Repository Lab speichert seine ersten KI-Lernbücher lokal; eine erweiterte Bibliothek mit Kapitelversionen, eine robuste SQLite-Datenbank, ein interaktiver Code-Editor und eine langfristig direkt integrierte Sign-in-with-ChatGPT-Verbindung sind weitere Ausbaustufen. Diese sind noch nicht vollständig implementiert.
+Das Repository Lab speichert seine ersten KI-Lernbücher lokal; eine erweiterte Bibliothek mit Kapitelversionen, eine robuste SQLite-Datenbank, ein interaktiver Code-Editor und weitergehende KI-gestützte Lernpfade sind weitere Ausbaustufen. Diese sind noch nicht vollständig implementiert.
 
 Mehr zum redaktionellen Anspruch: [Sprachversionen und Abdeckung](docs/LANGUAGE_COVERAGE.md) · [Qualität und Quellen](docs/CONTENT_REVIEW.md).
