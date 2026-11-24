@@ -6,14 +6,18 @@ export type RepositoryAnalysis={id:string;repository:string;head:string;title:st
 export type RepoProgress={phase:'fetching'|'analyzing'|'saving'|'done'|'failed';done:number;total:number;detail:string;startedAt:number};
 export type ChatGPTModel={slug:string;display_name:string};
 export type ChatGPTStatus={available:boolean;connected:boolean;sharing:boolean;email:string|null;plan:string|null;detail:string};
+export type DocumentationCoursePreview={packId:string;sourceCommit:string;documents:number;units:number;characters:number;title:string};
+export type DocumentationCourseResult={volumes:number;documents:number;units:number;title:string};
 export type RepoBridge={
  preview(url:string):Promise<RepositoryPreview>;
  chatgptStatus():Promise<ChatGPTStatus>;
  signIn():Promise<ChatGPTStatus>;
  signOut():Promise<ChatGPTStatus>;
  models():Promise<ChatGPTModel[]>;
+ previewCourse(packId:string):Promise<DocumentationCoursePreview>;
+ generateCourse(packId:string,sourceCommit:string,consent:boolean,model:string):Promise<DocumentationCourseResult>;
  analyze(url:string,consent:boolean,model:string):Promise<RepositoryAnalysis>;
- analyzeDocument(packId:string,documentPath:string,consent:boolean,model:string):Promise<RepositoryAnalysis>;
+
  saved():Promise<RepositoryAnalysis[]>;
  remove(id:string):Promise<void>;
  onProgress(callback:(value:RepoProgress)=>void):()=>void;
