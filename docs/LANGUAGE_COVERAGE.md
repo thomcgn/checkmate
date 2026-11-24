@@ -48,3 +48,9 @@ Das erste Release enthält ein **kuratierter Konzept-Handbuchkern**, nicht jede 
 ## Desktop-Technologie
 
 Electron, React und strikt typisiertes TypeScript. Statische, geprüfte Handbuchinhalte werden mit der Desktopanwendung ausgeliefert. Eine zusätzliche Datenbank ist für read-only Nachschlagewissen nicht nötig. Für künftig dauerhaft speicherbare Bücher, Kapitelversionen und umfangreiche Lernprofile kann eine lokale SQLite-Datenbank ergänzt werden. Kein Hosting-Server ist erforderlich.
+
+## Redaktioneller Ausbau – sieben weitere Sprachkapitel
+
+Die Offline-Bibliothek enthält jetzt zusätzliche eigenständig verfasste Einstiegskapitel für Python (Funktionsverträge und veränderliche Defaults), JavaScript (Identität, Truthiness und Konvertierung), C# (Nullable Reference Types), C++ (RAII und Besitz), PHP (Array-Schlüssel und Datenformen), Go (Fehlerwerte und `defer`) sowie Kotlin (Nullsicherheit). Jedes Kapitel enthält mehrere zusammenhängende Abschnitte, Codebeispiele, Verständnisfragen, eine Transferaufgabe und eine erläuterte Lösung. Fachliche Ausgangspunkte sind die direkt im Quellcode hinterlegten offiziellen Dokumentationslinks; es werden keine Originalbuchtexte übernommen.
+
+**Nicht mit vollständigen Fachbüchern verwechseln:** Die Dokumentationspakete sind wesentlich umfangreicher als diese Manuskriptteile. Keine der zehn Buchausgaben gilt als redaktionell abgeschlossen. Eine vollständige Inhalts- und Quellenabdeckung aller zehn Sprachen sowie viele weitere eigenständige Lehrkapitel fehlen weiterhin. Die Bibliothek zeigt den Veröffentlichungsstand, aber noch keine zehn fertigen Sprach-Enzyklopädien.
