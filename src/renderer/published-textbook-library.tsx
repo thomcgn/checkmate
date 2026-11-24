@@ -8,8 +8,25 @@ function readState():ReadState{
  try{
   const value:unknown=JSON.parse(localStorage.getItem(KEY)??'{}');
   if(!value||typeof value!=='object'||Array.isArray(value))return {};
-  return Object.fromEntries(Object.entries(value).filter(([key,chapters])=>
-   key.startsWith('checkmate-')&&Array.isArray(chapters)&&chapters.every(x=>typeof x==='string')));
+  const valid=Object.fromEntries(Object.entries(value).filter(([key,chapters])=>
+   key.startsWith('checkmate-')&&Array.isArray(chapters)&&chapters.every(x=>typeof x==='string'))) as ReadState;
+  // Previous practice volumes are now incorporated into one continuous textbook.
+  const additions:Record<string,string>={
+   'checkmate-java-practice-v1':'checkmate-java-basics-v1',
+   'checkmate-typescript-practice-v1':'checkmate-typescript-basics-v1',
+   'checkmate-rust-practice-v1':'checkmate-rust-basics-v1'
+  };
+  const combined:Record<string,readonly string[]>={...valid};
+  let migrated=false;
+  for(const [oldId,newId] of Object.entries(additions)){
+   if(oldId in valid){
+    combined[newId]=[...new Set([...(combined[newId]??[]),...(valid[oldId]??[])])];
+    delete combined[oldId];
+    migrated=true;
+   }
+  }
+  if(migrated)localStorage.setItem(KEY,JSON.stringify(combined));
+  return combined;
  }catch{return {};}
 }
 /** Editorially bundled books. Reading them never requires network, OAuth or AI. */
@@ -27,6 +44,10 @@ export function PublishedTextbookLibrary():React.JSX.Element{
  const [study,setStudy]=useState<ReadState>(readState);
  const book=books.find(b=>b.id===bookId)??books[0];
  const visible=book?.lessons.filter(c=>c.title.toLocaleLowerCase('de').includes(query.toLocaleLowerCase('de')))||[];
+ const plan=book?.curriculum;
+ const plannedCount=plan?.parts.reduce((sum,part)=>sum+part.chapters.length,0)??book?.lessons.length??0;
+ const publishedIds=new Set(book?.lessons.map(lesson=>lesson.id)??[]);
+ const matchesQuery=(title:string):boolean=>title.toLocaleLowerCase('de').includes(query.toLocaleLowerCase('de'));
  const lesson=book?.lessons.find(c=>c.id===chapterId)??book?.lessons[0];
  const learned=new Set(study[book?.id??'']??[]);
  const selectBook=(id:string):void=>{setBookId(id);setChapterId('');setQuery('');setRevealed(new Set());setTransfer(false);};
@@ -41,21 +62,22 @@ export function PublishedTextbookLibrary():React.JSX.Element{
  return <section className="published-library" aria-label="Fertige Checkmate-Lehrbücher">
   <header className="documentation-header">
    <span className="eyebrow">CHECKMATE / LEHRBUCHBIBLIOTHEK</span>
-   <h2>Fertige Lehrbücher</h2>
-   <p>Diese Bücher sind bereits in Checkmate enthalten. Sie lassen sich vollständig offline lesen – ohne ChatGPT-Anmeldung, API-Key, Download oder Generierung.</p>
+   <h2>Checkmate-Fachbücher</h2>
+   <p>Die bereits veröffentlichten Kapitel sind offline lesbar. Der Gesamtlehrplan zeigt transparent, welche Kapitel redaktionell noch fehlen. Keine KI-Generierung auf deinem Gerät.</p>
    <small>Checkmate Originalausgaben · eigenständig verfasste Lehrtexte · keine fremden Buchinhalte</small>
   </header>
   <div className="published-shell">
    <nav className="published-books" aria-label="Lehrbuch auswählen">
     <strong>BUCHREIHE</strong>
     {books.map(item=><button type="button" className={item.id===book.id?'selected':''} key={item.id} onClick={()=>selectBook(item.id)} aria-current={item.id===book.id?'page':undefined}>
-     <span>{item.language.name}</span><small>{item.lessons.length} Kapitel · {item.edition}</small>
+     <span>{item.language.name}</span><small>{item.lessons.length} von {item.curriculum?.parts.reduce((sum,part)=>sum+part.chapters.length,0)??item.lessons.length} Kapiteln veröffentlicht</small>
     </button>)}
    </nav>
    {book&&lesson?<div className="published-workspace">
     <header className="published-book-header">
      <span className="eyebrow">{book.edition}</span>
      <h3>{book.title}</h3><p>{book.description}</p>
+     <p role="status">{book.editorialStatus==='complete'?'Redaktionell abgeschlossen':'Fachbuch im Aufbau'} · {book.lessons.length} von {plannedCount} Kapiteln veröffentlicht · {plan?.parts.length??1} Buchteile</p>
      <span>{learned.size} / {book.lessons.length} Kapitel als verstanden markiert · nur lokal gespeichert</span>
     </header>
     <div className="published-reader-grid">
@@ -63,14 +85,23 @@ export function PublishedTextbookLibrary():React.JSX.Element{
       <label htmlFor="published-search">INHALTSVERZEICHNIS</label>
       <input id="published-search" aria-label="Buchkapitel suchen" placeholder="Kapitel suchen …" value={query} onChange={e=>setQuery(e.target.value)}/>
       <div className="published-toc-items">
-       {visible.map((item,i)=><button type="button" key={item.id} className={lesson.id===item.id?'selected':''} onClick={()=>selectLesson(item.id)}>
+       {plan?plan.parts.map((part)=><div key={part.id} className="published-toc-part">
+        <strong>{part.title}</strong><small>{part.goal}</small>
+        {part.chapters.filter(item=>matchesQuery(item.title)||publishedIds.has(item.id)&&visible.some(lesson=>lesson.id===item.id)).map(item=>{
+         const available=book.lessons.find(lesson=>lesson.id===item.id);
+         return <button type="button" key={item.id} disabled={!available} className={lesson.id===item.id?'selected':''} onClick={()=>{if(available)selectLesson(available.id);}}>
+          <span>{learned.has(item.id)?'✓':available?'●':'○'} · {item.title}</span>
+          <small>{available?available.chapter.readingMinutes+' Min. · Lesen':'Noch nicht veröffentlicht'}</small>
+         </button>;
+        })}
+       </div>):visible.map(item=><button type="button" key={item.id} className={lesson.id===item.id?'selected':''} onClick={()=>selectLesson(item.id)}>
         <span>{learned.has(item.id)?'✓':String(book.lessons.indexOf(item)+1).padStart(2,'0')} · {item.title}</span><small>{item.chapter.readingMinutes} Min. Lesezeit</small>
        </button>)}
-       {visible.length===0&&<p>Keine passenden Kapitel gefunden.</p>}
+       {(plan?plan.parts.every(part=>part.chapters.every(item=>!matchesQuery(item.title))):visible.length===0)&&<p>Keine passenden Kapitel gefunden.</p>}
       </div>
      </aside>
      <article className="published-article" key={lesson.id}>
-      <span className="eyebrow">KAPITEL {book.lessons.indexOf(lesson)+1} / {book.lessons.length}</span>
+      <span className="eyebrow">VERÖFFENTLICHTES KAPITEL {book.lessons.indexOf(lesson)+1} / {book.lessons.length}</span>
       <h2>{lesson.title}</h2>
       <section className="published-objectives"><h3>Das lernst du</h3><ul>{lesson.chapter.objectives.map((objective,i)=><li key={i}>{objective}</li>)}</ul></section>
       {lesson.chapter.sections.map((section,i)=><section className="published-section" key={section.id}>
