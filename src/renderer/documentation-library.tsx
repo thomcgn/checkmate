@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useState} from 'react';
 import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentPackStatus,type DocumentView,type DocumentationBridge} from '../shared/documentation';
 import {LANGUAGE_SPECS} from '../content/language-reference';
 import {OfflineMarkdown} from './offline-markdown';
+import type {RepoProgress,DocumentationCoursePreview} from '../shared/repository';
 import './documentation-library.css';
 declare global{interface Window{checkmateDocs?:DocumentationBridge}}
 function PlainText({source}:{source:string}):React.JSX.Element{
@@ -20,6 +21,8 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
  const [error,setError]=useState('');
  const [creating,setCreating]=useState(false);
  const [created,setCreated]=useState('');
+ const [coursePreview,setCoursePreview]=useState<DocumentationCoursePreview|null>(null);
+ const [courseProgress,setCourseProgress]=useState<RepoProgress|null>(null);
  useEffect(()=>{
   if(!api)return;
   void api.packs().then(setStatuses).catch(e=>setError(String(e)));
@@ -30,7 +33,7 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
  const packs=available.filter(p=>p.language===currentLanguage);
  const current=selected&&packs.some(p=>p.id===selected)?selected:packs[0]?.id??null;
  useEffect(()=>{
-  setPack(null);setPath('');setArticle(null);setQuery('');setMatches(null);
+  setPack(null);setPath('');setArticle(null);setQuery('');setMatches(null);setCoursePreview(null);setCourseProgress(null);
   if(!api||!current)return;
   let alive=true;
   void api.loadPack(current).then(data=>{
@@ -58,9 +61,24 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
    .catch(e=>{if(alive)setError(String(e));});
   return()=>{alive=false;};
  },[api,pack,currentPath]);
- const createLesson=async():Promise<void>=>{
+ useEffect(()=>{
   const teaching=window.checkmateRepos;
-  if(!teaching||!pack||!article||creating)return;
+  return teaching?.onProgress(setCourseProgress);
+ },[]);
+ const prepareFullTextbook=async():Promise<void>=>{
+  const teaching=window.checkmateRepos;
+  if(!teaching||!pack||creating)return;
+  setError('');setCreated('');
+  try{
+   setCreating(true);
+   const summary=await teaching.previewCourse(pack.id);
+   setCoursePreview(summary);
+  }catch(e){setError(e instanceof Error?e.message:String(e));}
+  finally{setCreating(false);}
+ };
+ const createFullTextbook=async():Promise<void>=>{
+  const teaching=window.checkmateRepos;
+  if(!teaching||!pack||!coursePreview||creating)return;
   setError('');setCreated('');
   try{
    const account=await teaching.chatgptStatus();
@@ -68,10 +86,15 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
    const models=await teaching.models();
    const model=models[0]?.slug;
    if(!model)throw Error('Für das verbundene ChatGPT-Konto ist kein Modell verfügbar.');
-   if(!window.confirm('Aus dem angezeigten Dokumentationskapitel ein deutsches Lehrbuch erstellen? Dazu wird der Kapiteltext (maximal 12.000 Zeichen) nach deiner Zustimmung an ChatGPT übermittelt.'))return;
+   const summary=coursePreview;
+   if(summary.packId!==pack.id||summary.sourceCommit!==pack.sourceCommit)
+    throw Error('Die Dokumentation wurde geändert. Bitte erneut prüfen.');
+   if(!window.confirm('GESAMTES REFERENZWERK in didaktische Lehrbuchbände umwandeln?\\n\\n'+summary.title+
+    '\\n'+summary.documents+' Originaldokumente, '+summary.units+' KI-Lerneinheiten, '+summary.characters+' Zeichen Quelltext.\\n\\nJede Einheit wird über deinen ChatGPT-Login verarbeitet. Das kann viele Modellanfragen und erhebliche Zeit erfordern. Bereits geprüfte Einheiten werden gespeichert und bei erneutem Start verwendet. Die Originaldokumentation bleibt unverändert.'))return;
    setCreating(true);
-   const book=await teaching.analyzeDocument(pack.id,article.path,true,model);
-   setCreated('Lehrbuch „'+book.title+'“ gespeichert. Du findest es im Repository Lab.');
+   const result=await teaching.generateCourse(pack.id,summary.sourceCommit,true,model);
+   setCreated(result.volumes+' Lehrbuchbände aus '+result.documents+' Dokumenten erstellt. Du findest sie in der Lernbuchbibliothek im Repository Lab.');
+   setCoursePreview(null);
   }catch(e){setError(e instanceof Error?e.message:String(e));}
   finally{setCreating(false);}
  };
@@ -104,7 +127,14 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
       })}
      </aside>
      <div className="documentation-main">
-      {pack?<div className="documentation-reader documentation-reader-standalone">
+      {pack?<><div className="documentation-reader-toolbar">
+       <button className="primary-btn" disabled={creating||!window.checkmateRepos} onClick={()=>void prepareFullTextbook()}>{creating?'Verarbeitung läuft …':'Gesamte Dokumentation als Lehrbücher aufbereiten'}</button>
+       {coursePreview&&<div role="status">{coursePreview.documents} Originalkapitel · {coursePreview.units} didaktische Einheiten · vollständiger Quellenbestand geprüft
+        <button className="secondary-btn" disabled={creating} onClick={()=>void createFullTextbook()}>Lehrbuchreihe jetzt generieren</button>
+       </div>}
+       {created&&<small role="status">{created}</small>}
+       {courseProgress&&<small role="status">{courseProgress.detail} · {courseProgress.done}/{courseProgress.total}</small>}
+      </div><div className="documentation-reader documentation-reader-standalone">
        <aside className="documentation-toc">
         <label className="documentation-toc-label" htmlFor="offline-search">IN DIESEM HANDBUCH SUCHEN</label>
         <input id="offline-search" aria-label="Offline-Dokumentation durchsuchen" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Begriff, API, Klasse, Funktion …"/>
@@ -115,13 +145,12 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
        </aside>
        <article className="documentation-article">
         {article?<><h2>{article.title}</h2><small>{article.path} · Version {pack.sourceCommit.slice(0,12)}</small>
-         <div className="documentation-reader-toolbar"><button className="secondary-btn" disabled={creating||!window.checkmateRepos} onClick={()=>void createLesson()}>{creating?'Lehrbuch wird erstellt …':'Aus Kapitel ein Lehrbuch erstellen'}</button>{created&&<small role="status">{created}</small>}</div>
          {/\.(md|mdx|html|htm)$/i.test(article.path)?
           <OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setPath}/>:
           <PlainText source={article.text}/>}
         </>:<p>{documents.length===0?'Keine Treffer im Handbuch.':'Kapitel wird geöffnet …'}</p>}
        </article>
-      </div>:<div className="documentation-placeholder">Handbuch wird geladen …</div>}
+      </div></>:<div className="documentation-placeholder">Handbuch wird geladen …</div>}
      </div>
     </div>
    </>}
