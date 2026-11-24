@@ -78,3 +78,7 @@ Vier neue, fachlich zusammenhängende Lehrkapitel behandeln JavaScript-Objekte, 
 ## Java: zusammenhängender Sprach- und Plattformblock
 
 Vier weitere eigenständig geschriebene Java-Lehrkapitel sind im Offline-Fachbuch veröffentlicht: **Vererbung, Interfaces und Polymorphie**, **Lambdas und funktionale Interfaces**, **Path/Files und Ressourcenlebensdauer** sowie **LocalDate/Instant/Duration und Zeitzonen**. Die Kapitel enthalten längere fachliche Erklärungen, Codeillustrationen, Irrtümer und Fallstricke, Übungen mit Lösungen und einen Dokumentationsbezug auf dev.java. Sie erweitern den bisher veröffentlichten Gesamtstoff, beanspruchen aber ausdrücklich **noch keine vollständige Java- oder JDK-Abdeckung**. Die separate neue Snippet-/Compiler-Testpipeline bleibt bis zur Fertigstellung der Buchmanuskripte zurückgestellt.
+
+## TypeScript: zusammenhängender Typmodell- und Runtimeblock
+
+Vier neu verfasste Fachkapitel ergänzen die TypeScript-Ausgabe: strukturelle Objekttypen und optionale Properties, Utility/Mapped/Conditional Types, ESM und TypeScript-Modulauflösung sowie Node-Dateizugriff und sichere Electron-IPC-Grenzen. Die Kapitel verweisen auf offizielle TypeScript-Handbuchstellen, enthalten eigenständige Lehrtexte mit Fallstricken, Übungen und Lösungen und sind fest im Offline-Reader gebündelt. Sie stellen **keine** vollständige Abdeckung aller TypeScript-, Node- oder Electron-Dokumentationen dar. Der gesamte Sprachbuchauftrag bleibt daher offen.
