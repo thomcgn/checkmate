@@ -168,7 +168,7 @@ export async function generateDocumentationCourse(plan:CoursePlan,model:string,g
      const fragment=unit.fragments.find(f=>f.path===evidence.path&&evidence.startLine>=f.startLine);
      if(!fragment)throw Error('Checkpoint verweist auf fremde Quelle.');
      const start=evidence.startLine-fragment.startLine+1,end=evidence.endLine-fragment.startLine+1;
-     const slice=fragment.text.split('\\n').slice(start-1,end).join('\\n').trim();
+     const slice=fragment.text.split('\n').slice(start-1,end).join('\n').trim();
      if(slice!==evidence.quote.trim())throw Error('Checkpoint-Zitat weicht von der Originalquelle ab.');
     }
     auditDidacticChapter(cached);
