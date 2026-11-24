@@ -1,58 +1,76 @@
 import React,{useState} from 'react';
-import {PIZZERIA_BOOK,getBeginnerChapter} from '../content/pizzeria-book.ts';
+import {PIZZERIA_BOOK} from '../content/pizzeria-book.ts';
+import {PIZZERIA_OPERATIONS_BOOK} from '../content/pizzeria-operations.ts';
 import './academy.css';
 
-const STORAGE_KEY='checkmate:pizzeria-book:v1';
-function readCompleted():readonly string[]{
+type VolumeId='band1'|'band2';
+const VOLUMES:Readonly<Record<VolumeId,{label:string;key:string;book:typeof PIZZERIA_BOOK}>>={
+ band1:{label:'Band 1 · Die Pizzeria',key:'checkmate:pizzeria-book:v1',book:PIZZERIA_BOOK},
+ band2:{label:'Band 2 · In Betrieb',key:'checkmate:pizzeria-operations:v1',book:PIZZERIA_OPERATIONS_BOOK}
+};
+function readCompleted(key:string):readonly string[]{
  try{
-  const value:unknown=JSON.parse(localStorage.getItem(STORAGE_KEY)??'[]');
+  const value:unknown=JSON.parse(localStorage.getItem(key)??'[]');
   if(!Array.isArray(value))return [];
-  return value.filter((id):id is string=>typeof id==='string'&&PIZZERIA_BOOK.chapters.some(chapter=>chapter.id===id));
+  const known=new Set(PIZZERIA_BOOK.chapters.map(chapter=>chapter.id)
+   .concat(PIZZERIA_OPERATIONS_BOOK.chapters.map(chapter=>chapter.id)));
+  return value.filter((id):id is string=>typeof id==='string'&&known.has(id));
  }catch{return [];}
 }
 export function AcademyReader():React.JSX.Element{
+ const [volume,setVolume]=useState<VolumeId>('band1');
  const [chapterId,setChapterId]=useState(PIZZERIA_BOOK.chapters[0].id);
  const [revealed,setRevealed]=useState(false);
- const [completed,setCompleted]=useState<readonly string[]>(readCompleted);
- const chapter=getBeginnerChapter(chapterId);
- const index=PIZZERIA_BOOK.chapters.indexOf(chapter);
- const stage=PIZZERIA_BOOK.stages.find(item=>item.id===chapter.stage);
+ const [completed,setCompleted]=useState<readonly string[]>(()=>readCompleted(VOLUMES.band1.key));
+ const {book,key}=VOLUMES[volume];
+ const chapter=book.chapters.find(item=>item.id===chapterId)??book.chapters[0];
+ const index=book.chapters.indexOf(chapter);
+ const stage=book.stages.find(item=>item.id===chapter.stage);
  const isComplete=chapter.explain.length>0;
+ const switchVolume=(next:VolumeId):void=>{
+  setVolume(next);setChapterId(VOLUMES[next].book.chapters[0].id);
+  setRevealed(false);setCompleted(readCompleted(VOLUMES[next].key));
+ };
  const toggleComplete=():void=>{
   const next=completed.includes(chapter.id)?completed.filter(id=>id!==chapter.id):[...completed,chapter.id];
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
+  localStorage.setItem(key,JSON.stringify(next));
   setCompleted(next);
  };
  const select=(id:string):void=>{setChapterId(id);setRevealed(false);};
  const move=(delta:number):void=>{
-  const next=PIZZERIA_BOOK.chapters[index+delta];
+  const next=book.chapters[index+delta];
   if(next)select(next.id);
  };
  return <section className="academy-library" aria-label="Einsteiger-Lernbuch">
+  <div className="academy-volumes" role="group" aria-label="Band auswählen">
+   {(Object.keys(VOLUMES) as readonly VolumeId[]).map(id=><button type="button" key={id}
+    className={volume===id?'selected':''} aria-pressed={volume===id}
+    onClick={()=>switchVolume(id)}>{VOLUMES[id].label}</button>)}
+  </div>
   <header className="documentation-header">
-   <span className="eyebrow">CHECKMATE / EINSTEIGERBUCH · BAND 1</span>
-   <h2>{PIZZERIA_BOOK.title}</h2>
-   <p>{PIZZERIA_BOOK.scenario}</p>
-   <small>{PIZZERIA_BOOK.audience} · {PIZZERIA_BOOK.chapters.length} Kapitel · {completed.length} als verstanden markiert</small>
+   <span className="eyebrow">CHECKMATE / EINSTEIGERBUCH · {volume==='band1'?'BAND 1':'BAND 2'}</span>
+   <h2>{book.title}</h2>
+   <p>{book.scenario}</p>
+   <small>{book.audience} · {book.chapters.length} Kapitel · {completed.length} als verstanden markiert</small>
   </header>
   <div className="academy-shell">
    <nav className="academy-chapters cm-scroll-region" aria-label="Kapitel des Einsteigerbuchs" tabIndex={0}>
-    {PIZZERIA_BOOK.stages.map(item=>{
-     const chapters=PIZZERIA_BOOK.chapters.filter(entry=>entry.stage===item.id);
+    {book.stages.map(item=>{
+     const chapters=book.chapters.filter(entry=>entry.stage===item.id);
      if(!chapters.length)return null;
      return <div className="academy-stage" key={item.id}>
       <strong>{item.title}</strong><small>{item.goal}</small>
       {chapters.map(entry=><button type="button" key={entry.id}
        className={entry.id===chapter.id?'selected':''} aria-current={entry.id===chapter.id?'true':undefined}
        onClick={()=>select(entry.id)}>
-       <span>{PIZZERIA_BOOK.chapters.indexOf(entry)+1}. {entry.title}</span>
+       <span>{book.chapters.indexOf(entry)+1}. {entry.title}</span>
        <small>{entry.minutes} Min. {completed.includes(entry.id)?'· ✓':''} {entry.explain.length?'':'· geplant'}</small>
       </button>)}
      </div>;
     })}
    </nav>
-   <article className="academy-article cm-scroll-region" key={chapter.id} aria-labelledby="academy-title" tabIndex={0}>
-    <span className="eyebrow">{stage?.title} · KAPITEL {index+1} / {PIZZERIA_BOOK.chapters.length}</span>
+   <article className="academy-article cm-scroll-region" key={volume+chapter.id} aria-labelledby="academy-title" tabIndex={0}>
+    <span className="eyebrow">{stage?.title} · KAPITEL {index+1} / {book.chapters.length}</span>
     <h3 id="academy-title">{chapter.title}</h3>
     <section className="academy-scenario" aria-labelledby="academy-scenario-title">
      <h4 id="academy-scenario-title">Die Situation in deiner Pizzeria</h4>
@@ -98,7 +116,7 @@ export function AcademyReader():React.JSX.Element{
       </React.Fragment>)}</dl>
      </section>
     </>:<div className="academy-planned" role="status">
-      <p>Dieses Kapitel ist schon geplant: Du siehst die Alltagsszene, die Regel und die Lernziele. Der vollständige Text wird als Nächstes geschrieben.</p>
+      <p>Dieses Kapitel ist geplant: Du siehst die Alltagsszene, die Regel und die Lernziele. Der vollständige Text wird als Nächstes geschrieben.</p>
      </div>}
     <section className="academy-sources" aria-labelledby="academy-sources-title">
      <h4 id="academy-sources-title">Zum Nachschlagen</h4>
@@ -108,7 +126,7 @@ export function AcademyReader():React.JSX.Element{
      <button type="button" disabled={index===0} onClick={()=>move(-1)}>← Vorheriges Kapitel</button>
      <button type="button" aria-pressed={completed.includes(chapter.id)} onClick={toggleComplete}>
       {completed.includes(chapter.id)?'✓ Verstanden – zurücksetzen':'✓ Kapitel verstanden'}</button>
-     <button type="button" disabled={index===PIZZERIA_BOOK.chapters.length-1} onClick={()=>move(1)}>Nächstes Kapitel →</button>
+     <button type="button" disabled={index===book.chapters.length-1} onClick={()=>move(1)}>Nächstes Kapitel →</button>
     </footer>
    </article>
   </div>

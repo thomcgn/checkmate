@@ -1,5 +1,10 @@
 /* Einsteigerbuch: ein Kapitel pro Bildschirm, große Ruhe, kurze Sätze. */
 .academy-library{min-width:0;display:flex;flex-direction:column;gap:14px}
+.academy-volumes{display:flex;gap:9px;flex-wrap:wrap}
+.academy-volumes button{border:1px solid #514067;background:#241b30;color:#d9c8e5;border-radius:9px;
+ padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;min-height:44px}
+.academy-volumes button:hover{border-color:var(--cm-violet)}
+.academy-volumes button.selected{background:#3b2850;border-color:var(--cm-violet);color:#f4e5ff}
 .academy-library>.documentation-header>small{font-size:11px;color:#d5c0e2}
 .academy-library>.documentation-header p{font-size:13px;line-height:1.7;color:#cbbcd6;max-width:900px}
 .academy-shell{display:grid;grid-template-columns:minmax(200px,270px) minmax(0,1fr);gap:14px;min-width:0}

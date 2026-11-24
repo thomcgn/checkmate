@@ -41,4 +41,4 @@ Alle 37 Kapitel sind vollständig ausformuliert. Die Kapitel 1–4 liegen in `sr
 
 ## Fortsetzung
 
-Band 2 „Die Pizzeria geht in Betrieb" ergänzt Datenbank, Anmeldung und Rollen, echte Fehlerbehandlung, Testing, Docker/CI und ein einfaches Frontend. Band 3 behandelt Nebenläufigkeit, Caching, Warteschlangen, Sicherheit, Observability und Arbeiten im Team. Damit bleibt der Sprung von der Übungsanwendung zur echten Anwendung nachvollziehbar statt überfordernd.
+Band 2 „Die Pizzeria geht in Betrieb" ist mit 25 Kapiteln vollständig umgesetzt (`src/content/pizzeria-operations.ts`). Die sechs Stufen führen von der Datei über H2/JPA und Repositories zu Anmeldung, Rollen, Fehlerverträgen, Validierung, Logging, JUnit, CI, Docker, Profilen, Geheimnissen und einem kleinen Frontend. Beide Bänder liegen im Einsteigerbuch-Leser und sind dort umschaltbar; der Lernstand wird pro Band getrennt gespeichert. Band 3 behandelt Nebenläufigkeit, Caching, Warteschlangen, Sicherheit, Observability und Arbeiten im Team. Damit bleibt der Sprung von der Übungsanwendung zur echten Anwendung nachvollziehbar statt überfordernd.

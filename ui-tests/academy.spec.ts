@@ -46,6 +46,22 @@ test('auch später Kapitel sind vollständig mit Code und Übung geschrieben',as
  await expect(page.getByText(/Ohne Anführungszeichen/)).toBeVisible();
 });
 
+test('Band 2 ist umschaltbar und vollständig lesbar',async({page})=>{
+ await open(page);
+ const band2=page.getByRole('button',{name:'Band 2 · In Betrieb'});
+ await expect(band2).toHaveAttribute('aria-pressed','false');
+ await band2.click();
+ await expect(band2).toHaveAttribute('aria-pressed','true');
+ await expect(page.getByRole('heading',{name:'Die Pizzeria geht in Betrieb'})).toBeVisible();
+ await expect(page.getByText(/25 Kapitel/)).toBeVisible();
+ await expect(page.locator('.academy-stage button')).toHaveCount(25);
+ await expect(page.getByRole('heading',{name:'Nach dem Neustart ist das Regal leer'})).toBeVisible();
+ await expect(page.getByText(/WENN Daten auch morgen noch da sein sollen/)).toBeVisible();
+ await expect(page.getByText(/Dieses Kapitel ist geplant/)).toHaveCount(0);
+ await page.getByRole('button',{name:'Band 1 · Die Pizzeria'}).click();
+ await expect(page.getByRole('heading',{name:'Die Pizzeria – von der Regel zum Programm'})).toBeVisible();
+});
+
 test('Einsteigerbuch bleibt auf kleinem Display ohne horizontalen Überlauf',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await open(page);
@@ -54,4 +70,9 @@ test('Einsteigerbuch bleibt auf kleinem Display ohne horizontalen Überlauf',asy
  expect(metrics.sw).toBe(metrics.iw);
  expect(metrics.sh).toBe(metrics.ih);
  await expect(page.locator('.academy-stage button').first()).toBeVisible();
+ await page.getByRole('button',{name:'Band 2 · In Betrieb'}).click();
+ const band2=await page.evaluate(()=>({sw:document.body.scrollWidth,iw:window.innerWidth,
+  sh:document.documentElement.scrollHeight,ih:window.innerHeight}));
+ expect(band2.sw).toBe(band2.iw);
+ expect(band2.sh).toBe(band2.ih);
 });
