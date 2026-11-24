@@ -66,7 +66,7 @@ test('all units become checked textbook chapters with persistent resume',async()
     assert.ok(pathMatch);
     return {model,text:JSON.stringify({verdict:'pass',findings:[],claims:[{
      claim:'Wir untersuchen den Ablauf im Code und begründen die Wirkung.',
-     path:pathMatch[1],quote:pathMatch[3]
+     path:pathMatch[1],quote:pathMatch[2]+'\n'+pathMatch[3]
     }]})};
    }
    const matches=[...prompt.matchAll(/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| [^\n]+\n2 \| ([^\n]+)/g)];
@@ -178,7 +178,7 @@ test('cancellation stops subsequent model requests and preserves checked chapter
     assert.ok(pathMatch);
     return {model:chosen,text:JSON.stringify({verdict:'pass',findings:[],claims:[{
      claim:'Wichtige Grundlagen strukturiert erläutern.',
-     path:pathMatch[1],quote:pathMatch[3]
+     path:pathMatch[1],quote:pathMatch[2]+'\n'+pathMatch[3]
     }]})};
    }
    const matches=[...prompt.matchAll(/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| [^\n]+\n2 \| ([^\n]+)/g)];
