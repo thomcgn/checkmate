@@ -9,6 +9,7 @@ import {bookCurriculum,validateBookCurricula,type BookCurriculum} from './book-c
 import {JAVA_NEW_CHAPTERS,TYPESCRIPT_NEW_CHAPTERS,RUST_NEW_CHAPTERS} from './book-expansion-v1.ts';
 import {CONTROL_FLOW_LESSONS} from './control-flow-expansion.ts';
 import {NEW_LANGUAGE_CHAPTERS} from './seven-language-chapters.ts';
+import {SECOND_LANGUAGE_CHAPTERS} from './seven-language-second-chapters.ts';
 
 /** Original learning material shipped in the application; never generated on the user's device. */
 export type PublishedLesson={
@@ -25,13 +26,13 @@ const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
  java:[...JAVA_ADVANCED_LESSONS,...JAVA_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='java')],
  typescript:[...TYPESCRIPT_PRACTICE_LESSONS,...TYPESCRIPT_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='typescript')],
  rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='rust')],
- python:NEW_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='python'),
- javascript:NEW_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='javascript'),
- csharp:NEW_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='csharp'),
- cpp:NEW_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='cpp'),
- php:NEW_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='php'),
- go:NEW_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='go'),
- kotlin:NEW_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='kotlin')
+ python:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='python'),
+ javascript:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='javascript'),
+ csharp:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='csharp'),
+ cpp:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='cpp'),
+ php:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='php'),
+ go:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='go'),
+ kotlin:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='kotlin')
 };
 const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
  const original:PublishedLesson[]=TEXTBOOK.flatMap(chapter=>{
