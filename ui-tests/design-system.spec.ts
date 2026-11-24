@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 test('10-inch desktop app uses Checkmate colors, deliberate scrolling and keyboard navigation',async({page})=>{
  await page.goto('/');
  await expect(page.getByRole('heading',{name:/Code verstehen/})).toBeVisible();
- await expect(page.getByRole('button',{name:/Sprachenhandbücher/})).toBeVisible();
+ await expect(page.getByRole('button',{name:/Originaldokumentationen/})).toBeVisible();
  const properties=await page.evaluate(()=>{
   const shell=document.querySelector('.shell');
   const sidebar=document.querySelector('.sidebar');
@@ -26,9 +26,9 @@ test('10-inch desktop app uses Checkmate colors, deliberate scrolling and keyboa
  expect(properties.violet).toBe('#c18af9');
  await page.keyboard.press('Control+k');
  await expect(page.getByRole('dialog')).toBeVisible();
- await page.getByRole('textbox',{name:'Bereiche durchsuchen'}).fill('Sprachen');
+ await page.getByRole('textbox',{name:'Bereiche durchsuchen'}).fill('Originaldokumentationen');
  await page.getByRole('dialog').getByRole('button',{name:/Sprachenhandbücher/}).click();
- await expect(page.getByRole('heading',{name:'Sprachenhandbücher'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Offizielle Referenzdokumentationen'})).toBeVisible();
  await expect(page.getByRole('dialog')).toHaveCount(0);
  await page.keyboard.press('Control+k');
  await expect(page.getByRole('dialog')).toBeVisible();
