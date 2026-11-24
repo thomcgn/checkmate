@@ -165,10 +165,12 @@ app.whenReady().then(()=>{
    const result=await generateDocumentationCourse(plan,model,(prompt,chosen,onProgress,signal)=>
     chatgpt.analyze(prompt,chosen,onProgress,signal),courseStore,(done,total,detail)=>
     publish({phase:'analyzing',done,total,detail,startedAt:start}),{signal:controller.signal});
+   if(controller.signal.aborted)throw Error('Lehrbuchgenerierung abgebrochen.');
    const volumes=createCourseVolumes(pack,plan,result.lessons,result.fingerprint,model);
    publish({phase:'saving',done:0,total:volumes.length,detail:'Lehrbuchbände speichern',startedAt:start});
    const previous=new Map((await store.list()).map(b=>[b.id,b]));
    for(let i=0;i<volumes.length;i++){
+    if(controller.signal.aborted)throw Error('Lehrbuchgenerierung abgebrochen.');
     const volume=volumes[i];
     const existing=previous.get(volume.id);
     if(existing){
