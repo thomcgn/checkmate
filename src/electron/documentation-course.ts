@@ -5,6 +5,7 @@ import type {DocumentView,InstalledDocumentPack} from '../shared/documentation';
 import type {LessonSection,RepositoryAnalysis,SourceEvidence,TeachingBook} from '../shared/repository';
 import {validateLesson,renderTeachingBook,type TeachingModel} from './teaching-engine.ts';
 import {buildCurriculum,curriculumOrder,type Curriculum} from './curriculum.ts';
+import {assertFreeDocumentationLicense} from './documentation-license.ts';
 
 export type CourseFragment={path:string;startLine:number;text:string;continuation?:boolean};
 export type CourseUnit={fragments:CourseFragment[];title:string};
@@ -48,6 +49,7 @@ export function splitDocument(view:DocumentView,maxChars=MAX_CONTEXT):CourseFrag
 }
 /** Walk every installed source document. Unlike the former single-chapter path, no document is sampled or skipped. */
 export async function planDocumentationCourse(pack:InstalledDocumentPack,reader:(path:string)=>Promise<DocumentView>,report?:(done:number,total:number,detail:string)=>void):Promise<CoursePlan>{
+ assertFreeDocumentationLicense(pack);
  const units:CourseUnit[]=[];
  let pending:CourseUnit|null=null;
  let characters=0;
@@ -129,6 +131,7 @@ export function createCourseVolumes(pack:InstalledDocumentPack,plan:CoursePlan,l
  if(lessons.length!==plan.units.length)throw Error('Nicht alle Dokumentationsabschnitte wurden didaktisch bearbeitet.');
  const volumes:RepositoryAnalysis[]=[];
  const number=Math.ceil(lessons.length/MAX_CHAPTERS_PER_VOLUME);
+ const license=assertFreeDocumentationLicense(pack);
  for(let i=0;i<number;i++){
   const chapters=lessons.slice(i*MAX_CHAPTERS_PER_VOLUME,(i+1)*MAX_CHAPTERS_PER_VOLUME);
   const paths=[...new Set(plan.units.slice(i*MAX_CHAPTERS_PER_VOLUME,(i+1)*MAX_CHAPTERS_PER_VOLUME)
@@ -136,7 +139,7 @@ export function createCourseVolumes(pack:InstalledDocumentPack,plan:CoursePlan,l
   const title=pack.title+' – Lehrbuch Band '+(i+1)+'/'+number;
   const textbook:TeachingBook={version:1,title,learningGoals:['Die Konzepte der Originaldokumentation verstehen und selbst anwenden'],chapters:[...chapters],
    coverage:{included:paths.length,total:pack.documents.length,limited:paths.length<pack.documents.length},
-   series:{title:pack.title,volume:i+1,totalVolumes:number,documentsInVolume:paths.length,totalDocuments:plan.documents,totalUnits:plan.units.length,complete:true}};
+   series:{title:pack.title,volume:i+1,totalVolumes:number,documentsInVolume:paths.length,totalDocuments:plan.documents,totalUnits:plan.units.length,complete:true,sourceUrl:license.sourceUrl,license:license.name,licenseUrl:license.url}};
   const markdown=renderTeachingBook(textbook);
   volumes.push({id:bookId(fingerprint+':'+i),repository:'documentation/'+pack.id,head:pack.sourceCommit,
    title,createdAt:new Date().toISOString(),model,files:paths.length,includedPaths:paths,markdown,teachingBook:textbook});
