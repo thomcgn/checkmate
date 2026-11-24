@@ -82,3 +82,7 @@ Vier weitere eigenständig geschriebene Java-Lehrkapitel sind im Offline-Fachbuc
 ## TypeScript: zusammenhängender Typmodell- und Runtimeblock
 
 Vier neu verfasste Fachkapitel ergänzen die TypeScript-Ausgabe: strukturelle Objekttypen und optionale Properties, Utility/Mapped/Conditional Types, ESM und TypeScript-Modulauflösung sowie Node-Dateizugriff und sichere Electron-IPC-Grenzen. Die Kapitel verweisen auf offizielle TypeScript-Handbuchstellen, enthalten eigenständige Lehrtexte mit Fallstricken, Übungen und Lösungen und sind fest im Offline-Reader gebündelt. Sie stellen **keine** vollständige Abdeckung aller TypeScript-, Node- oder Electron-Dokumentationen dar. Der gesamte Sprachbuchauftrag bleibt daher offen.
+
+## Rust: Standardbibliothek, Besitzmodelle und Projektpraxis
+
+Fünf zusammenhängende Originalmanuskript-Kapitel erweitern das Rust-Buch um `Box`, `Rc`, `RefCell` und `Weak`, Cargo-Crates/Module/Sichtbarkeit, Closure-Captures und `Fn`-Traits, `Arc`/`Mutex`/Threads/Channels sowie Unit- und Integrationstests. Alle fünf sind mit erläuternden Langtexten, Beispielen, Aufgaben und Lösungswegen als fertiger Offline-Leseinhalt eingebunden. Die offizielle Rust-Book-Dokumentation dient als fachliche Referenz, nicht als kopierter Buchtext. **Editorial Release Gate:** Die Abdeckung muss zusätzlich redaktionell geprüft und freigegeben werden; das bloße Befüllen aller geplanten Kapitel-IDs genügt nicht mehr, um den Status eines Buchs auf production-ready zu setzen. Keines der zehn Bücher ist bisher als vollständig auditiert freigegeben.

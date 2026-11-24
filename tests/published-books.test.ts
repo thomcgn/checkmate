@@ -14,6 +14,7 @@ import {PYTHON_FOUNDATIONS_VOLUME} from '../src/content/python-foundations-volum
 import {JAVASCRIPT_CORE_VOLUME} from '../src/content/javascript-core-volume.ts';
 import {JAVA_PLATFORM_VOLUME} from '../src/content/java-platform-volume.ts';
 import {TYPESCRIPT_TYPE_SYSTEM_VOLUME} from '../src/content/typescript-type-system-volume.ts';
+import {RUST_STANDARD_LIBRARY_VOLUME} from '../src/content/rust-standard-library-volume.ts';
 test('published books are complete original editorial content, not model placeholders',()=>{
  assert.deepEqual(validateTextbook(),[]);
  assert.deepEqual(validatePublishedBooks(),[]);
@@ -24,7 +25,7 @@ test('published books are complete original editorial content, not model placeho
  for(const book of PUBLISHED_TEXTBOOKS){
   assert.ok(book.lessons.length>=2,book.id);
   for(const lesson of book.lessons){
-   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS,...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS,...PYTHON_FOUNDATIONS_VOLUME,...JAVASCRIPT_CORE_VOLUME,...JAVA_PLATFORM_VOLUME,...TYPESCRIPT_TYPE_SYSTEM_VOLUME].some(chapter=>chapter.id===lesson.id));
+   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS,...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS,...PYTHON_FOUNDATIONS_VOLUME,...JAVASCRIPT_CORE_VOLUME,...JAVA_PLATFORM_VOLUME,...TYPESCRIPT_TYPE_SYSTEM_VOLUME,...RUST_STANDARD_LIBRARY_VOLUME].some(chapter=>chapter.id===lesson.id));
    assert.equal(lesson.implementation.language,book.language.id);
    assert.ok(lesson.chapter.sections.length>=4);
    assert.ok(lesson.chapter.checkpoints.length>=2);
@@ -263,4 +264,32 @@ test('TypeScript manuscript adds structural, type transformation, modules and ru
   assert.ok(chapter.chapter.transfer.answer.length>140);
   assert.ok(chapter.implementation.docs.startsWith('https://www.typescriptlang.org/'));
  }
+});
+
+test('Rust standard library chapters are authored deeply and bundled into the single book',()=>{
+ const book=publishedBook('checkmate-rust-basics-v1');
+ assert.ok(book);
+ assert.equal(book.editorialStatus,'in-progress');
+ assert.deepEqual(RUST_STANDARD_LIBRARY_VOLUME.map(ch=>ch.id),[
+  'rust-smart-pointers','rust-modules','rust-closures','rust-sync','rust-testing'
+ ]);
+ for(const ch of RUST_STANDARD_LIBRARY_VOLUME){
+  assert.equal(book.lessons.filter(item=>item.id===ch.id).length,1);
+  assert.equal(ch.chapter.sections.length,4);
+  assert.ok(ch.chapter.sections.every(s=>s.paragraphs.length===2&&!!s.code&&!!s.annotation));
+  assert.ok(ch.chapter.sections.reduce((n,s)=>n+s.paragraphs.join(' ').length,0)>3000);
+  assert.equal(ch.chapter.objectives.length,3);
+  assert.equal(ch.chapter.checkpoints.length,3);
+  assert.ok(ch.chapter.transfer.prompt.length>140);
+  assert.ok(ch.chapter.transfer.answer.length>150);
+  assert.ok(ch.implementation.docs.startsWith('https://doc.rust-lang.org/'));
+ }
+});
+
+test('a complete textbook requires audited documentation coverage, not only filled chapter IDs',()=>{
+ const java=publishedBook('checkmate-java-basics-v1');
+ assert.ok(java);
+ assert.notEqual(java.editorialAuditApproved,true);
+ const forged={...java,editorialStatus:'complete' as const};
+ assert.ok(validatePublishedBooks([forged]).some(error=>error.includes('ohne redaktionell genehmigte Dokumentationsabdeckung')));
 });
