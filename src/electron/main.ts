@@ -5,12 +5,13 @@ import {pathToFileURL} from 'node:url';
 import {fetchRepository,parseRepo,type RepositorySnapshot} from './repo-sources';
 import {DirectChatGPT} from './direct-chatgpt';
 import {BookStore} from './book-store';
+import {StudyProgressStore} from './study-progress';
 import {generateTeachingBook,renderTeachingBook} from './teaching-engine';
 import {TeachingCheckpointStore,teachingFingerprint} from './teaching-checkpoints';
 import {DocumentationStore} from './documentation-store';
 import {planDocumentationCourse,generateDocumentationCourse,createCourseVolumes,DocumentationCourseStore} from './documentation-course';
 import type {PackProgress} from '../shared/documentation';
-import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
+import type {RepositoryAnalysis,RepoProgress,StudyChapterStatus} from '../shared/repository';
 let window:BrowserWindow|null=null;
 let splashWindow:BrowserWindow|null=null;
 function closeSplash():void{
@@ -35,6 +36,7 @@ function createSplashWindow():void{
 
 let chatgpt:DirectChatGPT;
 let store:BookStore;
+let study:StudyProgressStore;
 let checkpoints:TeachingCheckpointStore;
 let documentation:DocumentationStore;
 let courseStore:DocumentationCourseStore;
@@ -86,6 +88,7 @@ function createWindow():void{
 }
 app.whenReady().then(()=>{
  store=new BookStore(app.getPath('userData'));
+ study=new StudyProgressStore(app.getPath('userData'));
  checkpoints=new TeachingCheckpointStore(path.join(app.getPath('userData'),'teaching-checkpoints'));
  documentation=new DocumentationStore(path.join(app.getPath('userData'),'offline-documentation'));
  courseStore=new DocumentationCourseStore(path.join(app.getPath('userData'),'documentation-courses'));
@@ -109,6 +112,19 @@ app.whenReady().then(()=>{
  handle('repo:signout',async()=>{await chatgpt.signOut();return chatgpt.status();});
  handle('repo:models',()=>chatgpt.models());
  handle('repo:saved',()=>store.list());
+ handle('repo:study',async(bookId)=>{
+  if(typeof bookId!=='string')throw Error('Ungültige Lernbuch-ID.');
+  const book=(await store.list()).find(item=>item.id===bookId);
+  if(!book)throw Error('Lernbuch nicht gefunden.');
+  return study.list(bookId);
+ });
+ handle('repo:study-set',async(bookId,chapterIndex,status)=>{
+  if(typeof bookId!=='string'||typeof chapterIndex!=='number'||typeof status!=='string')
+   throw Error('Ungültige Lernfortschrittsdaten.');
+  const book=(await store.list()).find(item=>item.id===bookId);
+  if(!book||!book.teachingBook?.chapters.length)throw Error('Lernbuchkapitel nicht gefunden.');
+  return study.set(bookId,chapterIndex,status as StudyChapterStatus,book.teachingBook.chapters.length);
+ });
  handle('repo:remove',async(id)=>{
   if(typeof id!=='string')throw Error('Ungültige Buch-ID');
   if(busy)throw Error('Analyse läuft bereits');
