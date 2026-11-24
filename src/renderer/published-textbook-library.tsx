@@ -113,12 +113,12 @@ export function PublishedTextbookLibrary():React.JSX.Element{
        {section.paragraphs.map((paragraph,j)=><p key={j}>{paragraph}</p>)}
        {section.code&&<figure><figcaption>BEISPIEL · CODE VERSTEHEN</figcaption><pre><code>{section.code}</code></pre><p>{section.annotation}</p></figure>}
       </section>)}
-      <section className="published-section published-language-example">
+      {!lesson.exampleInline&&<section className="published-section published-language-example">
        <h5>{book.language.name}: so sieht es in der Praxis aus</h5>
        <p>{lesson.implementation.explanation}</p>
        <figure><figcaption>{lesson.implementation.name}</figcaption><pre><code>{lesson.implementation.code}</code></pre></figure>
        <p><strong>Unterschiede und Grenzen:</strong> {lesson.implementation.differences}</p>
-      </section>
+      </section>}
       <section className="published-section">
        <h5>Verständnisfragen</h5><p>Versuche die Antwort erst selbst zu formulieren.</p>
        {lesson.chapter.checkpoints.map((question,i)=><div className="published-question" key={i}>
