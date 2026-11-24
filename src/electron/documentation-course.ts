@@ -9,7 +9,7 @@ export type CourseFragment={path:string;startLine:number;text:string};
 export type CourseUnit={fragments:CourseFragment[];title:string};
 export type CoursePlan={units:CourseUnit[];documents:number;characters:number;sourceCommit:string;packId:string};
 const MAX_CONTEXT=18_000;
-const MAX_CHAPTERS_PER_VOLUME=12;
+const MAX_CHAPTERS_PER_VOLUME=8;
 const size=(value:string):number=>value.length;
 const digest=(text:string):string=>createHash('sha256').update(text).digest('hex');
 const bookId=(value:string):string=>{
@@ -57,7 +57,7 @@ export async function planDocumentationCourse(pack:InstalledDocumentPack,reader:
   for(const fragment of splitDocument(view)){
    // Combining small documents reduces model calls, but every character is retained.
    const candidate=fragment.text.length+fragment.path.length+90;
-   if(pending&&size(pending.fragments.map(x=>x.text).join(''))+candidate>MAX_CONTEXT){
+   if(pending&&(pending.fragments.some(f=>f.path===fragment.path)||size(pending.fragments.map(x=>x.text).join(''))+candidate>MAX_CONTEXT)){
     units.push(pending);pending=null;
    }
    if(!pending)pending={title:entry.title,fragments:[]};
@@ -85,7 +85,6 @@ export function validateCourseLesson(raw:string,unit:CourseUnit):LessonSection{
  });
  return {...lesson,evidence};
 }
-export type CourseState={version:1;fingerprint:string;completed:number;updatedAt:string};
 export class DocumentationCourseStore{
  private readonly root:string;
  constructor(root:string){this.root=root;}
