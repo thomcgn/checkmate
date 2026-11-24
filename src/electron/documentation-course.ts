@@ -5,7 +5,7 @@ import type {DocumentView,InstalledDocumentPack} from '../shared/documentation';
 import type {LessonSection,RepositoryAnalysis,SourceEvidence,TeachingBook} from '../shared/repository';
 import {validateLesson,renderTeachingBook,type TeachingModel} from './teaching-engine.ts';
 
-export type CourseFragment={path:string;startLine:number;text:string};
+export type CourseFragment={path:string;startLine:number;text:string;continuation?:boolean};
 export type CourseUnit={fragments:CourseFragment[];title:string};
 export type CoursePlan={units:CourseUnit[];documents:number;characters:number;sourceCommit:string;packId:string};
 const MAX_CONTEXT=18_000;
@@ -30,7 +30,12 @@ export function splitDocument(view:DocumentView,maxChars=MAX_CONTEXT):CourseFrag
  };
  for(let i=0;i<lines.length;i++){
   const line=lines[i];
-  if(line.length>maxChars)throw Error('Dokument enthält eine einzelne Zeile über dem Quellenlimit: '+view.path+':'+(i+1));
+  if(line.length>maxChars){
+   flush();
+   for(let offset=0;offset<line.length;offset+=maxChars)
+    result.push({path:view.path,startLine:i+1,text:line.slice(offset,offset+maxChars),continuation:offset>0});
+   continue;
+  }
   const additional=line.length+(batch.length?1:0);
   if(batch.length&&used+additional>maxChars)flush();
   if(!batch.length)start=i+1;
@@ -72,7 +77,7 @@ export async function planDocumentationCourse(pack:InstalledDocumentPack,reader:
 }
 export function courseFingerprint(plan:CoursePlan,model:string):string{
  return digest(JSON.stringify({packId:plan.packId,sourceCommit:plan.sourceCommit,model,
-  units:plan.units.map(unit=>unit.fragments.map(f=>({path:f.path,startLine:f.startLine,hash:digest(f.text)})))}));
+  units:plan.units.map(unit=>unit.fragments.map(f=>({path:f.path,startLine:f.startLine,continuation:f.continuation===true,hash:digest(f.text)})))}));
 }
 export function validateCourseLesson(raw:string,unit:CourseUnit):LessonSection{
  const sources=unit.fragments.map(f=>({path:f.path,content:f.text}));
