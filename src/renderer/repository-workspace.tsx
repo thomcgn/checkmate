@@ -90,14 +90,14 @@ export function RepositoryWorkspace():React.JSX.Element{
  const book=books.find(b=>b.id===selectedId);
  useEffect(()=>{
   setStudyRecords([]);setActiveChapter(0);
-  if(!api||!selectedId)return;
+  if(!api||!selectedId||typeof api.studyProgress!=='function')return;
   let alive=true;
   void api.studyProgress(selectedId).then(records=>{if(alive)setStudyRecords(records);})
    .catch(e=>{if(alive)setError(e instanceof Error?e.message:String(e));});
   return()=>{alive=false;};
  },[api,selectedId]);
  const updateMastery=async(next:StudyChapterStatus):Promise<void>=>{
-  if(!api||!book?.teachingBook||busy)return;
+  if(!api||typeof api.setStudyProgress!=='function'||!book?.teachingBook||busy)return;
   try{
    const record=await api.setStudyProgress(book.id,activeChapter,next);
    setStudyRecords(current=>[...current.filter(item=>item.chapterIndex!==activeChapter),record]);
