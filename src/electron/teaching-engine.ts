@@ -2,7 +2,7 @@ import type {RepositorySnapshot} from './repo-sources';
 import type {LessonSection,TeachingBook,SourceEvidence} from '../shared/repository';
 import {teachingFingerprint,type TeachingCheckpoint,type TeachingOutline} from './teaching-checkpoints.ts';
 export type TeachingProgress=(done:number,total:number,detail:string)=>void;
-export type TeachingModel=(prompt:string,model:string,onProgress:(detail:string)=>void)=>Promise<{text:string;model:string}>;
+export type TeachingModel=(prompt:string,model:string,onProgress:(detail:string)=>void,signal?:AbortSignal)=>Promise<{text:string;model:string}>;
 const record=(value:unknown):Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
 const strings=(value:unknown):string[]=>Array.isArray(value)?value.filter((x):x is string=>typeof x==='string'):[];
 

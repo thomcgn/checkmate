@@ -156,13 +156,14 @@ export function createCourseVolumes(pack:InstalledDocumentPack,plan:CoursePlan,l
  return volumes;
 }
 export async function generateDocumentationCourse(plan:CoursePlan,model:string,generate:TeachingModel,
- checkpoint:DocumentationCourseStore,report:(done:number,total:number,detail:string)=>void):Promise<{lessons:LessonSection[];fingerprint:string}>{
+ checkpoint:DocumentationCourseStore,report:(done:number,total:number,detail:string)=>void,options:{signal?:AbortSignal}={}):Promise<{lessons:LessonSection[];fingerprint:string}>{
  const fingerprint=courseFingerprint(plan,model);
  const lessons:LessonSection[]=[];
  const total=plan.units.length;
  const orderedStages=curriculumOrder(plan.curriculum).map(index=>plan.curriculum.units[index].stage);
  const titleFor=(index:number):string=>plan.curriculum.parts.find(part=>part.stage===orderedStages[index])?.title??'Weitere Themen';
  for(let index=0;index<total;index++){
+  if(options.signal?.aborted)throw Error('Lehrbucherstellung abgebrochen. Bereits geprüfte Kapitel bleiben erhalten.');
   const unit=plan.units[index];
   const cached=await checkpoint.read(fingerprint,index);
   if(cached){
@@ -200,13 +201,15 @@ export async function generateDocumentationCourse(plan:CoursePlan,model:string,g
   ].join('\n\n');
   let verified:LessonSection|null=null;
   for(let attempt=0;attempt<2&&!verified;attempt++){
-   const response=await generate(prompt+(attempt?'\n\nDie vorige Antwort hatte ungültige Quellenangaben. Erzeuge ausschließlich korrektes JSON mit wortgetreuen Originalzitaten.':''),model,()=>{});
+   if(options.signal?.aborted)throw Error('Lehrbucherstellung abgebrochen. Bereits geprüfte Kapitel bleiben erhalten.');
+   const response=await generate(prompt+(attempt?'\n\nDie vorige Antwort hatte ungültige Quellenangaben. Erzeuge ausschließlich korrektes JSON mit wortgetreuen Originalzitaten.':''),model,()=>{},options.signal);
    try{
     verified=validateCourseLesson(response.text,unit);
     auditDidacticChapter(verified);
    }
    catch(e){if(attempt===1)throw e;}
   }
+  if(options.signal?.aborted)throw Error('Lehrbucherstellung abgebrochen. Bereits geprüfte Kapitel bleiben erhalten.');
   if(!verified)throw Error('Kapitel konnte nicht verifiziert werden.');
   const chapter={...verified,partTitle:titleFor(index)};
   await checkpoint.save(fingerprint,index,chapter);

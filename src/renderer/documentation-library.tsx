@@ -20,6 +20,8 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
  const [matches,setMatches]=useState<readonly string[]|null>(null);
  const [error,setError]=useState('');
  const [creating,setCreating]=useState(false);
+ const [generating,setGenerating]=useState(false);
+ const [cancelRequested,setCancelRequested]=useState(false);
  const [created,setCreated]=useState('');
  const [coursePreview,setCoursePreview]=useState<DocumentationCoursePreview|null>(null);
  const [courseProgress,setCourseProgress]=useState<RepoProgress|null>(null);
@@ -91,12 +93,19 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
     throw Error('Die Dokumentation wurde geändert. Bitte erneut prüfen.');
    if(!window.confirm('GESAMTES REFERENZWERK in didaktische Lehrbuchbände umwandeln?\\n\\n'+summary.title+
     '\\n'+summary.documents+' Originaldokumente, '+summary.units+' KI-Lerneinheiten, '+summary.characters+' Zeichen Quelltext.\\n\\nJede Einheit wird über deinen ChatGPT-Login verarbeitet. Das kann viele Modellanfragen und erhebliche Zeit erfordern. Bereits geprüfte Einheiten werden gespeichert und bei erneutem Start verwendet. Die Originaldokumentation bleibt unverändert.'))return;
-   setCreating(true);
+   setCreating(true);setGenerating(true);setCancelRequested(false);
    const result=await teaching.generateCourse(pack.id,summary.sourceCommit,true,model);
    setCreated(result.volumes+' Lehrbuchbände aus '+result.documents+' Dokumenten erstellt. Du findest sie in der Lernbuchbibliothek im Repository Lab.');
    setCoursePreview(null);
   }catch(e){setError(e instanceof Error?e.message:String(e));}
-  finally{setCreating(false);}
+  finally{setCreating(false);setGenerating(false);setCancelRequested(false);}
+ };
+ const cancelFullTextbook=async():Promise<void>=>{
+  const teaching=window.checkmateRepos;
+  if(!teaching||!generating||cancelRequested)return;
+  setCancelRequested(true);
+  try{await teaching.cancelCourse();}
+  catch(e){setError(e instanceof Error?e.message:String(e));setCancelRequested(false);}
  };
  const installed=statuses.filter(s=>s.installed).length;
  return <section className="documentation-library documentation-handbooks" aria-label="Installierte Sprachenhandbücher">
@@ -129,6 +138,7 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
      <div className="documentation-main">
       {pack?<><div className="documentation-reader-toolbar">
        <button className="primary-btn" disabled={creating||!window.checkmateRepos} onClick={()=>void prepareFullTextbook()}>{creating?'Verarbeitung läuft …':'Gesamte Dokumentation als Lehrbücher aufbereiten'}</button>
+       {generating&&<button className="secondary-btn" disabled={cancelRequested} onClick={()=>void cancelFullTextbook()}>{cancelRequested?'Abbruch angefordert …':'Lehrbuchgenerierung abbrechen'}</button>}
        {coursePreview&&<div role="status">{coursePreview.documents} Originalkapitel · {coursePreview.units} didaktische Einheiten · vollständiger Quellenbestand geprüft
         <button className="secondary-btn" disabled={creating} onClick={()=>void createFullTextbook()}>Lehrbuchreihe jetzt generieren</button>
        </div>}

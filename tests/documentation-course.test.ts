@@ -152,3 +152,42 @@ test('the global planner limits grouped source count to the verification budget'
  assert.ok(plan.units.every(unit=>unit.fragments.length<=8));
  assert.equal(plan.units.flatMap(u=>u.fragments).length,19);
 });
+
+test('cancellation stops subsequent model requests and preserves checked chapter checkpoints',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'checkmate-course-cancel-'));
+ try{
+  const plan=await planDocumentationCourse(pack,read);
+  assert.ok(plan.units.length>1);
+  const store=new DocumentationCourseStore(root);
+  const controller=new AbortController();
+  let calls=0;
+  const model=async(prompt:string,chosen:string,_onProgress:(detail:string)=>void,signal?:AbortSignal)=>{
+   assert.equal(chosen,'test-model');
+   assert.equal(signal,controller.signal);
+   calls++;
+   const matches=[...prompt.matchAll(/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| [^\n]+\n2 \| ([^\n]+)/g)];
+   const evidence=matches.map(m=>({path:m[1],startLine:2,endLine:2,quote:m[2]}));
+   return {model:chosen,text:JSON.stringify({title:'Strukturiertes Programmieren verstehen',
+    explanation:'## Grundlagen\n'+('Wichtige Grundlagen strukturiert erläutern. '.repeat(12))+
+     '\n## Schritt für Schritt\n'+('Das Beispiel wird nachvollziehbar begründet. '.repeat(12))+
+     '\n## Typische Fehler und Grenzen\n'+('Beachte mögliche Fehler und Einschränkungen. '.repeat(12)),
+    learningObjectives:['Wichtige Quellkonzepte erklären und anwenden','Ein eigenes kleines Programm damit aufbauen'],
+    glossary:[{term:'Variable',definition:'Ein benannter Verweis auf einen verarbeiteten Datenwert.'},
+      {term:'Funktion',definition:'Eine aufrufbare Einheit wiederverwendbarer Operationen.'}],
+    reviewQuestions:[{question:'Wie werden die im Beispiel beschriebenen Werte verarbeitet?',
+      answer:'Indem die Werte schrittweise an Funktionen übergeben und ausgewertet werden.'},
+      {question:'Welchen praktischen Nutzen hat die gezeigte Struktur?',
+      answer:'Sie trennt einzelne Aufgaben und verbessert die Nachvollziehbarkeit des Ablaufs.'}],
+    exercise:'Schreibe ein eigenes kleines Beispiel, das diese Konzepte kombiniert.',
+    solution:'Verwende eine Variable und eine Funktion, die diesen Wert überprüfbar verarbeitet.',
+    sourcePaths:matches.map(m=>m[1]),evidence})};
+  };
+  await assert.rejects(generateDocumentationCourse(plan,'test-model',model,store,(done)=>{
+   if(done===1)controller.abort();
+  },{signal:controller.signal}),/abgebrochen/);
+  assert.equal(calls,1);
+  const fingerprint=courseFingerprint(plan,'test-model');
+  assert.ok(await store.read(fingerprint,0));
+  assert.equal(await store.read(fingerprint,1),null);
+ }finally{await rm(root,{recursive:true,force:true});}
+});

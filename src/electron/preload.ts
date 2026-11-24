@@ -10,6 +10,7 @@ const api:RepoBridge={
  analyze:(url:string,consent:boolean,model:string):Promise<RepositoryAnalysis>=>ipcRenderer.invoke('checkmate:repo:analyze',url,consent,model),
  previewCourse:(packId:string)=>ipcRenderer.invoke('checkmate:docs:course-preview',packId),
  generateCourse:(packId:string,sourceCommit:string,consent:boolean,model:string)=>ipcRenderer.invoke('checkmate:docs:course-generate',packId,sourceCommit,consent,model),
+ cancelCourse:():Promise<boolean>=>ipcRenderer.invoke('checkmate:docs:course-cancel'),
  saved:():Promise<RepositoryAnalysis[]>=>ipcRenderer.invoke('checkmate:repo:saved'),
  studyProgress:(bookId:string):Promise<StudyChapterRecord[]>=>ipcRenderer.invoke('checkmate:repo:study',bookId),
  setStudyProgress:(bookId:string,chapterIndex:number,status:StudyChapterStatus):Promise<StudyChapterRecord>=>ipcRenderer.invoke('checkmate:repo:study-set',bookId,chapterIndex,status),
