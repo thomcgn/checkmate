@@ -55,7 +55,7 @@ test('all units become checked textbook chapters with persistent resume',async()
    calls++;
    const match=/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| ([^\n]+)/.exec(prompt);
    assert.ok(match);
-   const evidence={path:match[1],startLine:1,endLine:1,quote:match[2]};
+   const evidence={path:match[1],startLine:2,endLine:2,quote:match[2]};
    return {model,text:JSON.stringify({title:'Ein nachvollziehbares Programmierkonzept',explanation:'Du lernst Grundlagen schrittweise mit Erklärung und Praxis. '.repeat(10),
     exercise:'Baue selbst ein Beispiel und erkläre die einzelnen Schritte.',
     solution:'Beginne mit einem kleinen Ausdruck und prüfe die Ausgabe.',sourcePaths:[match[1]],evidence:[evidence]})};
