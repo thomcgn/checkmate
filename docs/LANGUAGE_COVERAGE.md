@@ -74,3 +74,7 @@ Die Python-Fachbuchausgabe enthält zusätzlich fünf vollständige eigenständi
 ## JavaScript: zusammenhängender Grundlagenblock (Originalmanuskript)
 
 Vier neue, fachlich zusammenhängende Lehrkapitel behandeln JavaScript-Objekte, Prototypketten und eigene Properties; Iterationsprotokolle, for...of und Generatoren; Map, Set und fachliche Gleichheit; sowie Exceptions, Error.cause und Abschlussregeln. Diese Kapitel sind nach den drei bereits mitgelieferten JavaScript-Manuskriptkapiteln als echter Leseinhalt gebündelt. Fachliche Quellreferenzen auf MDN sind je Kapitel hinterlegt, die Darstellung ist eigenständig verfasst. Trotz dieser Erweiterung sind die zehn Fachbücher weiterhin unvollständig und nicht als production-ready freigegeben.
+
+## Java: zusammenhängender Sprach- und Plattformblock
+
+Vier weitere eigenständig geschriebene Java-Lehrkapitel sind im Offline-Fachbuch veröffentlicht: **Vererbung, Interfaces und Polymorphie**, **Lambdas und funktionale Interfaces**, **Path/Files und Ressourcenlebensdauer** sowie **LocalDate/Instant/Duration und Zeitzonen**. Die Kapitel enthalten längere fachliche Erklärungen, Codeillustrationen, Irrtümer und Fallstricke, Übungen mit Lösungen und einen Dokumentationsbezug auf dev.java. Sie erweitern den bisher veröffentlichten Gesamtstoff, beanspruchen aber ausdrücklich **noch keine vollständige Java- oder JDK-Abdeckung**. Die separate neue Snippet-/Compiler-Testpipeline bleibt bis zur Fertigstellung der Buchmanuskripte zurückgestellt.
