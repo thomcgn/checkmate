@@ -7,6 +7,7 @@ import {TYPESCRIPT_PRACTICE_LESSONS} from '../src/content/typescript-practice.ts
 import {RUST_PRACTICE_LESSONS} from '../src/content/rust-practice.ts';
 import {JAVA_NEW_CHAPTERS,TYPESCRIPT_NEW_CHAPTERS,RUST_NEW_CHAPTERS} from '../src/content/book-expansion-v1.ts';
 import {CONTROL_FLOW_LESSONS} from '../src/content/control-flow-expansion.ts';
+import {NEW_LANGUAGE_CHAPTERS} from '../src/content/seven-language-chapters.ts';
 test('published books are complete original editorial content, not model placeholders',()=>{
  assert.deepEqual(validateTextbook(),[]);
  assert.deepEqual(validatePublishedBooks(),[]);
@@ -17,7 +18,7 @@ test('published books are complete original editorial content, not model placeho
  for(const book of PUBLISHED_TEXTBOOKS){
   assert.ok(book.lessons.length>=2,book.id);
   for(const lesson of book.lessons){
-   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS].some(chapter=>chapter.id===lesson.id));
+   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS,...NEW_LANGUAGE_CHAPTERS].some(chapter=>chapter.id===lesson.id));
    assert.equal(lesson.implementation.language,book.language.id);
    assert.ok(lesson.chapter.sections.length>=4);
    assert.ok(lesson.chapter.checkpoints.length>=2);
@@ -109,5 +110,26 @@ test('all new control-flow lessons have independently authored complete reading 
   assert.ok(lesson.chapter.sections.filter(part=>part.code?.length).length>=3);
   assert.ok(lesson.chapter.transfer.prompt.length>100);
   assert.ok(lesson.chapter.transfer.answer.length>100);
+ }
+});
+
+test('every previously underserved language has substantial original teaching content',()=>{
+ const expected=['python','javascript','csharp','cpp','php','go','kotlin'];
+ assert.deepEqual(NEW_LANGUAGE_CHAPTERS.map(lesson=>lesson.implementation.language).sort(),[...expected].sort());
+ for(const language of expected){
+  const book=publishedBook('checkmate-'+language+'-basics-v1');
+  assert.ok(book,language);
+  assert.equal(book.editorialStatus,'in-progress');
+  const authored=NEW_LANGUAGE_CHAPTERS.find(item=>item.implementation.language===language);
+  assert.ok(authored,language);
+  assert.equal(book.lessons.filter(lesson=>lesson.id===authored.id).length,1);
+  assert.ok(authored.chapter.sections.length>=4);
+  assert.ok(authored.chapter.sections.every(section=>section.paragraphs.length>=2&&!!section.code&&!!section.annotation));
+  assert.ok(authored.chapter.sections.reduce((n,section)=>n+section.paragraphs.join(' ').length,0)>2200);
+  assert.ok(authored.chapter.objectives.length>=3);
+  assert.ok(authored.chapter.checkpoints.length>=3);
+  assert.ok(authored.chapter.transfer.prompt.length>100);
+  assert.ok(authored.chapter.transfer.answer.length>100);
+  assert.ok(authored.implementation.docs.startsWith('https://'));
  }
 });
