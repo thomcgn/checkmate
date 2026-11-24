@@ -17,6 +17,8 @@ test('Repository Lab workflow with mocked desktop transport at 10-inch viewport'
     includedPaths:['README.md','src/Main.java'],markdown:'# Analyse\n\n## Generics\n\nEin generischer Typ bewahrt Typzusammenhänge.'};
     stored.unshift(book);return book;},
    saved:async()=>stored,
+   studyProgress:async()=>[],
+   setStudyProgress:async(bookId:string,chapterIndex:number,status:string)=>({bookId,chapterIndex,status,updatedAt:new Date().toISOString()}),
    remove:async(id:string)=>{const index=stored.findIndex(x=>x.id===id);if(index>=0)stored.splice(index,1);},
    onProgress:()=>()=>{},
   }});

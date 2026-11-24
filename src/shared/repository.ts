@@ -7,6 +7,8 @@ export type TeachingBook={version:1;title:string;learningGoals:string[];chapters
 export type RepositoryPreview={repository:string;head:string;files:number;included:number;bytes:number;samplePaths:readonly string[];excluded:number;source:string};
 export type RepositoryAnalysis={id:string;repository:string;head:string;title:string;createdAt:string;model:string;files:number;includedPaths:string[];markdown:string;teachingBook?:TeachingBook};
 export type RepoProgress={phase:'fetching'|'analyzing'|'saving'|'done'|'failed';done:number;total:number;detail:string;startedAt:number};
+export type StudyChapterStatus='unread'|'learning'|'understood';
+export type StudyChapterRecord={bookId:string;chapterIndex:number;status:StudyChapterStatus;updatedAt:string};
 export type ChatGPTModel={slug:string;display_name:string};
 export type ChatGPTStatus={available:boolean;connected:boolean;sharing:boolean;email:string|null;plan:string|null;detail:string};
 export type DocumentationCoursePreview={packId:string;sourceCommit:string;documents:number;units:number;characters:number;title:string};
@@ -22,6 +24,8 @@ export type RepoBridge={
  analyze(url:string,consent:boolean,model:string):Promise<RepositoryAnalysis>;
 
  saved():Promise<RepositoryAnalysis[]>;
+ studyProgress(bookId:string):Promise<StudyChapterRecord[]>;
+ setStudyProgress(bookId:string,chapterIndex:number,status:StudyChapterStatus):Promise<StudyChapterRecord>;
  remove(id:string):Promise<void>;
  onProgress(callback:(value:RepoProgress)=>void):()=>void;
 };

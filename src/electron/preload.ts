@@ -1,6 +1,6 @@
 import {contextBridge,ipcRenderer} from 'electron';
 import type {DocumentationBridge,PackProgress} from '../shared/documentation';
-import type {RepoBridge,RepoProgress,RepositoryPreview,RepositoryAnalysis,ChatGPTStatus} from '../shared/repository';
+import type {RepoBridge,RepoProgress,RepositoryPreview,RepositoryAnalysis,ChatGPTStatus,StudyChapterRecord,StudyChapterStatus} from '../shared/repository';
 const api:RepoBridge={
  preview:(url:string):Promise<RepositoryPreview>=>ipcRenderer.invoke('checkmate:repo:preview',url),
  chatgptStatus:():Promise<ChatGPTStatus>=>ipcRenderer.invoke('checkmate:repo:status'),
@@ -11,6 +11,8 @@ const api:RepoBridge={
  previewCourse:(packId:string)=>ipcRenderer.invoke('checkmate:docs:course-preview',packId),
  generateCourse:(packId:string,sourceCommit:string,consent:boolean,model:string)=>ipcRenderer.invoke('checkmate:docs:course-generate',packId,sourceCommit,consent,model),
  saved:():Promise<RepositoryAnalysis[]>=>ipcRenderer.invoke('checkmate:repo:saved'),
+ studyProgress:(bookId:string):Promise<StudyChapterRecord[]>=>ipcRenderer.invoke('checkmate:repo:study',bookId),
+ setStudyProgress:(bookId:string,chapterIndex:number,status:StudyChapterStatus):Promise<StudyChapterRecord>=>ipcRenderer.invoke('checkmate:repo:study-set',bookId,chapterIndex,status),
  remove:(id:string):Promise<void>=>ipcRenderer.invoke('checkmate:repo:remove',id),
  onProgress:(callback:(progress:RepoProgress)=>void):(()=>void)=>{
   const listener=(_event:Electron.IpcRendererEvent,value:RepoProgress):void=>callback(value);
