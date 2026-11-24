@@ -72,6 +72,9 @@
 .learning-markdown h4{font-size:15px;color:#d7baef}
 .learning-markdown p{margin:0 0 12px}
 .learning-markdown .learning-list-line{padding-left:13px}
+.learning-markdown .learning-list{padding-left:22px;margin:0 0 12px;list-style:disc}
+.learning-markdown ol.learning-list{list-style:decimal}
+.learning-markdown .learning-list li{margin-bottom:6px}
 .learning-code{white-space:pre;overflow:auto;font:12px/1.7 ui-monospace,monospace;background:#100f18;border:1px solid #342b42;color:#ace3d1;padding:16px;border-radius:8px}
 .repo-note{background:#352536;padding:12px;border:1px solid #5a4157;color:#f0d0e6;border-radius:9px;font-size:12px}
 @media(max-width:1130px){.repo-layout{grid-template-columns:290px minmax(0,1fr)}.repo-panel{padding:15px}.repo-hero-symbol{display:none}.repo-left,.repo-reader{max-height:calc(100vh - 290px)}}

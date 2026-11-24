@@ -56,6 +56,8 @@ npm run check
 
 Dieser Aufruf prüft TypeScript, die Inhaltstests und den Renderer-/Electron-Build. Die CI führt diese Prüfungen auf **Linux, Windows und macOS** aus.
 
+Die Oberfläche ist auf barrierefreies, responsives Design ausgelegt: Sprungmarke zum Hauptinhalt, sichtbarer Tastaturfokus, mindestens 44 × 44 Pixel große Bedienelemente, echte Reiter- und Zustandsattribute (`aria-selected`, `aria-expanded`, `aria-pressed`, `aria-current`), per Tastatur erreichbare Scrollbereiche ohne sichtbare Doppel-Scrollbalken sowie ein einspaltiges Reflow bis 320 px bzw. 200 % Zoom. `prefers-reduced-motion`, `prefers-contrast` und Windows High Contrast werden berücksichtigt. `npm run test:ui` prüft diese Eigenschaften zusätzlich mit Playwright.
+
 Technologie: **Electron · React · TypeScript**, streng typisiert. Die vorgefertigten Lehrbuchinhalte sind versionierte Projektdateien, persönliche Notizen und Lernstände liegen derzeit im lokalen App-Speicher. Eine zusätzliche Datenbank ist für die gebündelte Wissensbasis nicht nötig.
 
 ## Weitere Entwicklung

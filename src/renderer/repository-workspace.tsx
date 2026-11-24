@@ -21,8 +21,21 @@ function TeachingMarkdown({value}:{value:string}):React.JSX.Element{
   if(inCode){code.push(line);continue;}
   const heading=/^(#{1,4})\s+(.+)$/.exec(line);
   if(heading){const title=heading[2];if(heading[1].length<=2)nodes.push(<h3 key={key}>{title}</h3>);else nodes.push(<h4 key={key}>{title}</h4>);continue;}
-  if(/^\s*[-*] /.test(line)){nodes.push(<p className="learning-list-line" key={key}>• {line.replace(/^\s*[-*] /,'')}</p>);continue;}
-  if(/^\d+\.\s/.test(line)){nodes.push(<p className="learning-list-line" key={key}>{line}</p>);continue;}
+  const listItem=/^\s*(?:[-*] |\d+\.\s)(.+)$/;
+  const item=listItem.exec(line);
+  if(item){
+   const ordered=/^\s*\d+\.\s/.test(line);
+   const entries:string[]=[];
+   let end=i;
+   for(;end<lines.length;end++){
+    const match=listItem.exec(lines[end]);
+    if(!match||/^\s*\d+\.\s/.test(lines[end])!==ordered)break;
+    entries.push(match[1]);
+   }
+   const items=entries.map((entry,index)=><li key={index}>{entry}</li>);
+   nodes.push(ordered?<ol className="learning-list" key={key}>{items}</ol>:<ul className="learning-list" key={key}>{items}</ul>);
+   i=end-1;continue;
+  }
   if(line.trim())nodes.push(<p key={key}>{line}</p>);
  }
  if(code.length)nodes.push(<pre key="last-code" className="learning-code"><code>{code.join('\n')}</code></pre>);
@@ -104,21 +117,21 @@ export function RepositoryWorkspace():React.JSX.Element{
   }catch(e){setError(e instanceof Error?e.message:String(e));}
  };
  const completedChapters=book?.teachingBook?.chapters.filter((_,i)=>studyRecords.some(record=>record.chapterIndex===i&&record.status==='understood')).length??0;
- return <div className="repo-workspace">
+ return <section className="repo-workspace" aria-label="Repository Lab">
   <div className="repo-hero"><div>
     <span className="repo-overline">CHECKMATE / REPOSITORY LAB</span>
     <h2>Fremden Code lesen.<br/><em>Eigenen Code beherrschen.</em></h2>
     <p>Lerne Architektur, Konzepte und Entscheidungen an echtem Quellcode. ChatGPT schreibt dein persönliches Lehrkapitel – kein Agent verändert das Repository.</p>
    </div><div className="repo-hero-symbol" aria-hidden="true">♚<span>{'{ }'}</span></div>
   </div>
-  {!api&&<div className="repo-note">Für die Repository-Analyse bitte die Electron-Desktop-App starten. Die browserbasierte Vorschau zeigt nur die Bibliothek.</div>}
+  {!api&&<div className="repo-note" role="note">Für die Repository-Analyse bitte die Electron-Desktop-App starten. Die browserbasierte Vorschau zeigt nur die Bibliothek.</div>}
   <div className="repo-layout">
-   <div className="repo-left">
+   <div className="repo-left cm-scroll-region" tabIndex={0}>
     <section className="repo-panel">
      <div className="repo-panel-title"><span className="repo-step">01</span><div><h3>ChatGPT verbinden</h3><p>Eigener ChatGPT-Login, keine lokalen Modelle.</p></div></div>
      <div className="repo-account">
       <span className={status?.connected?'repo-led good':'repo-led'}/>
-      <div><strong>{status?.connected?(status.sharing?'ChatGPT verbunden':'Berechtigung zur Plannutzung fehlt'):status?.available?'Anmeldung erforderlich':'Anmeldung nicht verfügbar'}</strong>
+      <div><strong role="status" aria-live="polite">{status?.connected?(status.sharing?'ChatGPT verbunden':'Berechtigung zur Plannutzung fehlt'):status?.available?'Anmeldung erforderlich':'Anmeldung nicht verfügbar'}</strong>
        <small>{status?.connected?status.email||status.plan||'ChatGPT-Konto':status?.detail||'Status wird gelesen …'}</small></div>
      </div>
      <div className="repo-actions"><button className="repo-primary" disabled={!api||busy} onClick={()=>void(status?.connected?refresh():signIn())}>{status?.connected?'Status aktualisieren':'Mit ChatGPT anmelden'}</button>
@@ -139,38 +152,38 @@ export function RepositoryWorkspace():React.JSX.Element{
       <p>Begrenzte Stichprobe: Ausgewählte Quelldateien werden als Text analysiert. Vollständigkeit des gesamten Repositories wird nicht behauptet.</p>
       <details><summary>Analysierte Dateipfade ansehen</summary><ul>{preview.samplePaths.map(p=><li key={p}>{p}</li>)}</ul></details>
       <label className="repo-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>Ich möchte diese ausgewählten Quellcodeausschnitte an ChatGPT zur Lernanalyse senden.</span></label>
-      <button className="repo-primary repo-wide" disabled={!api||busy||!consent||!status?.sharing||!model} onClick={()=>void analyze()}>♚ Lehrkapitel mit ChatGPT erstellen</button>
+      <button type="button" className="repo-primary repo-wide" disabled={!api||busy||!consent||!status?.sharing||!model} onClick={()=>void analyze()}><span aria-hidden="true">♚</span> Lehrkapitel mit ChatGPT erstellen</button>
      </div>}
     </section>
     <section className="repo-panel repo-books">
      <div className="repo-panel-title"><span className="repo-step">03</span><div><h3>Deine Lernbücher</h3><p>Ergebnisse bleiben auf diesem Rechner gespeichert.</p></div></div>
      {books.length===0?<p className="repo-hint">Noch keine Analysen gespeichert. Nach der ersten erfolgreichen Analyse entsteht hier deine Bibliothek.</p>:books.map(b=><div className={'repo-book '+(b.id===selectedId?'chosen':'')} key={b.id}>
-      <button onClick={()=>setSelectedId(b.id)}><strong>▤ {b.title}</strong><small>{new Date(b.createdAt).toLocaleDateString('de-DE')} · {b.files} Dateien · {b.head.slice(0,8)}</small></button>
-      <button className="repo-delete" aria-label={'Buch '+b.title+' löschen'} title="Lernbuch löschen" onClick={()=>void remove(b.id)}>×</button>
+      <button type="button" onClick={()=>setSelectedId(b.id)}><strong><span aria-hidden="true">▤</span> {b.title}</strong><small>{new Date(b.createdAt).toLocaleDateString('de-DE')} · {b.files} Dateien · {b.head.slice(0,8)}</small></button>
+      <button type="button" className="repo-delete" aria-label={'Buch '+b.title+' löschen'} title="Lernbuch löschen" onClick={()=>void remove(b.id)}>×</button>
      </div>)}
     </section>
    </div>
-   <section className="repo-panel repo-reader">
+   <section className="repo-panel repo-reader cm-scroll-region" aria-label="Dein Studierzimmer" tabIndex={0}>
     <div className="repo-reader-head"><div><span className="repo-overline">LIVE LEARNING / DEIN STUDIERZIMMER</span><h3>{book?book.title:'Dein nächstes Aha-Erlebnis'}</h3></div><span className="repo-status">{progress?.phase==='done'?'✓ Gespeichert':busy?'● In Arbeit':'Bereit'}</span></div>
     {error&&<div className="repo-error" role="alert">{error}</div>}
     {progress&&<div className="repo-progress">
      <div><strong>{progress.detail}</strong><span>{progress.phase==='fetching'||progress.phase==='analyzing'?progress.done+'/'+progress.total:progress.phase}</span></div>
-     <div className="repo-track"><span style={{width:(progress.total?Math.round(progress.done/progress.total*100):0)+'%'}}/></div>
+     <div className="repo-track" role="progressbar" aria-label="Fortschritt der Analyse" aria-valuemin={0} aria-valuemax={progress.total||100} aria-valuenow={progress.done}><span style={{width:(progress.total?Math.round(progress.done/progress.total*100):0)+'%'}}/></div>
      <small>Verstrichen: {elapse(progress.startedAt)}{estimateRemainingSeconds(progress,Date.now())!==null?' · ETA ca. '+formatDuration(estimateRemainingSeconds(progress,Date.now())!):''}{busy?' · Schätzung abhängig von Modell und Kontingent.':''}</small>
     </div>}
     {book?<><div className="repo-book-meta">{book.model} · Commit {book.head.slice(0,12)} · {book.files} Quelldateien</div>
-     {!!book.teachingBook?.chapters.length&&<div className="repo-progress" aria-label="Lernfortschritt für das Lehrbuch">
+     {!!book.teachingBook?.chapters.length&&<section className="repo-progress" aria-label="Lernfortschritt für das Lehrbuch">
       <strong>Lernfortschritt: {completedChapters} von {book.teachingBook.chapters.length} Kapiteln verstanden</strong>
       <label htmlFor="repo-study-chapter" className="repo-label">KAPITEL</label>
       <select id="repo-study-chapter" value={activeChapter} onChange={e=>setActiveChapter(Number(e.target.value))}>
        {book.teachingBook.chapters.map((chapter,i)=><option key={i} value={i}>{i+1}. {chapter.title}</option>)}
       </select>
       <div className="repo-actions">
-       <button className="repo-secondary" disabled={busy} onClick={()=>void updateMastery('learning')}>In Bearbeitung</button>
-       <button className="repo-secondary" disabled={busy} onClick={()=>void updateMastery('understood')}>Verstanden</button>
-       <button className="repo-secondary" disabled={busy} onClick={()=>void updateMastery('unread')}>Zurücksetzen</button>
+       <button type="button" className="repo-secondary" aria-pressed={studyRecords.some(r=>r.chapterIndex===activeChapter&&r.status==='learning')} disabled={busy} onClick={()=>void updateMastery('learning')}>In Bearbeitung</button>
+       <button type="button" className="repo-secondary" aria-pressed={studyRecords.some(r=>r.chapterIndex===activeChapter&&r.status==='understood')} disabled={busy} onClick={()=>void updateMastery('understood')}>Verstanden</button>
+       <button type="button" className="repo-secondary" disabled={busy} onClick={()=>void updateMastery('unread')}>Zurücksetzen</button>
       </div>
-     </div>}
+     </section>}
      <TeachingMarkdown value={book.markdown}/></>:
      <div className="repo-empty-state">
       <div className="repo-empty-symbol">♚</div>
@@ -180,5 +193,5 @@ export function RepositoryWorkspace():React.JSX.Element{
      </div>}
    </section>
   </div>
- </div>;
+ </section>;
 }

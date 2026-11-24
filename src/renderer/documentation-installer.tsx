@@ -44,7 +44,7 @@ export function DocumentationInstaller({openLibrary}:{openLibrary:()=>void}):Rea
   finally{setBusy(false);setBatch(null);stop.current=false;}
  };
  const successful=statuses.filter(s=>s.installed).length;
- return <section className="documentation-library documentation-installer" aria-label="Dokumentationen installieren">
+ return <section className="documentation-library documentation-installer" aria-label="Dokumentationen installieren" aria-busy={busy}>
   <header className="documentation-header">
    <span className="eyebrow">CHECKMATE / EINRICHTUNG</span>
    <h2>Sprachreferenzen installieren</h2>
@@ -59,8 +59,11 @@ export function DocumentationInstaller({openLibrary}:{openLibrary:()=>void}):Rea
     {successful>0&&<button className="secondary-btn" onClick={openLibrary}>Zu den Handbüchern</button>}
    </div>
   </div>
-  {batch&&<p className="documentation-progress" role="status">Paket {batch.current}/{batch.total}: {batch.title}</p>}
-  {progress&&<p className="documentation-progress" role="status">{progress.detail}{progress.total>0?' · '+Math.min(100,Math.round(progress.done/progress.total*100))+' %':''}</p>}
+  {(batch||progress)&&<p className="documentation-progress" role="status" aria-live="polite">
+   {batch?'Paket '+batch.current+'/'+batch.total+': '+batch.title:''}
+   {batch&&progress?' · ':''}
+   {progress?progress.detail+(progress.total>0?' · '+Math.min(100,Math.round(progress.done/progress.total*100))+' %':''):''}
+  </p>}
   {errors.length>0&&<div className="documentation-error" role="alert">{errors.map((e,i)=><p key={i}>{e}</p>)}</div>}
   <div className="documentation-install-grid">
    {OFFICIAL_PACKS.map(p=>{

@@ -27,18 +27,23 @@ function OfflineImage({src,alt,documentPath,pack,api}:{src:string;alt?:string;do
   void api.readAsset(pack.id,target).then(value=>{if(live)setImage(value);}).catch(()=>{if(live)setImage(null);});
   return()=>{live=false;};
  },[src,documentPath,pack,api]);
- return image?<img src={image} alt={alt??'Abbildung der Dokumentation'} loading="lazy"/>:
-  <span className="documentation-image-alt">Abbildung: {alt??src}</span>;
+  const description=alt?.trim()?alt:'Abbildung der Dokumentation';
+  return image?<img src={image} alt={description} loading="lazy"/>:
+   <span className="documentation-image-alt">Abbildung: {description}</span>;
 }
 export function OfflineMarkdown({source,currentPath,pack,api,onNavigate}:{source:string;currentPath:string;
  pack:InstalledDocumentPack;api:DocumentationBridge;onNavigate:(path:string)=>void}):React.JSX.Element{
  return <div className="documentation-content documentation-rich">
   <ReactMarkdown skipHtml components={{
+   h1:({children})=><h4>{children}</h4>,
+   h2:({children})=><h4>{children}</h4>,
+   h3:({children})=><h5>{children}</h5>,
+   h4:({children})=><h6>{children}</h6>,
    a:({href,children})=>{
     const file=resolveOfflinePath(currentPath,href??'');
     const known=file&&pack.documents.some(d=>d.path===file);
     return known?<button type="button" className="documentation-inline-link" onClick={()=>onNavigate(file)}>{children}</button>:
-     <span className="documentation-unavailable-link" title="Nur externe Referenz; keine Browsernavigation">{children}</span>;
+     <span className="documentation-unavailable-link" title="Nur externe Referenz; keine Browsernavigation">{children}<span className="sr-only"> (nur externe Referenz, offline nicht verfügbar)</span></span>;
    },
    img:({src,alt})=><OfflineImage src={src??''} alt={alt} documentPath={currentPath} pack={pack} api={api}/>
   }}>{source}</ReactMarkdown>

@@ -72,36 +72,39 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
    </div>:
    <>
     <nav className="documentation-language-tabs" aria-label="Installierte Programmiersprachen">
-     {availableLanguages.map(l=><button key={l.id} className={l.id===currentLanguage?'active':''} onClick={()=>{setLanguage(l.id);setSelected(null);}}>{l.name}</button>)}
+     {availableLanguages.map(l=><button type="button" key={l.id} className={l.id===currentLanguage?'active':''}
+       aria-current={l.id===currentLanguage?'true':undefined} onClick={()=>{setLanguage(l.id);setSelected(null);}}>{l.name}</button>)}
     </nav>
     <div className="documentation-shell">
-     <aside className="documentation-pack-list" aria-label="Handbücher der gewählten Sprache">
-      <strong>HANDBÜCHER · {LANGUAGE_SPECS.find(l=>l.id===currentLanguage)?.name}</strong>
+     <aside className="documentation-pack-list cm-scroll-region" aria-label="Handbücher der gewählten Sprache" tabIndex={0}>
+      <h3>HANDBÜCHER · {LANGUAGE_SPECS.find(l=>l.id===currentLanguage)?.name}</h3>
       {packs.map(p=>{
        const state=statuses.find(x=>x.id===p.id);
-       return <button className={current===p.id?'documentation-pack active':'documentation-pack'} key={p.id} onClick={()=>setSelected(p.id)}>
+       return <button type="button" className={current===p.id?'documentation-pack active':'documentation-pack'} key={p.id}
+         aria-current={current===p.id?'true':undefined} onClick={()=>setSelected(p.id)}>
         <b>{p.title}</b><span>{state?.count??0} Kapitel · lokal gespeichert</span>
        </button>;
       })}
      </aside>
-     <div className="documentation-main">
+     <div className="documentation-main cm-scroll-region" role="region" aria-label="Handbuchinhalt" tabIndex={0}>
       {pack?<><div className="documentation-reader-toolbar"><span>Originalreferenz · ausschließlich zum Nachschlagen · offline</span></div><div className="documentation-reader documentation-reader-standalone">
        <aside className="documentation-toc">
-        <label className="documentation-toc-label" htmlFor="offline-search">IN DIESEM HANDBUCH SUCHEN</label>
+        <label className="documentation-toc-label" htmlFor="offline-search">Offline-Dokumentation durchsuchen</label>
         <input id="offline-search" aria-label="Offline-Dokumentation durchsuchen" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Begriff, API, Klasse, Funktion …"/>
-        <small>{documents.length} / {pack.documents.length} Kapitel</small>
-        <div className="documentation-toc-list">{documents.map(doc=><button className={doc.path===currentPath?'selected':''} key={doc.path} onClick={()=>setPath(doc.path)}>
+        <small role="status" aria-live="polite">{documents.length} / {pack.documents.length} Kapitel</small>
+        <div className="documentation-toc-list cm-scroll-region" tabIndex={0}>{documents.map(doc=><button type="button" className={doc.path===currentPath?'selected':''} key={doc.path}
+           aria-current={doc.path===currentPath?'true':undefined} onClick={()=>setPath(doc.path)}>
          {doc.title}<small>{doc.path}</small>
         </button>)}</div>
        </aside>
-       <article className="documentation-article">
-        {article?<><h2>{article.title}</h2><small>{article.path} · Version {pack.sourceCommit.slice(0,12)}</small>
+       <article className="documentation-article cm-scroll-region" aria-labelledby="doc-article-title" tabIndex={0}>
+        {article?<><h3 id="doc-article-title">{article.title}</h3><small>{article.path} · Version {pack.sourceCommit.slice(0,12)}</small>
          {/\.(md|mdx|html|htm)$/i.test(article.path)?
           <OfflineMarkdown source={article.text} currentPath={article.path} pack={pack} api={api!} onNavigate={setPath}/>:
           <PlainText source={article.text}/>}
-        </>:<p>{documents.length===0?'Keine Treffer im Handbuch.':'Kapitel wird geöffnet …'}</p>}
+        </>:<p role="status">{documents.length===0?'Keine Treffer im Handbuch.':'Kapitel wird geöffnet …'}</p>}
        </article>
-      </div></>:<div className="documentation-placeholder">Handbuch wird geladen …</div>}
+      </div></>:<div className="documentation-placeholder" role="status">Handbuch wird geladen …</div>}
      </div>
     </div>
    </>}

@@ -13,7 +13,7 @@ export const buttonVariants=cva(
   secondary:'border-[var(--cm-border)] bg-[var(--cm-raised)] text-[var(--cm-text)] hover:border-[var(--cm-violet)] hover:bg-[var(--cm-panel)]',
   ghost:'border-transparent bg-transparent text-[var(--cm-muted)] hover:bg-[var(--cm-raised)] hover:text-[var(--cm-text)]',
   accent:'border-[var(--cm-gold)] bg-[var(--cm-gold)] text-[var(--cm-ink)] hover:bg-[#ffe0a2]'
- },size:{default:'h-9 px-4',sm:'h-8 px-3 text-xs',icon:'h-9 w-9 p-0'}},defaultVariants:{variant:'default',size:'default'}}
+ },size:{default:'h-11 px-4',sm:'h-11 px-3 text-xs',icon:'h-11 w-11 p-0'}},defaultVariants:{variant:'default',size:'default'}}
 );
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>,VariantProps<typeof buttonVariants>{
  asChild?:boolean;

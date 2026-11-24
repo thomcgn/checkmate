@@ -67,7 +67,7 @@ export function PublishedTextbookLibrary():React.JSX.Element{
    <small>Checkmate Originalausgaben · eigenständig verfasste Lehrtexte · keine fremden Buchinhalte</small>
   </header>
   <div className="published-shell">
-   <nav className="published-books" aria-label="Lehrbuch auswählen">
+   <nav className="published-books cm-scroll-region" aria-label="Lehrbuch auswählen" tabIndex={0}>
     <strong>BUCHREIHE</strong>
     {books.map(item=><button type="button" className={item.id===book.id?'selected':''} key={item.id} onClick={()=>selectBook(item.id)} aria-current={item.id===book.id?'page':undefined}>
      <span>{item.language.name}</span><small>{item.lessons.length} von {item.curriculum?.parts.reduce((sum,part)=>sum+part.chapters.length,0)??item.lessons.length} Kapiteln veröffentlicht</small>
@@ -82,63 +82,68 @@ export function PublishedTextbookLibrary():React.JSX.Element{
     </header>
     <div className="published-reader-grid">
      <aside className="published-toc" aria-label="Inhaltsverzeichnis">
-      <label htmlFor="published-search">INHALTSVERZEICHNIS</label>
-      <input id="published-search" aria-label="Buchkapitel suchen" placeholder="Kapitel suchen …" value={query} onChange={e=>setQuery(e.target.value)}/>
-      <div className="published-toc-items">
+      <label htmlFor="published-search">Buchkapitel suchen</label>
+      <input id="published-search" placeholder="Kapitel suchen …" value={query} onChange={e=>setQuery(e.target.value)}/>
+      <div className="published-toc-items cm-scroll-region" tabIndex={0}>
        {plan?plan.parts.map((part)=><div key={part.id} className="published-toc-part">
         <strong>{part.title}</strong><small>{part.goal}</small>
         {part.chapters.filter(item=>matchesQuery(item.title)||publishedIds.has(item.id)&&visible.some(lesson=>lesson.id===item.id)).map(item=>{
          const available=book.lessons.find(lesson=>lesson.id===item.id);
-         return <button type="button" key={item.id} disabled={!available} className={lesson.id===item.id?'selected':''} onClick={()=>{if(available)selectLesson(available.id);}}>
-          <span>{learned.has(item.id)?'✓':available?'●':'○'} · {item.title}</span>
+         return <button type="button" key={item.id} disabled={!available} className={lesson.id===item.id?'selected':''}
+            aria-current={lesson.id===item.id?'true':undefined}
+            aria-label={(available?(learned.has(item.id)?'Verstanden: ':''):'Noch nicht veröffentlicht: ')+item.title}
+            onClick={()=>{if(available)selectLesson(available.id);}}>
+          <span aria-hidden="true">{learned.has(item.id)?'✓':available?'●':'○'} · {item.title}</span>
           <small>{available?available.chapter.readingMinutes+' Min. · Lesen':'Noch nicht veröffentlicht'}</small>
          </button>;
         })}
-       </div>):visible.map(item=><button type="button" key={item.id} className={lesson.id===item.id?'selected':''} onClick={()=>selectLesson(item.id)}>
-        <span>{learned.has(item.id)?'✓':String(book.lessons.indexOf(item)+1).padStart(2,'0')} · {item.title}</span><small>{item.chapter.readingMinutes} Min. Lesezeit</small>
+       </div>):visible.map(item=><button type="button" key={item.id} className={lesson.id===item.id?'selected':''}
+         aria-current={lesson.id===item.id?'true':undefined} onClick={()=>selectLesson(item.id)}>
+        <span aria-hidden="true">{learned.has(item.id)?'✓':String(book.lessons.indexOf(item)+1).padStart(2,'0')} · {item.title}</span><small>{item.chapter.readingMinutes} Min. Lesezeit</small>
        </button>)}
-       {(plan?plan.parts.every(part=>part.chapters.every(item=>!matchesQuery(item.title))):visible.length===0)&&<p>Keine passenden Kapitel gefunden.</p>}
+       {(plan?plan.parts.every(part=>part.chapters.every(item=>!matchesQuery(item.title))):visible.length===0)&&<p role="status">Keine passenden Kapitel gefunden.</p>}
       </div>
      </aside>
-     <article className="published-article" key={lesson.id}>
+     <article className="published-article cm-scroll-region" key={lesson.id} aria-labelledby="published-chapter-title" tabIndex={0}>
       <span className="eyebrow">VERÖFFENTLICHTES KAPITEL {book.lessons.indexOf(lesson)+1} / {book.lessons.length}</span>
-      <h2>{lesson.title}</h2>
-      <section className="published-objectives"><h3>Das lernst du</h3><ul>{lesson.chapter.objectives.map((objective,i)=><li key={i}>{objective}</li>)}</ul></section>
+      <h4 id="published-chapter-title">{lesson.title}</h4>
+      <section className="published-objectives"><h5>Das lernst du</h5><ul>{lesson.chapter.objectives.map((objective,i)=><li key={i}>{objective}</li>)}</ul></section>
       {lesson.chapter.sections.map((section,i)=><section className="published-section" key={section.id}>
-       <h3>{i+1}. {section.title}</h3>
+       <h5>{i+1}. {section.title}</h5>
        {section.paragraphs.map((paragraph,j)=><p key={j}>{paragraph}</p>)}
        {section.code&&<figure><figcaption>BEISPIEL · CODE VERSTEHEN</figcaption><pre><code>{section.code}</code></pre><p>{section.annotation}</p></figure>}
       </section>)}
       <section className="published-section published-language-example">
-       <h3>{book.language.name}: so sieht es in der Praxis aus</h3>
+       <h5>{book.language.name}: so sieht es in der Praxis aus</h5>
        <p>{lesson.implementation.explanation}</p>
        <figure><figcaption>{lesson.implementation.name}</figcaption><pre><code>{lesson.implementation.code}</code></pre></figure>
        <p><strong>Unterschiede und Grenzen:</strong> {lesson.implementation.differences}</p>
       </section>
       <section className="published-section">
-       <h3>Verständnisfragen</h3><p>Versuche die Antwort erst selbst zu formulieren.</p>
+       <h5>Verständnisfragen</h5><p>Versuche die Antwort erst selbst zu formulieren.</p>
        {lesson.chapter.checkpoints.map((question,i)=><div className="published-question" key={i}>
         <strong>{i+1}. {question.question}</strong>
-        <button type="button" onClick={()=>setRevealed(current=>{
-         const next=new Set(current);if(next.has(i))next.delete(i);else next.add(i);return next;
-        })}>{revealed.has(i)?'Antwort verbergen':'Antwort mit Begründung zeigen'}</button>
-        {revealed.has(i)&&<p><strong>{question.answer}</strong> {question.reason}</p>}
+        <button type="button" aria-expanded={revealed.has(i)} aria-controls={'published-answer-'+i}
+         onClick={()=>setRevealed(current=>{
+          const next=new Set(current);if(next.has(i))next.delete(i);else next.add(i);return next;
+         })}>{revealed.has(i)?'Antwort verbergen':'Antwort mit Begründung zeigen'}</button>
+        {revealed.has(i)&&<p id={'published-answer-'+i} role="status"><strong>{question.answer}</strong> {question.reason}</p>}
        </div>)}
       </section>
       <section className="published-section published-transfer">
-       <h3>Praxisaufgabe und Transfer</h3><p>{lesson.chapter.transfer.prompt}</p>
-       <button type="button" onClick={()=>setTransfer(v=>!v)}>{transfer?'Lösungsweg verbergen':'Lösungsweg ansehen'}</button>
-       {transfer&&<p>{lesson.chapter.transfer.answer}</p>}
+       <h5>Praxisaufgabe und Transfer</h5><p>{lesson.chapter.transfer.prompt}</p>
+       <button type="button" aria-expanded={transfer} aria-controls="published-transfer" onClick={()=>setTransfer(v=>!v)}>{transfer?'Lösungsweg verbergen':'Lösungsweg ansehen'}</button>
+       {transfer&&<p id="published-transfer" role="status">{lesson.chapter.transfer.answer}</p>}
       </section>
       <footer className="published-reader-actions">
-       <button type="button" onClick={markRead}>{learned.has(lesson.id)?'Als noch offen markieren':'✓ Kapitel verstanden'}</button>
+       <button type="button" aria-pressed={learned.has(lesson.id)} onClick={markRead}>{learned.has(lesson.id)?'Als noch offen markieren':'✓ Kapitel verstanden'}</button>
        <button type="button" disabled={book.lessons.indexOf(lesson)===book.lessons.length-1} onClick={()=>{
         const next=book.lessons[book.lessons.indexOf(lesson)+1];if(next)selectLesson(next.id);
        }}>Nächstes Kapitel</button>
       </footer>
      </article>
     </div>
-    <small className="published-attribution">{book.copyrightNotice} · <a href={book.language.officialSource} target="_blank" rel="noopener noreferrer">Offizielle Sprachreferenz</a></small>
+    <small className="published-attribution">{book.copyrightNotice} · <a href={book.language.officialSource} target="_blank" rel="noopener noreferrer">Offizielle Sprachreferenz<span aria-hidden="true"> ↗</span><span className="sr-only"> (öffnet in neuem Fenster)</span></a></small>
    </div>:<div className="documentation-placeholder">Noch keine redaktionell veröffentlichten Lehrbücher vorhanden.</div>}
   </div>
  </section>;
