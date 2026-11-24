@@ -8,6 +8,7 @@ import {BookStore} from './book-store';
 import {generateTeachingBook,renderTeachingBook} from './teaching-engine';
 import {TeachingCheckpointStore,teachingFingerprint} from './teaching-checkpoints';
 import {DocumentationStore} from './documentation-store';
+import {planDocumentationCourse,generateDocumentationCourse,createCourseVolumes,DocumentationCourseStore} from './documentation-course';
 import type {PackProgress} from '../shared/documentation';
 import type {RepositoryAnalysis,RepoProgress} from '../shared/repository';
 let window:BrowserWindow|null=null;
@@ -36,6 +37,7 @@ let chatgpt:DirectChatGPT;
 let store:BookStore;
 let checkpoints:TeachingCheckpointStore;
 let documentation:DocumentationStore;
+let courseStore:DocumentationCourseStore;
 let busy=false;
 let snapshot:RepositorySnapshot|null=null;
 const startedAt=()=>Date.now();
@@ -86,6 +88,7 @@ app.whenReady().then(()=>{
  store=new BookStore(app.getPath('userData'));
  checkpoints=new TeachingCheckpointStore(path.join(app.getPath('userData'),'teaching-checkpoints'));
  documentation=new DocumentationStore(path.join(app.getPath('userData'),'offline-documentation'));
+ courseStore=new DocumentationCourseStore(path.join(app.getPath('userData'),'documentation-courses'));
  chatgpt=new DirectChatGPT(path.join(app.getPath('userData'),'chatgpt'));
  handle('docs:status',()=>documentation.statuses());
  handle('docs:load',(id)=>{if(typeof id!=='string')throw Error('Ungültiges Dokumentationspaket');return documentation.load(id);});
@@ -111,35 +114,47 @@ app.whenReady().then(()=>{
   if(busy)throw Error('Analyse läuft bereits');
   await store.remove(id);
  });
- handle('repo:analyze-document',async(packId,documentPath,consent,model)=>{
-  if(typeof packId!=='string'||typeof documentPath!=='string'||consent!==true||typeof model!=='string'||model.length>150)throw Error('Dokumentation, ChatGPT-Modell und ausdrückliche Freigabe erforderlich.');
-  if(busy)throw Error('Eine Lehrbuchgenerierung läuft bereits');
+ handle('docs:course-preview',async(packId)=>{
+  if(typeof packId!=='string')throw Error('Ungültiges Dokumentationspaket.');
+  if(busy)throw Error('Es läuft bereits eine Lehrbuchgenerierung.');
   const pack=await documentation.load(packId);
-  const entry=pack?.documents.find(d=>d.path===documentPath);
-  if(!pack||!entry)throw Error('Gewähltes Dokumentationskapitel ist nicht installiert.');
+  if(!pack)throw Error('Dokumentationspaket ist nicht installiert.');
+  const start=startedAt();
+  const plan=await planDocumentationCourse(pack,p=>documentation.readDocument(pack.id,p),(done,total,detail)=>
+   publish({phase:'fetching',done,total,detail,startedAt:start}));
+  return {packId:plan.packId,sourceCommit:plan.sourceCommit,documents:plan.documents,
+   units:plan.units.length,characters:plan.characters,title:pack.title};
+ });
+ handle('docs:course-generate',async(packId,sourceCommit,consent,model)=>{
+  if(typeof packId!=='string'||typeof sourceCommit!=='string'||consent!==true||
+     typeof model!=='string'||model.length>150||!model.trim())throw Error('Dokumentationspaket, Quellversion, Modell und ausdrückliche Übermittlungsfreigabe erforderlich.');
+  if(busy)throw Error('Eine Lehrbuchgenerierung läuft bereits.');
+  const pack=await documentation.load(packId);
+  if(!pack||pack.sourceCommit!==sourceCommit)throw Error('Dokumentation wurde seit der Vorschau geändert. Bitte erneut prüfen.');
   busy=true;
   const start=startedAt();
   try{
-   const article=await documentation.readDocument(pack.id,entry.path);
-   const content=article.text.slice(0,12000);
-   const selected:RepositorySnapshot={preview:{repository:'documentation/'+pack.id,head:pack.sourceCommit,
-    files:pack.documents.length,included:1,bytes:Buffer.byteLength(content),samplePaths:[entry.path],
-    excluded:pack.documents.length-1,source:'Installierte Dokumentation: '+pack.title},
-    sources:[{path:entry.path,content}]};
-   publish({phase:'analyzing',done:0,total:5,detail:'Didaktischen Lehrplan für '+article.title+' erstellen',startedAt:start});
-   const fingerprint=teachingFingerprint(selected,model);
-   const resume=await checkpoints.load(fingerprint);
-   const result=await generateTeachingBook(selected,model,(prompt,chosen,onProgress)=>chatgpt.analyze(prompt,chosen,onProgress),
-    (done,total,detail)=>publish({phase:'analyzing',done,total,detail,startedAt:start}),
-    {resume,saveCheckpoint:next=>checkpoints.save(next)});
-   const book:RepositoryAnalysis={id:randomUUID(),repository:selected.preview.repository,head:selected.preview.head,
-    title:result.book.title,createdAt:new Date().toISOString(),model:result.model,files:1,
-    includedPaths:[entry.path],markdown:renderTeachingBook(result.book),teachingBook:result.book};
-   publish({phase:'saving',done:0,total:1,detail:'Didaktisches Kapitel lokal speichern',startedAt:start});
-   await store.add(book);
-   await checkpoints.remove(fingerprint);
-   publish({phase:'done',done:1,total:1,detail:'Lehrbuch gespeichert',startedAt:start});
-   return book;
+   const plan=await planDocumentationCourse(pack,p=>documentation.readDocument(pack.id,p),(done,total,detail)=>
+    publish({phase:'fetching',done,total,detail,startedAt:start}));
+   publish({phase:'analyzing',done:0,total:plan.units.length,detail:'Gesamtes Handbuch didaktisch aufbereiten',startedAt:start});
+   const result=await generateDocumentationCourse(plan,model,(prompt,chosen,onProgress)=>
+    chatgpt.analyze(prompt,chosen,onProgress),courseStore,(done,total,detail)=>
+    publish({phase:'analyzing',done,total,detail,startedAt:start}));
+   const volumes=createCourseVolumes(pack,plan,result.lessons,result.fingerprint,model);
+   publish({phase:'saving',done:0,total:volumes.length,detail:'Lehrbuchbände speichern',startedAt:start});
+   const previous=new Map((await store.list()).map(b=>[b.id,b]));
+   for(let i=0;i<volumes.length;i++){
+    const volume=volumes[i];
+    const existing=previous.get(volume.id);
+    if(existing){
+     if(existing.head!==volume.head||existing.repository!==volume.repository)
+      throw Error('Konflikt mit bereits gespeicherter Buch-ID.');
+    }else await store.add(volume);
+    publish({phase:'saving',done:i+1,total:volumes.length,detail:'Band '+(i+1)+'/'+volumes.length+' gespeichert',startedAt:start});
+   }
+   await courseStore.remove(result.fingerprint);
+   publish({phase:'done',done:volumes.length,total:volumes.length,detail:'Gesamtes Handbuch in '+volumes.length+' Lehrbuchbänden gespeichert',startedAt:start});
+   return {volumes:volumes.length,documents:plan.documents,units:plan.units.length,title:pack.title};
   }catch(error){
    publish({phase:'failed',done:0,total:1,detail:error instanceof Error?error.message:'Lehrbuchgenerierung fehlgeschlagen',startedAt:start});
    throw error;

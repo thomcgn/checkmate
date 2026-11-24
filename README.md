@@ -39,9 +39,13 @@ Die erste Version analysiert pro Anfrage eine begrenzte Stichprobe statt alle Co
 
 Mehr Details zu Anmeldung, Datenschutz und Grenzen: [Repository Lab](docs/REPOSITORY_LAB.md).
 
-## Lehrbücher aus Offline-Dokumentationen
+## Lehrbücher aus vollständigen Offline-Dokumentationen
 
-In **Sprachenhandbücher** lässt sich aus dem jeweils geöffneten Referenzkapitel ein deutsches Lehrbuch erstellen. Vor dem Übermitteln von bis zu 12.000 Zeichen an ChatGPT wird eine ausdrückliche Bestätigung abgefragt. Das Original bleibt unverändert; das generierte Lehrbuch erscheint im Repository Lab und ist anschließend offline lesbar. Für Generierung und spätere Neugenerierung ist ein verbundenes ChatGPT-Konto mit Freigabe erforderlich. Umfangreiche Originalhandbücher werden hier noch nicht vollständig als Lehrbuch neu strukturiert.
+Unter **Sprachenhandbücher** lässt sich ein installiertes **gesamtes Referenzpaket** in eine deutschsprachige didaktische Lehrbuchreihe aufbereiten, nicht nur ein einzeln geöffnetes Kapitel. Checkmate liest den vollständigen lokal installierten Textbestand, bildet daraus begrenzte Quelleneinheiten, erstellt für jede Einheit ein Lehrbuchkapitel mit Erklärungen, Beispielen, Übungen und Lösungen und bündelt diese in nummerierte Bände in der lokalen Lernbuchbibliothek. Die Originaldokumentation wird dabei nicht verändert. Zeilenbelege werden gegen die tatsächlich gelesenen Ausschnitte geprüft.
+
+**Vor jeder Generierung** zeigt Checkmate die Gesamtzahl der Originaldokumente und zu verarbeitenden Einheiten an. Erst nach ausdrücklicher Freigabe werden diese Quelltexte über den bereits vorhandenen ChatGPT-Login übertragen. Für sehr große Handbücher können zahlreiche separate Modellaufrufe und erhebliche Laufzeiten entstehen; es gibt keine pauschale Kosten- oder Laufzeitzusage. Fertig geprüfte Einheiten bleiben als lokale Checkpoints erhalten, falls eine Generierung unterbrochen wird, und werden beim nächsten Start desselben Quellstands und Modells wiederverwendet. Gespeicherte Bände sind offline lesbar. Verändert sich der installierte Quellstand, muss die Generierung neu überprüft werden.
+
+**Grenze:** Ein vollständig *eingelesener* Quellenbestand bedeutet nicht, dass jede Originalaussage in ein einziges Kompendium ohne Abstraktion übernommen wird. Die erzeugten Lehrbuchkapitel sind didaktische Darstellungen mit überprüften Textzitaten; ihre Interpretation wird noch nicht automatisch semantisch verifiziert.
 
 ## Entwicklung und Qualität
 
