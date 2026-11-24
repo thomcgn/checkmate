@@ -132,7 +132,8 @@ export function createCourseVolumes(pack:InstalledDocumentPack,plan:CoursePlan,l
    .flatMap(unit=>unit.fragments.map(f=>f.path)))];
   const title=pack.title+' – Lehrbuch Band '+(i+1)+'/'+number;
   const textbook:TeachingBook={version:1,title,learningGoals:['Die Konzepte der Originaldokumentation verstehen und selbst anwenden'],chapters:[...chapters],
-   coverage:{included:paths.length,total:pack.documents.length,limited:paths.length<pack.documents.length}};
+   coverage:{included:paths.length,total:pack.documents.length,limited:paths.length<pack.documents.length},
+   series:{title:pack.title,volume:i+1,totalVolumes:number,documentsInVolume:paths.length,totalDocuments:plan.documents,totalUnits:plan.units.length,complete:true}};
   const markdown=renderTeachingBook(textbook);
   volumes.push({id:bookId(fingerprint+':'+i),repository:'documentation/'+pack.id,head:pack.sourceCommit,
    title,createdAt:new Date().toISOString(),model,files:paths.length,includedPaths:paths,markdown,teachingBook:textbook});
