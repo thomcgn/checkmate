@@ -212,7 +212,8 @@ export class DirectChatGPT{
   const catalog=await readApiJSON(response,'https://api.openai.com');
   return parseModelCatalog(catalog);
  }
- async analyze(prompt:string,model:string,progress:(message:string)=>void):Promise<{text:string;model:string}>{
+ async analyze(prompt:string,model:string,progress:(message:string)=>void,signal?:AbortSignal):Promise<{text:string;model:string}>{
+  if(signal?.aborted)throw Error('Lehrbuchgenerierung abgebrochen.');
   const access=await this.token();
   const models=await this.models();
   if(!models.some(m=>m.slug===model))throw Error('Gewähltes Modell ist für dieses ChatGPT-Konto nicht freigegeben.');
@@ -223,7 +224,7 @@ export class DirectChatGPT{
     redirect:'error',
     method:'POST',headers:{Authorization:'Bearer '+access,'Content-Type':'application/json'},
     body:JSON.stringify({model,input:[{role:'user',content:prompt}],store:false,stream:true}),
-    signal:controller.signal
+    signal:signal?AbortSignal.any([signal,controller.signal]):controller.signal
    });
    if(!response.ok){await readApiJSON(response,'https://api.openai.com');throw Error('ChatGPT-Anfrage fehlgeschlagen.');}
    if(!response.body)throw Error('ChatGPT hat keinen Antwortstream geliefert.');
@@ -237,7 +238,7 @@ export class DirectChatGPT{
      if(event.type==='response.completed')completed=true;
     }
    };
-   while(true){const {done,value}=await reader.read();if(done)break;process(parser.push(decoder.decode(value,{stream:true}).replace(/\r\n/g,'\n')));}
+   while(true){if(signal?.aborted)throw Error('Lehrbuchgenerierung abgebrochen.');const {done,value}=await reader.read();if(done)break;process(parser.push(decoder.decode(value,{stream:true}).replace(/\r\n/g,'\n')));}
    process(parser.push(decoder.decode().replace(/\r\n/g,'\n')));
    if(!completed)throw Error('ChatGPT hat keine vollständige Antwort bestätigt.');
    if(output.trim().length<80)throw Error('ChatGPT hat kein ausreichendes Lernkapitel geliefert.');
