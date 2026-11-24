@@ -27,6 +27,7 @@ export type PublishedTextbook={
  readonly language:LanguageSpec;readonly edition:string;readonly lessons:readonly PublishedLesson[];
  readonly copyrightNotice:string;readonly curriculum?:BookCurriculum;
  readonly editorialStatus:'in-progress'|'complete';
+ readonly editorialAuditApproved?:boolean;
 };
 const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
  java:[...JAVA_ADVANCED_LESSONS,...JAVA_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='java'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='java'),...JAVA_PLATFORM_VOLUME],
@@ -40,6 +41,8 @@ const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
  go:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='go'),
  kotlin:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='kotlin')
 };
+/** A complete table of contents is not proof of verified documentation coverage. No approvals exist yet. */
+const SOURCE_AUDIT_APPROVALS:Readonly<Record<string,boolean>>={};
 const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
  const original:PublishedLesson[]=TEXTBOOK.flatMap(chapter=>{
   const concept=COMPLETE_CONCEPT_BY_ID.get(chapter.conceptId);
@@ -53,7 +56,8 @@ const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
  const ordered=curriculum?plan.flatMap(chapter=>{
   const found=published.get(chapter.id);return found?[found]:[];
  }):lessons;
- const complete=!!curriculum&&plan.length===ordered.length&&
+ const audited=SOURCE_AUDIT_APPROVALS[language.id]===true;
+ const complete=audited&&!!curriculum&&plan.length===ordered.length&&
   plan.every(chapter=>published.has(chapter.id));
  return {
   id:'checkmate-'+language.id+'-basics-v1',
@@ -62,7 +66,7 @@ const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
    'Systematisch von den Grundlagen bis zu fortgeschrittenen Anwendungen. Fertige Kapitel sind sofort offline lesbar; weitere Kapitel werden redaktionell ergänzt.':
    'Redaktionell ausgearbeitete Grundlagen mit Lernzielen, Erklärungen, Codebeispielen und Übungen.',
   language,edition:'Checkmate · Redaktioneller Ausbau 1',
-  lessons:ordered,curriculum,editorialStatus:complete?'complete' as const:'in-progress' as const,
+  lessons:ordered,curriculum,editorialAuditApproved:audited,editorialStatus:complete?'complete' as const:'in-progress' as const,
   copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Codebeispiele. Offizielle Dokumentationen werden als weiterführende Quellen verlinkt, nicht als fremde Bücher kopiert.'
  };
 }).filter(book=>book.lessons.length>0);
@@ -99,7 +103,9 @@ export function validatePublishedBooks(books:readonly PublishedTextbook[]=PUBLIS
    const trulyComplete=book.lessons.length===planned.length;
    if(book.editorialStatus==='complete'&&!trulyComplete)
     errors.push('Unvollständiger Band fälschlich als fertig bezeichnet: '+book.id);
-   if(book.editorialStatus==='in-progress'&&trulyComplete)
+   if(book.editorialStatus==='complete'&&!book.editorialAuditApproved)
+    errors.push('Fachbuch ohne redaktionell genehmigte Dokumentationsabdeckung als vollständig bezeichnet: '+book.id);
+   if(book.editorialStatus==='in-progress'&&trulyComplete&&book.editorialAuditApproved)
     errors.push('Fertige Kapitelreihe nicht als vollständig markiert: '+book.id);
   }else if(book.editorialStatus==='complete'){
    errors.push('Abgeschlossene Buchausgabe ohne überprüfbares Gesamtcurriculum: '+book.id);
