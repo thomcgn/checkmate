@@ -243,6 +243,9 @@ export class DirectChatGPT{
    if(!completed)throw Error('ChatGPT hat keine vollständige Antwort bestätigt.');
    if(output.trim().length<80)throw Error('ChatGPT hat kein ausreichendes Lernkapitel geliefert.');
    return{text:output.trim(),model};
+  }catch(error){
+   if(signal?.aborted)throw Error('Lehrbuchgenerierung abgebrochen. Bereits geprüfte Kapitel bleiben gespeichert.');
+   throw error;
   }finally{clearTimeout(timer);}
  }
  async signOut():Promise<void>{
