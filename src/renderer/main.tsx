@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {AREAS,LANGUAGES,type Concept,type LanguageId,type ConceptArea} from '../content/concepts';
 import {COMPLETE_CONCEPTS as CONCEPTS} from '../content/complete-concepts';
 import {searchConcepts,recommendedConcepts,compareLanguages} from '../content/concept-library';
+import {LANGUAGE_SPECS} from '../content/language-reference';
 import type {Stage} from '../shared/types';
 import {DocumentationLibrary} from './documentation-library';
 import {PublishedTextbookLibrary} from './published-textbook-library';
@@ -57,6 +58,7 @@ function App():React.JSX.Element{
  const [query,setQuery]=useState('');
  const [area,setArea]=useState<ConceptArea|'all'>('all');
  const [stage,setStage]=useState<Stage|'all'>('all');
+ const [languageFilter,setLanguageFilter]=useState<LanguageId|'all'>('all');
  const [selectedId,setSelectedId]=useState(CONCEPTS[0].id);
  const [left,setLeft]=useState<LanguageId>('java');
  const [right,setRight]=useState<LanguageId>('python');
@@ -69,7 +71,8 @@ function App():React.JSX.Element{
  const [showSolution,setShowSolution]=useState(false);
  const [answer,setAnswer]=useState('');
  const selected=CONCEPTS.find(c=>c.id===selectedId)??CONCEPTS[0];
- const results=useMemo(()=>searchConcepts({query,area,stage}),[query,area,stage]);
+ const results=useMemo(()=>searchConcepts({query,area,stage,
+  languages:languageFilter==='all'?undefined:[languageFilter]}),[query,area,stage,languageFilter]);
  const completed=useMemo(()=>new Set(Object.entries(study.progress).filter(([,v])=>v==='understood').map(([id])=>id)),[study]);
  const recommended=useMemo(()=>recommendedConcepts(completed),[completed]);
  const status=study.progress[selected.id]??'unknown';
@@ -78,6 +81,7 @@ function App():React.JSX.Element{
  const chosenRight=supported.includes(right)&&right!==chosenLeft?right:
   supported.find(x=>x!==chosenLeft)??chosenLeft;
  const comparison=chosenLeft!==chosenRight?compareLanguages(selected,chosenLeft,chosenRight):null;
+ const languageProfile=LANGUAGE_SPECS.find(spec=>spec.id===chosenLeft);
  useEffect(()=>{localStorage.setItem(STORAGE_KEY,JSON.stringify(study));},[study]);
  const updateStatus=(next:Knowledge):void=>setStudy(current=>({...current,progress:{...current.progress,[selected.id]:next}}));
  const updateNote=(next:string):void=>{
@@ -136,6 +140,10 @@ function App():React.JSX.Element{
    <section className="toolbar" aria-label="Konzeptbibliothek durchsuchen">
     <label className="search-wrap"><Search size={17} aria-hidden="true"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Suche: HashMap, dict, record, Streams …" aria-label="Konzept suchen"/></label>
     <select value={stage} onChange={e=>setStage(e.target.value as Stage|'all')} aria-label="Schwierigkeitsgrad"><option value="all">Alle Level</option><option value="basics">Basics</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select>
+    <select value={languageFilter} onChange={e=>setLanguageFilter(e.target.value as LanguageId|'all')} aria-label="Sprache filtern">
+     <option value="all">Alle Sprachen</option>
+     {languageIds.map(id=><option key={id} value={id}>{LANGUAGES[id]}</option>)}
+    </select>
     <span className="result-count" role="status" aria-live="polite">{results.length} Konzepte</span>
    </section>
    <div className="workspace">
@@ -145,7 +153,7 @@ function App():React.JSX.Element{
       <strong>{c.title}</strong><span className="entry-summary">{c.question}</span>
       <span className="entry-languages">{c.variants.map(v=>LANGUAGES[v.language]).slice(0,4).join(' · ')}{c.variants.length>4?' · +'+(c.variants.length-4):''}</span>
      </button>)}
-     {results.length===0&&<div className="empty"><strong>Kein passendes Konzept</strong><p>Versuche eine andere Bezeichnung oder entferne die Filter.</p><button type="button" onClick={()=>{setQuery('');setArea('all');setStage('all');}}>Filter zurücksetzen</button></div>}
+     {results.length===0&&<div className="empty"><strong>Kein passendes Konzept</strong><p>Versuche eine andere Bezeichnung oder entferne die Filter.</p><button type="button" onClick={()=>{setQuery('');setArea('all');setStage('all');setLanguageFilter('all');}}>Filter zurücksetzen</button></div>}
     </section>
     <article className="reader cm-scroll-region" ref={readerRef} aria-labelledby="concept-title" tabIndex={0}>
      <div className="reader-header"><div className="breadcrumbs">{AREAS[selected.area]} <span>›</span> {stages[selected.stage]}</div>
@@ -160,7 +168,8 @@ function App():React.JSX.Element{
        <span aria-hidden="true">{VIEW_LABELS[v].glyph}</span> {VIEW_LABELS[v].label}
       </button>)}</div>
      <div role="tabpanel" id={'cm-panel-'+view} aria-labelledby={'cm-tab-'+view} tabIndex={0}>
-     {view==='textbook'?<TextbookReader key={selected.id} conceptId={selected.id}/>:view==='compare'?<>
+     {view==='textbook'?<TextbookReader key={selected.id} conceptId={selected.id} onSelect={selectById}
+       onMarkUnderstood={()=>updateStatus(status==='understood'?'learning':'understood')} understood={status==='understood'}/>:view==='compare'?<>
       <div className="teaching-card"><div className="mini-label">DAS PRINZIP</div><p className="intuition">{selected.intuition}</p><p>{selected.mentalModel}</p><p>Das vollständige, ausführliche Kapitel findest du im Reiter „Lehrbuchkapitel“.</p></div>
       <section className="article-section"><h3>Schritt für Schritt</h3><ol className="steps">{selected.walkthrough.map((line,i)=><li key={i}><span>{i+1}</span><p>{line}</p></li>)}</ol></section>
       <section className="article-section"><div className="section-heading"><div><span className="mini-label">DASSELBE PROBLEM, ANDERE SPRACHE</span><h3>Syntax & Semantik vergleichen</h3></div></div>
@@ -170,6 +179,14 @@ function App():React.JSX.Element{
         <LanguageCard side="B" selected={chosenRight} variants={supported.filter(x=>x!==chosenLeft)} choose={setRight} variant={comparison.right}/>
        </div>:<p className="helper">Für dieses Konzept ist bislang nur ein Sprachbeispiel vorhanden.</p>}
        {comparison&&<p className="comparison-note"><strong>Wichtig:</strong> Diese Umsetzungen behandeln das gleiche Teilproblem, sind aber nicht automatisch austauschbar. Beachte vor allem Typprüfung, Laufzeitverhalten und Fehlerfälle.</p>}
+       {languageProfile&&<div className="language-profile">
+        <h4>Sprachprofil {LANGUAGES[chosenLeft]}</h4>
+        <p><strong>Geprüfte Sprachlinie:</strong> {languageProfile.version} · {languageProfile.platform}</p>
+        <p>{languageProfile.learningAdvice}</p>
+        <h5>Bewährte Regeln aus der Dokumentation</h5>
+        <ul>{languageProfile.bestPractices.map((rule,i)=><li key={i}>{rule}</li>)}</ul>
+        <a href={languageProfile.officialSource} target="_blank" rel="noopener noreferrer">Offizielle Referenz<span aria-hidden="true"> ↗</span><span className="sr-only"> (öffnet in neuem Fenster)</span></a>
+       </div>}
       </section>
       <section className="article-section"><h3>Warum nicht immer so?</h3><ul className="caveats">{selected.tradeoffs.map((t,i)=><li key={i}>{t}</li>)}</ul></section>
       {selected.prerequisiteIds.length>0&&<section className="article-section"><h3>Darauf baut es auf</h3><div className="prereqs">{selected.prerequisiteIds.map(id=>{const c=CONCEPTS.find(x=>x.id===id);return c?<button type="button" key={id} onClick={()=>selectById(id)}><span aria-hidden="true">{completed.has(id)?'✓':'↗'}</span><span className="sr-only">{completed.has(id)?'Verstanden: ':'Öffnen: '}</span>{c.title}</button>:null;})}</div></section>}

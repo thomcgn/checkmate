@@ -1,5 +1,9 @@
 # Sprachhandbücher · Stand 23. November 2026
 
+## Konzeptbibliothek als Einstieg
+
+Die Konzeptbibliothek umfasst 17 eigenständig formulierte Konzepte. Vier zusätzliche konzeptuelle Lektionen – **Besitz & Lebensdauer**, **Iteratoren & Generatoren**, **Closures & Funktionswerte** und **Gleichheit & Hashbarkeit** – stammen aus den hinterlegten offiziellen Referenzen der zehn Sprachen und sind vollständig offline lesbar. Jedes Kapitel enthält Lernziele, mehrere ausgearbeitete Abschnitte, erklärte Codebeispiele, Verständnisfragen und eine Transferaufgabe. Ergänzend werden Begriffe erklärt, verwandte Konzepte verlinkt und offizielle Referenzen als Nachschlagequellen angeboten. Die Volltextsuche durchsucht auch Lehrbuchtexte und Codebeispiele; ein Sprachfilter und ein Lernpfad ergänzen die Navigation. Die Konzeptbibliothek bleibt ein kuratierter Kern – keine vollständige Enzyklopädie einer Sprache oder Standardbibliothek.
+
 Checkmate ist **konzeptorientiert**. Die hier genannten Sprachhandbücher sind eigenständig formulierte deutschsprachige Lehrtexte und enthalten Version, praktische Beispiele, Abweichungen zu anderen Sprachen, Übungen und Quellenbezug. Die Originaldokumentationen werden **nicht** ungeprüft kopiert.
 
 ## Bewusst ausgewählte zehn Entwickler-Sprachen

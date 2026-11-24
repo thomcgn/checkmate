@@ -6,7 +6,7 @@ Checkmate ist eine eigenständige Desktop-Lernsoftware, mit der man Programmierk
 
 ## Heute im Entwicklungsstand vorhanden
 
-- **Sprachübergreifende Konzeptbibliothek:** Von Variablen, Listen und Maps bis Generics, Records, Streams, Ownership, Fehlerbehandlung und Nebenläufigkeit.
+- **Sprachübergreifende Konzeptbibliothek:** 17 Konzepte mit vollständigen Lehrkapiteln, Glossar, offiziellen Quellen und Querverweisen – von Variablen, Listen und Maps über Generics, Records, Streams, Ownership, Iteratoren, Closures und Gleichheit bis Fehlerbehandlung und Nebenläufigkeit. Volltextsuche, Sprachfilter und Lernpfad machen den Katalog schnell zugänglich.
 - **Fertige Offline-Lehrbücher:** Checkmate liefert eigenständig verfasste Buchkapitel und sprachspezifische Beispiele direkt mit der Anwendung aus. Kein ChatGPT-Konto, kein API-Key und keine Modellgenerierung erforderlich.
 - **Originaldokumentationen zum Nachschlagen:** Bereits importierte Originalreferenzen für Python, JavaScript, TypeScript, Java, C#, C++, PHP, Go, Rust und Kotlin erscheinen in der Handbuchbibliothek. Dort sind sie ohne Browserwechsel lesbar und durchsuchbar.
 - **Vergleich statt bloßer Syntaxübersetzung:** Beispielsweise Java `HashMap`, Python `dict`, Rust `HashMap` und JavaScript `Map` – mit ausdrücklichen Unterschieden bei Semantik und Laufzeitverhalten.
@@ -39,6 +39,10 @@ Das Repository Lab öffnest du in der Seitenleiste. Die Integration verwendet **
 Die erste Version analysiert pro Anfrage eine begrenzte Stichprobe statt alle Commit-Historien. Der Umfang wird sichtbar ausgewiesen. Die Teaching Engine erstellt zuerst Lernziele und einen Lehrplan, danach mehrere Kapitel mit Aufgaben und Musterlösungen. Quellpfade werden gegen die übermittelten Dateien geprüft; eine inhaltliche Verifikation jeder einzelnen Behauptung ist noch nicht implementiert. Lernbücher werden lokal als einzelne, atomar gespeicherte Dateien im App-Datenordner abgelegt. Bestehende Bücher aus `repo-books.json` werden beim ersten Zugriff automatisch übernommen; die alte Datei bleibt als Backup erhalten.
 
 Mehr Details zu Anmeldung, Datenschutz und Grenzen: [Repository Lab](docs/REPOSITORY_LAB.md).
+
+## Konzeptbibliothek mit Dokumentationsbezug
+
+Die Konzeptbibliothek ist der Einstieg in die Wissensbasis. Jedes Konzept besitzt ein ausführliches, eigenständig formuliertes Lehrbuchkapitel mit Lernzielen, Lesezeiten, Verständnisfragen und Transferaufgabe. Zusätzlich werden erläuterte Begriffe, verwandte Konzepte und die passenden Kapitel des Lernpfads angezeigt. Über „Quellen & Vertiefung“ sind die offiziellen Referenzen der zehn Sprachprofile verlinkt; im Sprachvergleich erscheinen Version, Plattform und bewährte Regeln aus dem Sprachprofil. Vollständige Konzepte, Lehrkapitel, Sprachprofile und veröffentlichte Fachbücher werden durch gemeinsame Validatoren geprüft: `validateConceptCatalog`, `validateTextbook` und `validatePublishedBooks`.
 
 ## Vorgefertigte Checkmate-Lehrbücher
 

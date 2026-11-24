@@ -27,6 +27,7 @@ export const BOOK_CURRICULA:readonly BookCurriculum[]=[
    ['sequences','Arrays und Listen'],
    ['key-value','Maps und Zuordnungen'],
    ['uniqueness','Sets, Identität und Gleichheit'],
+   ['equality','Inhaltsvergleich, Hashcodes und stabile Schlüssel',['uniqueness']],
    ['absence','Null, Optional und fehlende Werte'],
    ['errors','Exceptions und Fehlerverträge']
   ]),
@@ -35,12 +36,15 @@ export const BOOK_CURRICULA:readonly BookCurriculum[]=[
    ['java-type-relationships','Invarianz, Bounds, Wildcards und PECS',['generics']],
    ['java-collection-design','Collections, Hashcodes und stabile Schlüssel',['uniqueness']],
    ['java-lambdas','Lambdas und funktionale Interfaces',['functions']],
+   ['closures','Closures und eingeschlossener Zustand',['functions']],
+   ['iterators','Iteratoren und verzögerte Folgen',['sequences']],
    ['stream-pipelines','Stream-Grundlagen und Transformation',['sequences']],
    ['java-stream-reasoning','Filterreihenfolge, Collector und Dubletten',['stream-pipelines']]
   ]),
   part('platform','Teil IV · Plattform und praktische Software','Mit Dateien, Netzwerk, Datenbanken und nebenläufigen Abläufen arbeiten.',[
    ['java-file-io','Dateien, Pfade und Streams',['errors']],
    ['java-date-time','Datum, Uhrzeit und Zeitzonen'],
+   ['ownership','Besitz, Referenzen und Ressourcenlebensdauer',['functions']],
    ['java-http-client','HTTP-Client und JSON-Daten',['errors']],
    ['java-jdbc','SQL und JDBC-Grundlagen'],
    ['async','Nebenläufigkeit und asynchrone Arbeit'],
@@ -64,9 +68,12 @@ export const BOOK_CURRICULA:readonly BookCurriculum[]=[
    ['ts-primitives','Werte, primitive Typen und Konvertierung'],
    ['conditionals','Bedingungen und Kontrollfluss'],
    ['functions','Funktionen, Closures und this'],
+   ['closures','Closures und Funktionswerte',['functions']],
    ['sequences','Arrays und Iteration'],
+   ['iterators','Iteratoren und Generatoren',['sequences']],
    ['key-value','Objekte und Maps'],
    ['uniqueness','Sets und Wertgleichheit'],
+   ['equality','Referenz- und Wertgleichheit',['uniqueness']],
    ['ts-modules','ES Modules und Paketgrenzen']
   ]),
   part('typing','Teil II · Das TypeScript-Typsystem','Beziehungen statt Behauptungen modellieren.',[
@@ -92,6 +99,7 @@ export const BOOK_CURRICULA:readonly BookCurriculum[]=[
    ['ts-react-components','React-Komponenten und State'],
    ['ts-hooks','Hooks, Effects und kontrollierte Eingaben',['ts-react-components']],
    ['ts-node-fs','Dateizugriff, Pfade und Fehler in Node.js'],
+   ['ownership','Besitz und Lebensdauer von Referenzwerten',['functions']],
    ['ts-electron-ipc','Electron-Prozesse, Preload und sichere IPC',['ts-unknown-boundaries']],
    ['ts-storage','Lokale Persistenz, Schema-Versionierung und Migration'],
    ['ts-testing','Vitest, UI- und Integrationstests'],
@@ -109,6 +117,7 @@ export const BOOK_CURRICULA:readonly BookCurriculum[]=[
    ['rust-setup','rustup, Cargo, Editionen und das erste Programm'],
    ['variables','Bindings, Mutabilität und Shadowing'],
    ['rust-types','Skalare Typen, Tupel und Arrays'],
+   ['ownership','Besitz, Leihen und Lebensdauer',['variables']],
    ['conditionals','if, match und Kontrollfluss'],
    ['functions','Funktionen, Ausdrücke und Rückgaben'],
    ['sequences','Slices, Vec und String'],
@@ -128,10 +137,13 @@ export const BOOK_CURRICULA:readonly BookCurriculum[]=[
   part('collections','Teil III · Collections und funktionale Verarbeitung','Daten ohne versteckte Besitzfehler transformieren.',[
    ['key-value','HashMaps und Zuordnungen'],
    ['uniqueness','HashSets und Gleichheit'],
+   ['equality','PartialEq, Eq und Hash-Konsistenz',['uniqueness']],
    ['stream-pipelines','Iteratoren, Adapter und Collectors'],
+   ['iterators','Iterator-Protokoll und Generatoren',['stream-pipelines']],
    ['rust-results-iterators','Result, Option und Iteratoren im Projekt',['errors','stream-pipelines']],
    ['rust-smart-pointers','Box, Rc, Arc und RefCell'],
    ['rust-closures','Closures, Fn-Traits und Captures'],
+   ['closures','Closures als Funktionswerte',['functions']],
    ['rust-modules','Module, Crates und Sichtbarkeit']
   ]),
   part('systems','Teil IV · Systeme und Nebenläufigkeit','Dateien, Threads und asynchrone Abläufe kontrolliert verwenden.',[

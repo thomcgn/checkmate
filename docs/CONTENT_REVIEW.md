@@ -14,7 +14,7 @@ Der Katalog erlaubt ähnliche Implementierungen, ohne semantische Identität zu 
 
 ## Tests
 
-`validateConceptGraph` prüft Voraussetzungsgraf, doppelte Sprachvarianten und Quellenfelder. `validateLanguageDocumentation` prüft zehn Sprachprofile, Versionsdaten, Seitenabdeckung, Quellen-URLs und Fallstricke. CI führt TypeScript, Tests und Build auf Linux, Windows und macOS aus.
+`validateConceptGraph` prüft Voraussetzungsgraf, doppelte Sprachvarianten und Quellenfelder. `validateConceptCatalog` prüft zusätzlich den Katalog, den die Anwendung tatsächlich anzeigt: vollständige didaktische Felder, gültige Vergleichsarten, https-Quellen, eindeutige Sprachen über Basis- und Handbuchvarianten hinweg sowie bekannte Querverweise. Jedes Lehrbuchkapitel besitzt mindestens eine https-Quelle, zwei erläuterte Begriffe und gültige Querverweise; `validateTextbook` prüft diese Felder. `validateLanguageDocumentation` prüft zehn Sprachprofile, Versionsdaten, Seitenabdeckung, Quellen-URLs und Fallstricke. CI führt TypeScript, Tests und Build auf Linux, Windows und macOS aus.
 
 ## Quellen
 

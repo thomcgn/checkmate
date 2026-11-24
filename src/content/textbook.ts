@@ -1,4 +1,7 @@
-import {CONCEPTS} from './concepts.ts';
+import {CONCEPTS,LANGUAGES} from './concepts.ts';
+import {EXPANDED_TEXTBOOK} from './concept-expansion-textbook.ts';
+import {COMPLETE_CONCEPT_BY_ID} from './complete-concepts.ts';
+import {CONCEPT_METADATA} from './concept-metadata.ts';
 
 export interface ChapterSection {
  readonly id:string;
@@ -14,13 +17,16 @@ export interface TextbookChapter {
  readonly sections:readonly ChapterSection[];
  readonly checkpoints:readonly {question:string;answer:string;reason:string}[];
  readonly transfer:{prompt:string;answer:string};
+ readonly glossary?:readonly {readonly term:string;readonly definition:string}[];
+ readonly relatedConceptIds?:readonly string[];
+ readonly sources?:readonly {readonly label:string;readonly url:string}[];
 }
 /** Self-contained, original German teaching text. Language implementations are taught in the comparison tab. */
 const section=(id:string,title:string,paragraphs:string[],code?:string,annotation?:string):ChapterSection=>({id,title,paragraphs,code,annotation});
 const chapter=(conceptId:string,readingMinutes:number,objectives:string[],sections:ChapterSection[],
  checkpoints:{question:string;answer:string;reason:string}[],transfer:{prompt:string;answer:string}):TextbookChapter=>
  ({conceptId,readingMinutes,objectives,sections,checkpoints,transfer});
-export const TEXTBOOK:readonly TextbookChapter[]=[
+const BASE_TEXTBOOK:readonly TextbookChapter[]=[
 chapter('variables',16,[
  'Zwischen einem Wert, einem Namen und einer veränderbaren Speicherstelle unterscheiden.',
  'Erklären, warum eine Neuzuweisung nicht dasselbe wie das Verändern eines Objekts ist.',
@@ -400,6 +406,19 @@ chapter('async',27,[
  {question:'Wozu dient AbortController?',answer:'Eine unterstützte asynchrone Operation kann abgebrochen werden.',reason:'So können veraltete Netzwerkantworten und unnötige Arbeit vermieden werden.'}
 ],{prompt:'Du startest zwei Repository-Suchen kurz hintereinander. Wie stellst du sicher, dass die ältere Antwort nicht die neuere Anzeige überschreibt?',answer:'Brich die vorige Anfrage ab oder verwende eine Anfragen-ID/Generation und übernehme nur die Antwort der aktuell gültigen Suche.'})
 ];
+const RAW_TEXTBOOK:readonly TextbookChapter[]=[...BASE_TEXTBOOK,...EXPANDED_TEXTBOOK];
+/** Quellen und Begriffe werden aus dem geprüften Sprachregister abgeleitet, nicht aus fremden Texten kopiert. */
+export const TEXTBOOK:readonly TextbookChapter[]=RAW_TEXTBOOK.map(chapter=>{
+ const metadata=CONCEPT_METADATA[chapter.conceptId];
+ const concept=COMPLETE_CONCEPT_BY_ID.get(chapter.conceptId);
+ const seen=new Set<string>();
+ const sources=(concept?.variants??[]).flatMap(variant=>{
+  if(seen.has(variant.docs)||!variant.docs.startsWith('https://'))return [];
+  seen.add(variant.docs);
+  return [{label:LANGUAGES[variant.language]+' · '+variant.name,url:variant.docs}];
+ }).slice(0,4);
+ return {...chapter,glossary:metadata?.glossary??[],relatedConceptIds:metadata?.relatedConceptIds??[],sources};
+});
 export const TEXTBOOK_BY_CONCEPT:ReadonlyMap<string,TextbookChapter>=new Map(TEXTBOOK.map(c=>[c.conceptId,c]));
 export function getTextbookChapter(id:string):TextbookChapter{
  const content=TEXTBOOK_BY_CONCEPT.get(id);
@@ -419,6 +438,11 @@ export function validateTextbook(chapters:readonly TextbookChapter[]=TEXTBOOK):r
   if(chapter.sections.reduce((n,s)=>n+s.paragraphs.join(' ').length,0)<1200)problems.push('Zu oberflächlicher Lehrtext: '+chapter.conceptId);
   if(chapter.checkpoints.length<2)problems.push('Zu wenige Verständnisfragen: '+chapter.conceptId);
   if(!chapter.transfer.prompt||!chapter.transfer.answer)problems.push('Keine Transferaufgabe: '+chapter.conceptId);
+   if(!chapter.sources?.length||!chapter.sources.every(source=>source.url.startsWith('https://')))
+    problems.push('Keine geprüfte Quelle: '+chapter.conceptId);
+   if((chapter.glossary?.length??0)<2)problems.push('Zu wenig erläuterte Begriffe: '+chapter.conceptId);
+   for(const related of chapter.relatedConceptIds??[])
+    if(!known.has(related)||related===chapter.conceptId)problems.push('Ungültiger Querverweis: '+chapter.conceptId+'/'+related);
   const sectionIds=new Set<string>();
   for(const s of chapter.sections){
    if(sectionIds.has(s.id))problems.push('Doppelter Abschnitt: '+chapter.conceptId+'/'+s.id);

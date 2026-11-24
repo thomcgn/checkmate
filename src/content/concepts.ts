@@ -1,4 +1,5 @@
 import type {Stage} from '../shared/types';
+import {EXPANDED_CONCEPTS} from './concept-expansion.ts';
 
 /**
  * Konzept zuerst, Syntax danach. Ein Vergleich kann analog sein, ohne äquivalent zu sein:
@@ -33,6 +34,7 @@ export interface Concept {
  readonly solution:string;
  readonly variants:readonly LanguageVariant[];
  readonly lessonId?:string;
+ readonly relatedConceptIds?:readonly string[];
 }
 export const LANGUAGES:Readonly<Record<LanguageId,string>>={
  java:'Java',python:'Python',rust:'Rust',typescript:'TypeScript',
@@ -45,7 +47,7 @@ export const AREAS:Readonly<Record<ConceptArea,string>>={
 };
 const v=(language:LanguageId,name:string,code:string,explanation:string,differences:string,docs:string,equivalence:ComparisonKind='similar'):LanguageVariant=>({language,name,code,explanation,differences,docs,equivalence});
 const c=(id:string,title:string,area:ConceptArea,stage:Stage,question:string,intuition:string,mentalModel:string,walkthrough:string[],tradeoffs:string[],prerequisiteIds:string[],tags:string[],exercise:string,hint:string,solution:string,variants:LanguageVariant[],lessonId?:string):Concept=>({id,title,area,stage,question,intuition,mentalModel,walkthrough,tradeoffs,prerequisiteIds,tags,exercise,hint,solution,variants,lessonId});
-export const CONCEPTS:readonly Concept[]=[
+const BASE_CONCEPTS:readonly Concept[]=[
 c('variables','Variablen & Bindungen','fundamentals','basics','Wie merkt sich ein Programm Werte?','Wir geben einem Wert einen Namen, damit wir später mit ihm arbeiten können.','Ein Namensschild an einem Wert – nicht zwingend eine feste Schublade im Speicher.',[
  'Ein Programm erhält oder berechnet einen Wert.',
  'Ein Name verweist auf diesen Wert oder Speicherort.',
@@ -201,5 +203,6 @@ c('async','Asynchronität & Nebenläufigkeit','concurrency','advanced','Wie wart
  v('typescript','Promise / async-await','async function answer(): Promise<number> {\n  return 42;\n}\nanswer().then(console.log);','async liefert ein Promise.','await blockiert normalerweise nicht den JS-Eventloop-Thread, CPU-lastiger synchroner Code dagegen schon.','https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function')
 ])
 ];
+export const CONCEPTS:readonly Concept[]=[...BASE_CONCEPTS,...EXPANDED_CONCEPTS];
 export const CONCEPT_BY_ID:ReadonlyMap<string,Concept>=new Map(CONCEPTS.map(concept=>[concept.id,concept]));
 export function getConcept(id:string):Concept {const concept=CONCEPT_BY_ID.get(id);if(!concept)throw Error('Unbekanntes Konzept: '+id);return concept;}
