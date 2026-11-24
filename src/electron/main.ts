@@ -40,6 +40,7 @@ let study:StudyProgressStore;
 let checkpoints:TeachingCheckpointStore;
 let documentation:DocumentationStore;
 let courseStore:DocumentationCourseStore;
+let courseController:AbortController|null=null;
 let busy=false;
 let snapshot:RepositorySnapshot|null=null;
 const startedAt=()=>Date.now();
@@ -141,6 +142,11 @@ app.whenReady().then(()=>{
   return {packId:plan.packId,sourceCommit:plan.sourceCommit,documents:plan.documents,
    units:plan.units.length,characters:plan.characters,title:pack.title};
  });
+ handle('docs:course-cancel',()=>{
+  if(!courseController||courseController.signal.aborted)return false;
+  courseController.abort();
+  return true;
+ });
  handle('docs:course-generate',async(packId,sourceCommit,consent,model)=>{
   if(typeof packId!=='string'||typeof sourceCommit!=='string'||consent!==true||
      typeof model!=='string'||model.length>150||!model.trim())throw Error('Dokumentationspaket, Quellversion, Modell und ausdrückliche Übermittlungsfreigabe erforderlich.');
@@ -148,14 +154,17 @@ app.whenReady().then(()=>{
   const pack=await documentation.load(packId);
   if(!pack||pack.sourceCommit!==sourceCommit)throw Error('Dokumentation wurde seit der Vorschau geändert. Bitte erneut prüfen.');
   busy=true;
+  const controller=new AbortController();
+  courseController=controller;
   const start=startedAt();
   try{
    const plan=await planDocumentationCourse(pack,p=>documentation.readDocument(pack.id,p),(done,total,detail)=>
     publish({phase:'fetching',done,total,detail,startedAt:start}));
+   if(controller.signal.aborted)throw Error('Lehrbucherstellung abgebrochen.');
    publish({phase:'analyzing',done:0,total:plan.units.length,detail:'Gesamtes Handbuch didaktisch aufbereiten',startedAt:start});
-   const result=await generateDocumentationCourse(plan,model,(prompt,chosen,onProgress)=>
-    chatgpt.analyze(prompt,chosen,onProgress),courseStore,(done,total,detail)=>
-    publish({phase:'analyzing',done,total,detail,startedAt:start}));
+   const result=await generateDocumentationCourse(plan,model,(prompt,chosen,onProgress,signal)=>
+    chatgpt.analyze(prompt,chosen,onProgress,signal),courseStore,(done,total,detail)=>
+    publish({phase:'analyzing',done,total,detail,startedAt:start}),{signal:controller.signal});
    const volumes=createCourseVolumes(pack,plan,result.lessons,result.fingerprint,model);
    publish({phase:'saving',done:0,total:volumes.length,detail:'Lehrbuchbände speichern',startedAt:start});
    const previous=new Map((await store.list()).map(b=>[b.id,b]));
@@ -172,9 +181,9 @@ app.whenReady().then(()=>{
    publish({phase:'done',done:volumes.length,total:volumes.length,detail:'Gesamtes Handbuch in '+volumes.length+' Lehrbuchbänden gespeichert',startedAt:start});
    return {volumes:volumes.length,documents:plan.documents,units:plan.units.length,title:pack.title};
   }catch(error){
-   publish({phase:'failed',done:0,total:1,detail:error instanceof Error?error.message:'Lehrbuchgenerierung fehlgeschlagen',startedAt:start});
+   publish({phase:'failed',done:0,total:1,detail:controller.signal.aborted?'Lehrbuchgenerierung abgebrochen; geprüfte Kapitel bleiben gespeichert':error instanceof Error?error.message:'Lehrbuchgenerierung fehlgeschlagen',startedAt:start});
    throw error;
-  }finally{busy=false;}
+  }finally{courseController=null;busy=false;}
  });
  handle('repo:analyze',async(url,consent,model)=>{
   if(typeof url!=='string'||url.length>220||consent!==true||typeof model!=='string'||model.length>150)throw Error('Repository, ChatGPT-Modell und ausdrückliche Codeübermittlungsfreigabe erforderlich.');
