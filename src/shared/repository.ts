@@ -1,6 +1,6 @@
 export type SourceEvidence={path:string;startLine:number;endLine:number;quote:string};
 export type LessonSection={title:string;explanation:string;sourcePaths:string[];exercise:string;solution:string;evidence?:SourceEvidence[];partTitle?:string};
-export type TextbookSeries={title:string;volume:number;totalVolumes:number;documentsInVolume:number;totalDocuments:number;totalUnits:number;complete:boolean};
+export type TextbookSeries={title:string;volume:number;totalVolumes:number;documentsInVolume:number;totalDocuments:number;totalUnits:number;complete:boolean;sourceUrl?:string;license?:string;licenseUrl?:string};
 export type TeachingBook={version:1;title:string;learningGoals:string[];chapters:LessonSection[];coverage:{included:number;total:number;limited:boolean};series?:TextbookSeries};
 export type RepositoryPreview={repository:string;head:string;files:number;included:number;bytes:number;samplePaths:readonly string[];excluded:number;source:string};
 export type RepositoryAnalysis={id:string;repository:string;head:string;title:string;createdAt:string;model:string;files:number;includedPaths:string[];markdown:string;teachingBook?:TeachingBook};
