@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useState} from 'react';
-import type {ChatGPTModel,ChatGPTStatus,RepoBridge,RepoProgress,RepositoryAnalysis,RepositoryPreview} from '../shared/repository';
+import type {ChatGPTModel,ChatGPTStatus,RepoBridge,RepoProgress,RepositoryAnalysis,RepositoryPreview,StudyChapterRecord,StudyChapterStatus} from '../shared/repository';
 import './repository-workspace.css';
 import {estimateRemainingSeconds,formatDuration} from '../shared/teaching-progress';
 declare global{interface Window{checkmateRepos?:RepoBridge}}
@@ -42,6 +42,8 @@ export function RepositoryWorkspace():React.JSX.Element{
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [clock,setClock]=useState(0);
+ const [studyRecords,setStudyRecords]=useState<StudyChapterRecord[]>([]);
+ const [activeChapter,setActiveChapter]=useState(0);
  const refresh=useCallback(async():Promise<void>=>{
   if(!api)return;
   const [account,stored]=await Promise.all([api.chatgptStatus(),api.saved()]);
@@ -86,6 +88,22 @@ export function RepositoryWorkspace():React.JSX.Element{
   catch(e){setError(e instanceof Error?e.message:String(e));}
  };
  const book=books.find(b=>b.id===selectedId);
+ useEffect(()=>{
+  setStudyRecords([]);setActiveChapter(0);
+  if(!api||!selectedId)return;
+  let alive=true;
+  void api.studyProgress(selectedId).then(records=>{if(alive)setStudyRecords(records);})
+   .catch(e=>{if(alive)setError(e instanceof Error?e.message:String(e));});
+  return()=>{alive=false;};
+ },[api,selectedId]);
+ const updateMastery=async(next:StudyChapterStatus):Promise<void>=>{
+  if(!api||!book?.teachingBook||busy)return;
+  try{
+   const record=await api.setStudyProgress(book.id,activeChapter,next);
+   setStudyRecords(current=>[...current.filter(item=>item.chapterIndex!==activeChapter),record]);
+  }catch(e){setError(e instanceof Error?e.message:String(e));}
+ };
+ const completedChapters=book?.teachingBook?.chapters.filter((_,i)=>studyRecords.some(record=>record.chapterIndex===i&&record.status==='understood')).length??0;
  return <div className="repo-workspace">
   <div className="repo-hero"><div>
     <span className="repo-overline">CHECKMATE / REPOSITORY LAB</span>
@@ -140,7 +158,20 @@ export function RepositoryWorkspace():React.JSX.Element{
      <div className="repo-track"><span style={{width:(progress.total?Math.round(progress.done/progress.total*100):0)+'%'}}/></div>
      <small>Verstrichen: {elapse(progress.startedAt)}{estimateRemainingSeconds(progress,Date.now())!==null?' · ETA ca. '+formatDuration(estimateRemainingSeconds(progress,Date.now())!):''}{busy?' · Schätzung abhängig von Modell und Kontingent.':''}</small>
     </div>}
-    {book?<><div className="repo-book-meta">{book.model} · Commit {book.head.slice(0,12)} · {book.files} Quelldateien</div><TeachingMarkdown value={book.markdown}/></>:
+    {book?<><div className="repo-book-meta">{book.model} · Commit {book.head.slice(0,12)} · {book.files} Quelldateien</div>
+     {!!book.teachingBook?.chapters.length&&<div className="repo-progress" aria-label="Lernfortschritt für das Lehrbuch">
+      <strong>Lernfortschritt: {completedChapters} von {book.teachingBook.chapters.length} Kapiteln verstanden</strong>
+      <label htmlFor="repo-study-chapter" className="repo-label">KAPITEL</label>
+      <select id="repo-study-chapter" value={activeChapter} onChange={e=>setActiveChapter(Number(e.target.value))}>
+       {book.teachingBook.chapters.map((chapter,i)=><option key={i} value={i}>{i+1}. {chapter.title}</option>)}
+      </select>
+      <div className="repo-actions">
+       <button className="repo-secondary" disabled={busy} onClick={()=>void updateMastery('learning')}>In Bearbeitung</button>
+       <button className="repo-secondary" disabled={busy} onClick={()=>void updateMastery('understood')}>Verstanden</button>
+       <button className="repo-secondary" disabled={busy} onClick={()=>void updateMastery('unread')}>Zurücksetzen</button>
+      </div>
+     </div>}
+     <TeachingMarkdown value={book.markdown}/></>:
      <div className="repo-empty-state">
       <div className="repo-empty-symbol">♚</div>
       <h3>Aus Quellcode wird Verständnis.</h3>
