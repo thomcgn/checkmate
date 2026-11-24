@@ -46,9 +46,27 @@ test('Concept library and language handbooks are navigable without backend',asyn
  await page.goto('/');
  await page.getByRole('textbox',{name:'Konzept suchen'}).fill('HashMap');
  await expect(page.getByRole('button',{name:/Schlüssel-Wert-Zuordnungen/})).toBeVisible();
- await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
+ await page.getByRole('button',{name:/Originaldokumentationen/}).click();
  await expect(page.getByRole('heading',{name:'Deine Handbuchbibliothek ist noch leer'})).toBeVisible();
  await page.getByRole('button',{name:'Zur Einrichtung'}).click();
  await expect(page.getByRole('heading',{name:'Sprachreferenzen installieren'})).toBeVisible();
  await expect(page.getByRole('button',{name:/Paket installieren/}).first()).toBeDisabled();
+});
+
+test('published books are bundled and readable entirely without desktop backend, OAuth or network',async({page})=>{
+ await page.goto('/');
+ await page.getByRole('button',{name:/Lehrbücher/}).click();
+ await expect(page.getByRole('heading',{name:'Fertige Lehrbücher'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:/Java verstehen/})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Variablen & Bindungen'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Verständnisfragen'})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Antwort mit Begründung zeigen'}).first()).toBeVisible();
+ await expect(page.getByRole('button',{name:/Kapitel verstanden/})).toBeVisible();
+ await expect(page.getByRole('button',{name:/generier|ChatGPT/i})).toHaveCount(0);
+ await page.getByRole('button',{name:/Kapitel verstanden/}).click();
+ await expect(page.getByText(/1 \/ \d+ Kapitel als verstanden/)).toBeVisible();
+ await page.reload();
+ await page.getByRole('button',{name:/Lehrbücher/}).click();
+ await expect(page.getByText(/1 \/ \d+ Kapitel als verstanden/)).toBeVisible();
+ await expect(page.locator('body')).toHaveJSProperty('scrollWidth',1024);
 });
