@@ -47,7 +47,9 @@ const detailed=(chapter:BeginnerChapter,explain:readonly string[],wordbank:reado
  options:{code?:string;output?:string;tryIt:string;misconception:string;solution:string}):BeginnerChapter=>
  ({...chapter,explain,wordbank,...options});
 
-export const PIZZERIA_BOOK:BeginnerBook={
+import {PIZZERIA_LESSONS} from './pizzeria-lessons.ts';
+
+const BASE_BOOK:BeginnerBook={
  title:'Die Pizzeria – von der Regel zum Programm',
  subtitle:'Band 1: Java für Neulinge, erklärt an echten Alltagsproblemen',
  audience:'Für Schülerinnen und Schüler ab Klasse 7 – noch nie programmiert? Genau richtig.',
@@ -300,6 +302,14 @@ export const PIZZERIA_BOOK:BeginnerBook={
    ['Du wendest alle Konzepte des Bandes in einem Projekt an.','Du kannst deine Pizzeria einem anderen Menschen zeigen.'],
    ['variables','conditionals','sequences','records','generics','functions','contracts','key-value','stream-pipelines','errors','absence'])
  ]
+};
+/** Alle 37 Kapitel sind ausformuliert; die Lektionen 5–37 liegen in pizzeria-lessons.ts. */
+export const PIZZERIA_BOOK:BeginnerBook={
+ ...BASE_BOOK,
+ chapters:BASE_BOOK.chapters.map(chapter=>{
+  const additional=PIZZERIA_LESSONS.find(lesson=>lesson.id===chapter.id);
+  return additional?{...chapter,...additional}:chapter;
+ })
 };
 export const BEGINNER_BOOK_BY_ID:ReadonlyMap<string,BeginnerChapter>=
  new Map(PIZZERIA_BOOK.chapters.map(chapter=>[chapter.id,chapter]));

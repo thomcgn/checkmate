@@ -37,12 +37,13 @@ test('WENN-DANN-SONST-Lektion mit Code, Lösung und Lernstand',async({page})=>{
  await expect(page.getByRole('button',{name:'✓ Verstanden – zurücksetzen'})).toHaveAttribute('aria-pressed','true');
 });
 
-test('geplante Kapitel zeigen Lernziele statt leerer Seite',async({page})=>{
+test('auch später Kapitel sind vollständig mit Code und Übung geschrieben',async({page})=>{
  await open(page);
  await page.locator('.academy-stage button').filter({hasText:'Der Gast sieht die Antwort'}).click();
  await expect(page.getByRole('heading',{name:'Der Gast sieht die Antwort'})).toBeVisible();
- await expect(page.getByText(/Dieses Kapitel ist schon geplant/)).toBeVisible();
- await expect(page.getByText(/Du kennst den Befehl für eine Ausgabe/)).toBeVisible();
+ await expect(page.locator('.academy-figure code').first()).toContainText('Willkommen in der Pizzeria');
+ await expect(page.getByText(/Probier's selbst!/)).toBeVisible();
+ await expect(page.getByText(/Ohne Anführungszeichen/)).toBeVisible();
 });
 
 test('Einsteigerbuch bleibt auf kleinem Display ohne horizontalen Überlauf',async({page})=>{

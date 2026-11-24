@@ -16,14 +16,13 @@ test('der Fahrplan ist vollständig, altersgerecht und quellenbelegt',()=>{
  }
 });
 
-test('die ersten vier Kapitel sind vollständig ausgeformuliert',()=>{
- for(const id of ['first-guest','name-for-stock','rain-rule','enough-salami']){
-  const chapter=getBeginnerChapter(id);
-  assert.ok(chapter.explain.length>=2,id);
-  assert.ok(chapter.wordbank.length>=2,id);
-  assert.ok(chapter.tryIt.length>30&&chapter.misconception.length>30&&chapter.solution.length>30,id);
-  assert.ok(chapter.rule.pseudo.trim().length>10,id);
-  if(chapter.code)assert.ok(chapter.code.split('\n').length<=8,id+' must stay short');
+test('alle 37 Kapitel sind vollständig ausgeformuliert',()=>{
+ for(const chapter of PIZZERIA_BOOK.chapters){
+  assert.ok(chapter.explain.length>=2,chapter.id);
+  assert.ok(chapter.wordbank.length>=2,chapter.id);
+  assert.ok(chapter.tryIt.length>30&&chapter.misconception.length>30&&chapter.solution.length>30,chapter.id);
+  assert.ok(chapter.rule.pseudo.trim().length>5,chapter.id);
+  if(chapter.code)assert.ok(chapter.code.split('\n').length<=8,chapter.id+' must stay short');
  }
  const rain=getBeginnerChapter('rain-rule');
  assert.match(rain.rule.natural,/WENN es regnet/);

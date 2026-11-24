@@ -42,7 +42,7 @@ Mehr Details zu Anmeldung, Datenschutz und Grenzen: [Repository Lab](docs/REPOSI
 
 ## Einsteigerbuch „Die Pizzeria"
 
-Unter **Einsteigerbuch** liegt Band 1 eines durchgehenden Lehrbuchs für Schülerinnen und Schüler ohne Programmiererfahrung. 37 geplante Kapitel führen von der deutschen Regel („WENN es regnet, DANN nimm den Schirm, SONST wirst du nass") über Datenkarten, Records und Generics bis zur kleinen Spring-Boot-Bestell-API. Die ersten vier Kapitel sind vollständig ausformuliert; die übrigen Kapitel zeigen bereits Alltagsproblem, Regel, Lernziele und Quelle. Details und redaktioneller Maßstab: [Einsteigerbuch](docs/BEGINNER_BOOK.md).
+Unter **Einsteigerbuch** liegt Band 1 eines durchgehenden Lehrbuchs für Schülerinnen und Schüler ohne Programmiererfahrung. 37 geplante Kapitel führen von der deutschen Regel („WENN es regnet, DANN nimm den Schirm, SONST wirst du nass") über Datenkarten, Records und Generics bis zur kleinen Spring-Boot-Bestell-API. Alle 37 Kapitel sind vollständig ausformuliert und enthalten Mini-Code, Übung, typischen Fehler, Auflösung und Wortschatz. Details und redaktioneller Maßstab: [Einsteigerbuch](docs/BEGINNER_BOOK.md).
 
 ## Konzeptbibliothek mit Dokumentationsbezug
 

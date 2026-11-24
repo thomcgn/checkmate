@@ -37,7 +37,7 @@ Records und Generics kommen bewusst erst in Stufe 3 und 4. Vorher haben die Lese
 
 ## Stand
 
-Die Kapitel 1–4 sind vollständig ausformuliert (`src/content/pizzeria-book.ts`). Die Kapitel 5–37 besitzen bereits Alltagsszene, Regel, Lernziele, Konzeptverknüpfung und Quelle; der ausformulierte Text wird in der Reihenfolge der Stufen ergänzt. `validateBeginnerBook` verhindert, dass ein Kapitel ohne Alltagsproblem, ohne WENN-Regel, mit zu langem Codebeispiel oder ohne Quelle veröffentlicht wird.
+Alle 37 Kapitel sind vollständig ausformuliert. Die Kapitel 1–4 liegen in `src/content/pizzeria-book.ts`, die Kapitel 5–37 in `src/content/pizzeria-lessons.ts`; beim Laden werden sie zu einem Buch zusammengefügt. Jedes Kapitel besitzt Alltagsszene, WENN-Regel, Pseudocode, Lernziele, Erklärung, Mini-Code, Übung, typischen Fehler, Auflösung, Wortschatz und Quelle. `validateBeginnerBook` verhindert, dass ein Kapitel ohne Alltagsproblem, ohne WENN-Regel, mit zu langem Codebeispiel oder ohne Quelle veröffentlicht wird.
 
 ## Fortsetzung
 
