@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtemp,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {splitDocument,planDocumentationCourse,courseFingerprint,generateDocumentationCourse,createCourseVolumes,DocumentationCourseStore} from '../src/electron/documentation-course.ts';
+import {splitDocument,planDocumentationCourse,courseFingerprint,generateDocumentationCourse,createCourseVolumes,validateCourseLesson,DocumentationCourseStore} from '../src/electron/documentation-course.ts';
 import {OFFICIAL_PACKS,type DocumentView,type InstalledDocumentPack} from '../src/shared/documentation.ts';
 import {buildCurriculum,curriculumOrder} from '../src/electron/curriculum.ts';
 import {assertFreeDocumentationLicense} from '../src/electron/documentation-license.ts';
@@ -120,3 +120,29 @@ test('license gate accepts official freely licensed sources, rejects restricted 
 });
 
 
+
+test('each source grouped into a lesson must have its own exact quotation',()=>{
+ const unit={title:'Introduction',fragments:[
+  {path:'intro/variables.md',startLine:1,text:'# Variables\nvalue = 3 and is immutable here'},
+  {path:'intro/functions.md',startLine:1,text:'# Functions\ndef calculate(): return 3'}
+ ]};
+ const base={title:'Programmieren lernen',explanation:'## Grundlagen\n'+('Variablen speichern Werte. '.repeat(15))+
+  '\n## Schritt für Schritt\n'+('Einführung und eigenes Codebeispiel. '.repeat(20))+
+  '\n## Typische Fehler\n'+('Nicht mit unveränderlichem Zustand verwechseln. '.repeat(15)),
+  exercise:'Erstelle eine Funktion und verwende eine Variable im selben Programm.',
+  solution:'Definiere eine Variable value = 3 und gib diesen Wert in calculate() zurück.',
+  sourcePaths:['intro/variables.md','intro/functions.md']};
+ const onlyOne={...base,evidence:[{path:'intro/variables.md',startLine:2,endLine:2,quote:'value = 3 and is immutable here'}]};
+ assert.throws(()=>validateCourseLesson(JSON.stringify(onlyOne),unit),/nicht alle.*Originalquellen/);
+ const complete={...base,evidence:[...onlyOne.evidence,{path:'intro/functions.md',startLine:2,endLine:2,quote:'def calculate(): return 3'}]};
+ assert.equal(validateCourseLesson(JSON.stringify(complete),unit).evidence?.length,2);
+});
+test('the global planner limits grouped source count to the verification budget',async()=>{
+ const many={...pack,documents:Array.from({length:19},(_,i)=>({
+  path:'guide/part'+i+'.md',title:'Part '+i,bytes:100,sha256:'a'.repeat(64),text:true
+ }))};
+ const plan=await planDocumentationCourse(many,async p=>({path:p,title:p,text:'# '+p+'\nA documentation paragraph with important definitions.'}));
+ assert.ok(plan.units.length>=3);
+ assert.ok(plan.units.every(unit=>unit.fragments.length<=8));
+ assert.equal(plan.units.flatMap(u=>u.fragments).length,19);
+});
