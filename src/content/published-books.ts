@@ -4,6 +4,7 @@ import {LANGUAGE_SPECS,type LanguageSpec} from './language-reference.ts';
 import type {LanguageVariant} from './concepts.ts';
 import {JAVA_ADVANCED_LESSONS} from './java-advanced.ts';
 import {TYPESCRIPT_PRACTICE_LESSONS} from './typescript-practice.ts';
+import {RUST_PRACTICE_LESSONS} from './rust-practice.ts';
 
 /** Published, editorial content shipped inside Checkmate. Never invokes ChatGPT. */
 export type PublishedLesson={
@@ -44,6 +45,14 @@ export const PUBLISHED_TEXTBOOKS:readonly PublishedTextbook[]=LANGUAGE_SPECS.map
  edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
  lessons:[...TYPESCRIPT_PRACTICE_LESSONS],
  copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Codebeispiele. Fachliche Weiterführungen anhand offizieller TypeScript- und React-Dokumentation, ohne fremde Buchtexte.'
+},{
+ id:'checkmate-rust-practice-v1',
+ title:'Rust verstehen – Ownership, Borrowing und Fehlerbehandlung',
+ description:'Drei aufeinander aufbauende Praxislektionen über Moves, Referenzen und Lifetimes sowie Result, Option und Iteratoren.',
+ language:LANGUAGE_SPECS.find(spec=>spec.id==='rust')!,
+ edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
+ lessons:[...RUST_PRACTICE_LESSONS],
+ copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Codebeispiele. Verweise auf The Rust Programming Language dienen als externe Originalquellen, nicht als kopierter Buchinhalt.'
 }]);
 export function publishedBook(id:string):PublishedTextbook|undefined{
  return PUBLISHED_TEXTBOOKS.find(book=>book.id===id);

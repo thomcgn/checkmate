@@ -4,6 +4,7 @@ import {TEXTBOOK,validateTextbook} from '../src/content/textbook.ts';
 import {PUBLISHED_TEXTBOOKS,publishedBook,validatePublishedBooks} from '../src/content/published-books.ts';
 import {JAVA_ADVANCED_LESSONS} from '../src/content/java-advanced.ts';
 import {TYPESCRIPT_PRACTICE_LESSONS} from '../src/content/typescript-practice.ts';
+import {RUST_PRACTICE_LESSONS} from '../src/content/rust-practice.ts';
 test('published books are complete original editorial content, not model placeholders',()=>{
  assert.deepEqual(validateTextbook(),[]);
  assert.deepEqual(validatePublishedBooks(),[]);
@@ -14,7 +15,7 @@ test('published books are complete original editorial content, not model placeho
  for(const book of PUBLISHED_TEXTBOOKS){
   assert.ok(book.lessons.length>=2,book.id);
   for(const lesson of book.lessons){
-   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id));
+   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id));
    assert.equal(lesson.implementation.language,book.language.id);
    assert.ok(lesson.chapter.sections.length>=4);
    assert.ok(lesson.chapter.checkpoints.length>=2);
@@ -58,5 +59,23 @@ test('TypeScript volume is fully authored and bundled without model generation',
   assert.ok(chapter.chapter.checkpoints.length>=3);
   assert.ok(chapter.chapter.transfer.prompt.length>=100);
   assert.ok(chapter.chapter.transfer.answer.length>=100);
+ }
+});
+
+test('Rust practice volume covers ownership, references and error paths without runtime AI',()=>{
+ const volume=publishedBook('checkmate-rust-practice-v1');
+ assert.ok(volume);
+ assert.deepEqual(volume.lessons.map(chapter=>chapter.id),[
+  'rust-ownership-traces','rust-borrowing-lifetimes','rust-results-iterators'
+ ]);
+ for(const lesson of volume.lessons){
+  assert.ok(lesson.chapter.objectives.length>=3);
+  assert.ok(lesson.chapter.sections.length>=4);
+  assert.ok(lesson.chapter.sections.filter(section=>section.code).length>=3);
+  assert.ok(lesson.chapter.sections.reduce((n,section)=>n+section.paragraphs.join(' ').length,0)>2400);
+  assert.ok(lesson.chapter.checkpoints.length>=3);
+  assert.ok(lesson.chapter.transfer.prompt.length>=100);
+  assert.ok(lesson.chapter.transfer.answer.length>=100);
+  assert.equal(lesson.implementation.language,'rust');
  }
 });
