@@ -33,7 +33,7 @@ export const PUBLISHED_TEXTBOOKS:readonly PublishedTextbook[]=LANGUAGE_SPECS.map
  description:'Vertiefungsband mit durchgehenden EventService-Beispielen: Generics, Collections, Stream-Pipelines und fachliche JUnit-Tests.',
  language:LANGUAGE_SPECS.find(spec=>spec.id==='java')!,
  edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
- lessons:JAVA_ADVANCED_LESSONS,
+ lessons:[...JAVA_ADVANCED_LESSONS],
  copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Beispiele. Fachliche Grundlagen anhand frei zugänglicher offizieller Java-Dokumentation erläutert; keine Übernahme fremder Buchtexte.'
 }]);
 export function publishedBook(id:string):PublishedTextbook|undefined{
