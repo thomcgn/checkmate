@@ -1,3 +1,4 @@
+import {mapChatGPTQuotaError} from './chatgpt-quota.ts';
 import {createHash,randomBytes,randomUUID,timingSafeEqual} from 'node:crypto';
 import {createServer,type Server} from 'node:http';
 import {promises as fs} from 'node:fs';
@@ -234,7 +235,10 @@ export class DirectChatGPT{
    const process=(items:StreamEvent[]):void=>{
     for(const event of items){
      if(event.type==='response.output_text.delta'){output+=event.delta??'';if(output.length>250_000)throw Error('Maximale Kapitellänge erreicht.');}
-     if(event.type==='response.failed'||event.type==='response.incomplete')throw Error(event.response?.error?.message??event.response?.error?.code??'ChatGPT hat die Antwort nicht abgeschlossen.');
+     if(event.type==='response.failed'||event.type==='response.incomplete'){
+      const code=event.response?.error?.code,message=event.response?.error?.message;
+      throw Error(mapChatGPTQuotaError(code,message)??message??code??'ChatGPT hat die Antwort nicht abgeschlossen.');
+     }
      if(event.type==='response.completed')completed=true;
     }
    };

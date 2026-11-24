@@ -1,3 +1,4 @@
+import {mapChatGPTQuotaError} from './chatgpt-quota.ts';
 const asObject=(value:unknown):Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
 const string=(value:unknown):string=>typeof value==='string'?value:'';
 export type Model={slug:string;display_name:string};
@@ -61,6 +62,8 @@ export async function readApiJSON(response:Response,expectedOrigin='https://api.
   const error=asObject(data.error);
   const code=string(error.code)||string(data.code);
   const message=string(error.message)||string(data.detail)||'HTTP '+response.status;
+  const quota=mapChatGPTQuotaError(code,message,response.status);
+  if(quota)throw Error(quota+trace);
   const safeCode=/^[a-zA-Z0-9_.-]{1,100}$/.test(code)?' ['+code+']':'';
   throw Error('ChatGPT-Anfrage abgelehnt (HTTP '+response.status+')'+safeCode+': '+message.slice(0,300)+trace);
  }
