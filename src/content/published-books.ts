@@ -15,6 +15,7 @@ import {PYTHON_FOUNDATIONS_VOLUME} from './python-foundations-volume.ts';
 import {JAVASCRIPT_CORE_VOLUME} from './javascript-core-volume.ts';
 import {JAVA_PLATFORM_VOLUME} from './java-platform-volume.ts';
 import {TYPESCRIPT_TYPE_SYSTEM_VOLUME} from './typescript-type-system-volume.ts';
+import {RUST_STANDARD_LIBRARY_VOLUME} from './rust-standard-library-volume.ts';
 
 /** Original learning material shipped in the application; never generated on the user's device. */
 export type PublishedLesson={
@@ -30,7 +31,7 @@ export type PublishedTextbook={
 const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
  java:[...JAVA_ADVANCED_LESSONS,...JAVA_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='java'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='java'),...JAVA_PLATFORM_VOLUME],
  typescript:[...TYPESCRIPT_PRACTICE_LESSONS,...TYPESCRIPT_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='typescript'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='typescript'),...TYPESCRIPT_TYPE_SYSTEM_VOLUME],
- rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='rust'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='rust')],
+ rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='rust'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='rust'),...RUST_STANDARD_LIBRARY_VOLUME],
  python:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='python'),...PYTHON_FOUNDATIONS_VOLUME],
  javascript:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='javascript'),...JAVASCRIPT_CORE_VOLUME],
  csharp:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='csharp'),
