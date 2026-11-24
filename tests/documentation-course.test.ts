@@ -17,9 +17,9 @@ const pack:InstalledDocumentPack={
  ]
 };
 const contents=new Map<string,string>([
- ['guide/basics.md','# Basics\nPython variables are assigned with equals.\n'+('foo = 1\n'.repeat(75))],
- ['guide/collections.md','# Collections\nA list is an ordered collection of values.\n'+('xs = [1,2]\n'.repeat(75))],
- ['guide/functions.md','# Functions\nA function is defined with def.\n'+('def f(): return 1\n'.repeat(90))]
+ ['guide/basics.md','# Basics\nPython variables are assigned with equals.\n'+('foo = 1\n'.repeat(750))],
+ ['guide/collections.md','# Collections\nA list is an ordered collection of values.\n'+('xs = [1,2]\n'.repeat(750))],
+ ['guide/functions.md','# Functions\nA function is defined with def.\n'+('def f(): return 1\n'.repeat(700))]
 ]);
 const read=async(p:string):Promise<DocumentView>=>({path:p,title:p,text:contents.get(p)??''});
 test('splitting and planning covers every original document character, without a silent sample',async()=>{
