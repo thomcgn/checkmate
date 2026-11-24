@@ -1,19 +1,24 @@
 import React,{useState} from 'react';
+import type {BeginnerBook} from '../content/pizzeria-book.ts';
 import {PIZZERIA_BOOK} from '../content/pizzeria-book.ts';
 import {PIZZERIA_OPERATIONS_BOOK} from '../content/pizzeria-operations.ts';
+import {PIZZERIA_TYPESCRIPT_BOOK} from '../content/pizzeria-typescript-book.ts';
+import {PIZZERIA_TYPESCRIPT_OPERATIONS_BOOK} from '../content/pizzeria-typescript-operations.ts';
 import './academy.css';
 
-type VolumeId='band1'|'band2';
-const VOLUMES:Readonly<Record<VolumeId,{label:string;key:string;book:typeof PIZZERIA_BOOK}>>={
- band1:{label:'Band 1 · Die Pizzeria',key:'checkmate:pizzeria-book:v1',book:PIZZERIA_BOOK},
- band2:{label:'Band 2 · In Betrieb',key:'checkmate:pizzeria-operations:v1',book:PIZZERIA_OPERATIONS_BOOK}
+type VolumeId='band1'|'band2'|'ts-band1'|'ts-band2';
+const VOLUMES:Readonly<Record<VolumeId,{label:string;short:string;key:string;book:BeginnerBook}>>={
+ band1:{label:'Band 1 · Die Pizzeria',key:'checkmate:pizzeria-book:v1',book:PIZZERIA_BOOK,short:'BAND 1'},
+ band2:{label:'Band 2 · In Betrieb',key:'checkmate:pizzeria-operations:v1',book:PIZZERIA_OPERATIONS_BOOK,short:'BAND 2'},
+  'ts-band1':{label:'TypeScript · Band 1',short:'TYPESCRIPT · BAND 1',key:'checkmate:pizzeria-typescript-book:v1',book:PIZZERIA_TYPESCRIPT_BOOK},
+  'ts-band2':{label:'TypeScript · Band 2',short:'TYPESCRIPT · BAND 2',key:'checkmate:pizzeria-typescript-operations:v1',book:PIZZERIA_TYPESCRIPT_OPERATIONS_BOOK}
 };
 function readCompleted(key:string):readonly string[]{
  try{
   const value:unknown=JSON.parse(localStorage.getItem(key)??'[]');
   if(!Array.isArray(value))return [];
-  const known=new Set(PIZZERIA_BOOK.chapters.map(chapter=>chapter.id)
-   .concat(PIZZERIA_OPERATIONS_BOOK.chapters.map(chapter=>chapter.id)));
+  const known=new Set([PIZZERIA_BOOK,PIZZERIA_OPERATIONS_BOOK,PIZZERIA_TYPESCRIPT_BOOK,
+   PIZZERIA_TYPESCRIPT_OPERATIONS_BOOK].flatMap(book=>book.chapters.map(chapter=>chapter.id)));
   return value.filter((id):id is string=>typeof id==='string'&&known.has(id));
  }catch{return [];}
 }
@@ -48,7 +53,7 @@ export function AcademyReader():React.JSX.Element{
     onClick={()=>switchVolume(id)}>{VOLUMES[id].label}</button>)}
   </div>
   <header className="documentation-header">
-   <span className="eyebrow">CHECKMATE / EINSTEIGERBUCH · {volume==='band1'?'BAND 1':'BAND 2'}</span>
+   <span className="eyebrow">CHECKMATE / EINSTEIGERBUCH · {VOLUMES[volume].short}</span>
    <h2>{book.title}</h2>
    <p>{book.scenario}</p>
    <small>{book.audience} · {book.chapters.length} Kapitel · {completed.length} als verstanden markiert</small>
