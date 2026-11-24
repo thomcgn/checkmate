@@ -77,7 +77,12 @@ export class BookStore{
    if(!allowed(book)||book.id+'.json'!==filename)throw Error('Beschädigtes Lehrbuch: '+filename);
    books.push(book);
   }
-  return books.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||a.id.localeCompare(b.id));
+  return books.sort((a,b)=>{
+   const left=a.teachingBook?.series,right=b.teachingBook?.series;
+   if(left&&right&&a.repository===b.repository&&a.head===b.head&&left.title===right.title)
+    return left.volume-right.volume;
+   return b.createdAt.localeCompare(a.createdAt)||a.id.localeCompare(b.id);
+  });
  }
  async add(book:RepositoryAnalysis):Promise<void>{
   if(!allowed(book)||book.markdown.length>250_000)throw Error('Ungültiges Lernbuch');
