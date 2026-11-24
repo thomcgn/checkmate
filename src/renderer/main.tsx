@@ -10,8 +10,9 @@ import {PublishedTextbookLibrary} from './published-textbook-library';
 import {DocumentationInstaller} from './documentation-installer';
 import {RepositoryWorkspace} from './repository-workspace';
 import {TextbookReader} from './textbook-reader';
+import {AcademyReader} from './academy-reader';
 import {useRef} from 'react';
-import {BookOpenText,Boxes,Download,GraduationCap,Search,Command,Settings2,SlidersHorizontal} from 'lucide-react';
+import {BookOpenText,Boxes,Download,GraduationCap,Search,Command,Settings2,SlidersHorizontal,Sparkles} from 'lucide-react';
 import {Button} from './ui/primitives';
 import {CommandPalette} from './ui/command-palette';
 import './checkmate-theme.css';
@@ -27,10 +28,10 @@ const VIEW_LABELS:Readonly<Record<View,{glyph:string;label:string}>>={
  practice:{glyph:'⌘',label:'Üben & Verinnerlichen'}
 };
 const MODE_TITLES:Readonly<Record<LibraryMode,string>>={
- concepts:'Konzeptbibliothek',books:'Lehrbücher',handbooks:'Originaldokumentationen',
+ concepts:'Konzeptbibliothek',academy:'Einsteigerbuch',books:'Lehrbücher',handbooks:'Originaldokumentationen',
  setup:'Dokumentationen einrichten',repositories:'Repository Lab'
 };
-type LibraryMode='concepts'|'books'|'handbooks'|'repositories'|'setup';
+type LibraryMode='concepts'|'academy'|'books'|'handbooks'|'repositories'|'setup';
 type Knowledge='unknown'|'learning'|'understood';
 type StudyState={version:1;progress:Record<string,Knowledge>;notes:Record<string,string>};
 const STORAGE_KEY='checkmate:concept-library:v1';
@@ -115,11 +116,12 @@ function App():React.JSX.Element{
    <div className="brand"><span className="brand-crown" aria-hidden="true">♚</span><div><strong>CHECKMATE</strong><small>learn the logic</small></div></div>
    <div className="sidebar-section"><span className="eyebrow">LEARNING OS</span>
     <Button variant="ghost" className={libraryMode==='concepts'?'active-nav':'nav-secondary'} aria-current={libraryMode==='concepts'?'page':undefined} aria-label="Konzeptbibliothek" onClick={()=>setLibraryMode('concepts')}><Boxes size={16} aria-hidden="true"/><span>Konzeptbibliothek</span><small>{CONCEPTS.length}</small></Button>
+    <Button variant="ghost" className={libraryMode==='academy'?'active-nav':'nav-secondary'} aria-current={libraryMode==='academy'?'page':undefined} aria-label="Einsteigerbuch" onClick={()=>setLibraryMode('academy')}><GraduationCap size={16} aria-hidden="true"/><span>Einsteigerbuch</span><small>Neu</small></Button>
     <Button variant="ghost" className={libraryMode==='books'?'active-nav':'nav-secondary'} aria-current={libraryMode==='books'?'page':undefined} aria-label="Lehrbücher" onClick={()=>setLibraryMode('books')}><BookOpenText size={16} aria-hidden="true"/><span>Lehrbücher</span><small>Offline</small></Button>
     <Button variant="ghost" className={libraryMode==='handbooks'?'active-nav':'nav-secondary'} aria-current={libraryMode==='handbooks'?'page':undefined} aria-label="Originaldokumentationen" onClick={()=>setLibraryMode('handbooks')}><BookOpenText size={16} aria-hidden="true"/><span>Originaldokumentationen</span></Button>
     <Button variant="ghost" className={libraryMode==='setup'?'active-nav':'nav-secondary'} aria-current={libraryMode==='setup'?'page':undefined} aria-label="Dokumentationen einrichten" onClick={()=>setLibraryMode('setup')}><Download size={16} aria-hidden="true"/><span>Dokumentationen einrichten</span></Button>
     <Button variant="ghost" className={libraryMode==='repositories'?'active-nav':'nav-secondary'} aria-current={libraryMode==='repositories'?'page':undefined} aria-label="Repository Lab" onClick={()=>setLibraryMode('repositories')}><Command size={16} aria-hidden="true"/><span>Repository Lab</span><small>AI</small></Button>
-    <div className="nav-secondary"><GraduationCap size={16} aria-hidden="true"/><span>Lernpfad</span><small>{recommended.length} offen</small></div>
+    <div className="nav-secondary"><Sparkles size={16} aria-hidden="true"/><span>Lernpfad</span><small>{recommended.length} offen</small></div>
    </div>
    {libraryMode==='concepts'&&<details className="sidebar-themes">
     <summary aria-label="Themen filter"><SlidersHorizontal size={18} aria-hidden="true"/></summary>
@@ -204,7 +206,7 @@ function App():React.JSX.Element{
      </div>
     </article>
    </div>
-   </>:libraryMode==='books'?<PublishedTextbookLibrary/>:libraryMode==='handbooks'?<DocumentationLibrary openSetup={()=>setLibraryMode('setup')}/>:libraryMode==='setup'?<DocumentationInstaller openLibrary={()=>setLibraryMode('handbooks')}/>:<RepositoryWorkspace/>}
+   </>:libraryMode==='academy'?<AcademyReader/>:libraryMode==='books'?<PublishedTextbookLibrary/>:libraryMode==='handbooks'?<DocumentationLibrary openSetup={()=>setLibraryMode('setup')}/>:libraryMode==='setup'?<DocumentationInstaller openLibrary={()=>setLibraryMode('handbooks')}/>:<RepositoryWorkspace/>}
    <footer className="footnote"><span>CHECKMATE · Die Idee verstehen, nicht die Syntax auswendig lernen.</span><span>Wissensbasis v0.1 · {languageIds.length} Sprachen · {CONCEPTS.length} Konzepte</span></footer>
   </main>
  </div>;

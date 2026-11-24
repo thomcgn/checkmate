@@ -1,12 +1,13 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import {BookOpenText,Boxes,Command,Download,FlaskConical,Search,X} from 'lucide-react';
+import {BookOpenText,Boxes,Command,Download,FlaskConical,GraduationCap,Search,X} from 'lucide-react';
 import {Button} from './primitives';
 
-export type Destination='concepts'|'books'|'handbooks'|'setup'|'repositories';
+export type Destination='concepts'|'academy'|'books'|'handbooks'|'setup'|'repositories';
 interface Item{readonly id:Destination;readonly title:string;readonly description:string;readonly icon:React.JSX.Element}
 const options:readonly Item[]=[
  {id:'concepts',title:'Konzeptbibliothek',description:'Begriffe, Sprachvergleiche und Übungen',icon:<Boxes size={17}/>},
+  {id:'academy',title:'Einsteigerbuch',description:'Die Pizzeria: Java von Grund auf für Neulinge',icon:<GraduationCap size={17}/>},
  {id:'books',title:'Lehrbücher',description:'Fertige Offline-Fachbücher lesen und lernen',icon:<BookOpenText size={17}/>},
  {id:'handbooks',title:'Originaldokumentationen',description:'Offizielle Sprachreferenzen nachschlagen',icon:<BookOpenText size={17}/>},
  {id:'setup',title:'Dokumentationen einrichten',description:'Referenzpakete installieren und verwalten',icon:<Download size={17}/>},

@@ -40,6 +40,10 @@ Die erste Version analysiert pro Anfrage eine begrenzte Stichprobe statt alle Co
 
 Mehr Details zu Anmeldung, Datenschutz und Grenzen: [Repository Lab](docs/REPOSITORY_LAB.md).
 
+## Einsteigerbuch „Die Pizzeria"
+
+Unter **Einsteigerbuch** liegt Band 1 eines durchgehenden Lehrbuchs für Schülerinnen und Schüler ohne Programmiererfahrung. 37 geplante Kapitel führen von der deutschen Regel („WENN es regnet, DANN nimm den Schirm, SONST wirst du nass") über Datenkarten, Records und Generics bis zur kleinen Spring-Boot-Bestell-API. Die ersten vier Kapitel sind vollständig ausformuliert; die übrigen Kapitel zeigen bereits Alltagsproblem, Regel, Lernziele und Quelle. Details und redaktioneller Maßstab: [Einsteigerbuch](docs/BEGINNER_BOOK.md).
+
 ## Konzeptbibliothek mit Dokumentationsbezug
 
 Die Konzeptbibliothek ist der Einstieg in die Wissensbasis. Jedes Konzept besitzt ein ausführliches, eigenständig formuliertes Lehrbuchkapitel mit Lernzielen, Lesezeiten, Verständnisfragen und Transferaufgabe. Zusätzlich werden erläuterte Begriffe, verwandte Konzepte und die passenden Kapitel des Lernpfads angezeigt. Über „Quellen & Vertiefung“ sind die offiziellen Referenzen der zehn Sprachprofile verlinkt; im Sprachvergleich erscheinen Version, Plattform und bewährte Regeln aus dem Sprachprofil. Vollständige Konzepte, Lehrkapitel, Sprachprofile und veröffentlichte Fachbücher werden durch gemeinsame Validatoren geprüft: `validateConceptCatalog`, `validateTextbook` und `validatePublishedBooks`.
