@@ -86,3 +86,7 @@ Vier neu verfasste Fachkapitel ergänzen die TypeScript-Ausgabe: strukturelle Ob
 ## Rust: Standardbibliothek, Besitzmodelle und Projektpraxis
 
 Fünf zusammenhängende Originalmanuskript-Kapitel erweitern das Rust-Buch um `Box`, `Rc`, `RefCell` und `Weak`, Cargo-Crates/Module/Sichtbarkeit, Closure-Captures und `Fn`-Traits, `Arc`/`Mutex`/Threads/Channels sowie Unit- und Integrationstests. Alle fünf sind mit erläuternden Langtexten, Beispielen, Aufgaben und Lösungswegen als fertiger Offline-Leseinhalt eingebunden. Die offizielle Rust-Book-Dokumentation dient als fachliche Referenz, nicht als kopierter Buchtext. **Editorial Release Gate:** Die Abdeckung muss zusätzlich redaktionell geprüft und freigegeben werden; das bloße Befüllen aller geplanten Kapitel-IDs genügt nicht mehr, um den Status eines Buchs auf production-ready zu setzen. Keines der zehn Bücher ist bisher als vollständig auditiert freigegeben.
+
+## Fachkapitel: C#, C++, PHP, Go, Kotlin
+
+Der aktuelle Manuskriptausbau ergänzt fünf neue Originalkapitel: C# Records, Wertgleichheit und `with`; C++ Move-Konstruktoren, `std::move`, Exception-Garantien und Rule of Zero; PHP PDO-Prepared-Statements, SQL-Strukturtrennung und Transaktionen; Go generische Typparameter und Constraints; Kotlin sealed Statusfamilien und exhaustive `when`-Ausdrücke. Die Kapitel sind feste Offline-Lehrtexte mit eigener Formulierung, Aufgaben, Lösungen und Referenz zur jeweiligen Originaldokumentation. Für alle zehn Sprachen bleibt die notwendige umfassende Dokumentationsabdeckung und redaktionelle Freigabe weiterhin offen.
