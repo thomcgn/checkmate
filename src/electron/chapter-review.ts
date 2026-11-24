@@ -25,11 +25,13 @@ export function validateChapterReview(raw:string,chapter:LessonSection,fragments
  });
  const claims:ReviewedClaim[]=data.claims.map(value=>{
   const item=object(value);
-  if(!item||typeof item.claim!=='string'||typeof item.path!=='string'||typeof item.quote!=='string'||
-   item.claim.trim().length<15||item.claim.length>600||item.quote.length>2000||
-   !chapter.explanation.includes(item.claim)||!fragments.some(f=>f.path===item.path&&item.quote.length>=10&&f.text.includes(item.quote)))
+  if(!item||typeof item.claim!=='string'||typeof item.path!=='string'||typeof item.quote!=='string')
    throw Error('Review-Behauptung ist nicht im Kapitel oder Quelltext nachweisbar.');
-  return {claim:item.claim,path:item.path,quote:item.quote};
+  const {claim,path,quote}=item as {claim:string;path:string;quote:string};
+  if(claim.trim().length<15||claim.length>600||quote.length>2000||
+   !chapter.explanation.includes(claim)||!fragments.some(f=>f.path===path&&quote.length>=10&&f.text.includes(quote)))
+   throw Error('Review-Behauptung ist nicht im Kapitel oder Quelltext nachweisbar.');
+  return {claim,path,quote};
  });
  if(data.verdict==='pass'&&(findings.some(f=>f.severity!=='minor')||claims.length<1))
   throw Error('Lehrbuch-Review hat keine belastbare Freigabe.');
