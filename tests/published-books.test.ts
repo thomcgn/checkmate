@@ -9,6 +9,7 @@ import {JAVA_NEW_CHAPTERS,TYPESCRIPT_NEW_CHAPTERS,RUST_NEW_CHAPTERS} from '../sr
 import {CONTROL_FLOW_LESSONS} from '../src/content/control-flow-expansion.ts';
 import {NEW_LANGUAGE_CHAPTERS} from '../src/content/seven-language-chapters.ts';
 import {SECOND_LANGUAGE_CHAPTERS} from '../src/content/seven-language-second-chapters.ts';
+import {THIRD_LANGUAGE_CHAPTERS} from '../src/content/ten-language-third-chapters.ts';
 test('published books are complete original editorial content, not model placeholders',()=>{
  assert.deepEqual(validateTextbook(),[]);
  assert.deepEqual(validatePublishedBooks(),[]);
@@ -19,7 +20,7 @@ test('published books are complete original editorial content, not model placeho
  for(const book of PUBLISHED_TEXTBOOKS){
   assert.ok(book.lessons.length>=2,book.id);
   for(const lesson of book.lessons){
-   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS,...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS].some(chapter=>chapter.id===lesson.id));
+   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS,...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].some(chapter=>chapter.id===lesson.id));
    assert.equal(lesson.implementation.language,book.language.id);
    assert.ok(lesson.chapter.sections.length>=4);
    assert.ok(lesson.chapter.checkpoints.length>=2);
@@ -152,6 +153,30 @@ test('second original chapters extend all seven language books without filler',(
    assert.equal(chapter.chapter.objectives.length,3);
    assert.ok(chapter.chapter.transfer.prompt.length>100);
    assert.ok(chapter.chapter.transfer.answer.length>100);
+  }
+ }
+});
+
+test('third authored manuscript pass adds real chapters to all ten language books',()=>{
+ const languages=['python','javascript','typescript','java','csharp','cpp','php','go','rust','kotlin'];
+ assert.deepEqual(THIRD_LANGUAGE_CHAPTERS.map(item=>item.implementation.language).sort(),[...languages].sort());
+ const titles=new Set<string>();
+ for(const language of languages){
+  const book=publishedBook('checkmate-'+language+'-basics-v1');
+  assert.ok(book);
+  const chapters=THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language===language);
+  assert.equal(chapters.length,1);
+  for(const chapter of chapters){
+   assert.ok(!titles.has(chapter.id));titles.add(chapter.id);
+   assert.equal(book.lessons.filter(lesson=>lesson.id===chapter.id).length,1);
+   assert.equal(chapter.chapter.sections.length,4);
+   assert.ok(chapter.chapter.sections.every(section=>section.paragraphs.length===2&&!!section.code&&!!section.annotation));
+   assert.ok(chapter.chapter.sections.reduce((sum,section)=>sum+section.paragraphs.join(' ').length,0)>2200);
+   assert.equal(chapter.chapter.checkpoints.length,3);
+   assert.equal(chapter.chapter.objectives.length,3);
+   assert.ok(chapter.chapter.transfer.prompt.length>100);
+   assert.ok(chapter.chapter.transfer.answer.length>100);
+   assert.ok(chapter.implementation.docs.startsWith('https://'));
   }
  }
 });
