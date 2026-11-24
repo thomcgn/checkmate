@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import path from 'node:path';
 import type {RepositoryAnalysis} from '../shared/repository';
 
-const MAX_BOOKS=40;
+const MAX_BOOKS=2000;
 const MAX_BOOK_BYTES=700_000;
 const MAX_LEGACY_BYTES=16_000_000;
 const validId=(id:string):boolean=>/^[a-f0-9-]{36}$/.test(id);
@@ -84,7 +84,7 @@ export class BookStore{
   const serialized=JSON.stringify(book);
   if(Buffer.byteLength(serialized)>MAX_BOOK_BYTES)throw Error('Lernbuch überschreitet die Speichergrenze.');
   const existing=await this.list();
-  if(existing.length>=MAX_BOOKS)throw Error('Maximal 40 Analysebücher. Bitte zuerst alte Bücher entfernen.');
+  if(existing.length>=MAX_BOOKS)throw Error('Maximal 2000 Lehrbücher. Bitte zuerst alte Bücher entfernen.');
   if(existing.some(b=>b.id===book.id))throw Error('Lernbuch-ID bereits vorhanden.');
   await this.atomicWrite(this.bookFile(book.id),serialized);
  }
