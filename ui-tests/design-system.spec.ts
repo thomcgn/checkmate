@@ -27,7 +27,7 @@ test('10-inch desktop app uses Checkmate colors, deliberate scrolling and keyboa
  await page.keyboard.press('Control+k');
  await expect(page.getByRole('dialog')).toBeVisible();
  await page.getByRole('textbox',{name:'Bereiche durchsuchen'}).fill('Originaldokumentationen');
- await page.getByRole('dialog').getByRole('button',{name:/Sprachenhandbücher/}).click();
+ await page.getByRole('dialog').getByRole('button',{name:/Originaldokumentationen/}).click();
  await expect(page.getByRole('heading',{name:'Offizielle Referenzdokumentationen'})).toBeVisible();
  await expect(page.getByRole('dialog')).toHaveCount(0);
  await page.keyboard.press('Control+k');
