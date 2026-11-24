@@ -27,55 +27,48 @@ test('book identifiers resolve consistently offline',()=>{
  assert.equal(publishedBook('non-existent'),undefined);
 });
 
-test('Java advanced practice volume ships real substantial explanations and checked learning paths',()=>{
- const book=publishedBook('checkmate-java-practice-v1');
- assert.ok(book);
- assert.equal(book.lessons.length,4);
- assert.deepEqual(book.lessons.map(l=>l.id),[
-  'java-type-relationships','java-collection-design','java-stream-reasoning','java-test-boundaries'
- ]);
- for(const chapter of book.lessons){
-  assert.ok(chapter.chapter.objectives.length>=3);
-  assert.ok(chapter.chapter.sections.length>=4);
-  assert.ok(chapter.chapter.sections.reduce((n,s)=>n+s.paragraphs.join(' ').length,0)>2400);
-  assert.ok(chapter.chapter.sections.filter(s=>s.code).length>=3);
-  assert.ok(chapter.chapter.checkpoints.length>=2);
-  assert.ok(chapter.chapter.transfer.prompt.length>100);
-  assert.ok(chapter.chapter.transfer.answer.length>100);
+
+test('every existing authored Java, TypeScript and Rust chapter belongs to exactly one comprehensive textbook',()=>{
+ const extensions=[
+  {id:'java',chapters:JAVA_ADVANCED_LESSONS},
+  {id:'typescript',chapters:TYPESCRIPT_PRACTICE_LESSONS},
+  {id:'rust',chapters:RUST_PRACTICE_LESSONS}
+ ] as const;
+ for(const extension of extensions){
+  const book=publishedBook('checkmate-'+extension.id+'-basics-v1');
+  assert.ok(book);
+  assert.ok(book.curriculum);
+  assert.equal(book.editorialStatus,'in-progress');
+  assert.ok(book.curriculum.parts.length>=5);
+  const plan=book.curriculum.parts.flatMap(part=>part.chapters);
+  assert.ok(plan.length>=30,'expected full editorial roadmap for '+extension.id);
+  const ids=new Set(plan.map(chapter=>chapter.id));
+  assert.equal(ids.size,plan.length);
+  const authored=book.lessons.map(lesson=>lesson.id);
+  assert.equal(new Set(authored).size,authored.length);
+  assert.ok(extension.chapters.every(chapter=>authored.includes(chapter.id)));
+  assert.ok(authored.every(id=>ids.has(id)),'published chapter missing from book plan');
+  assert.ok(plan.some(chapter=>!authored.includes(chapter.id)),'missing chapters must not be hidden');
+  assert.equal(book.editorialStatus,'in-progress');
+  assert.equal(publishedBook('checkmate-'+extension.id+'-practice-v1'),undefined,
+   'old miniature practice volumes must not appear as separate books');
+  for(const chapter of extension.chapters){
+   assert.ok(chapter.chapter.objectives.length>=3);
+   assert.ok(chapter.chapter.sections.length>=4);
+   assert.ok(chapter.chapter.sections.filter(section=>section.code).length>=3);
+   assert.ok(chapter.chapter.sections.reduce((n,section)=>n+section.paragraphs.join(' ').length,0)>2400);
+   assert.ok(chapter.chapter.checkpoints.length>=2);
+   assert.ok(chapter.chapter.transfer.prompt.length>100);
+   assert.ok(chapter.chapter.transfer.answer.length>100);
+  }
  }
 });
 
-test('TypeScript volume is fully authored and bundled without model generation',()=>{
- const volume=publishedBook('checkmate-typescript-practice-v1');
- assert.ok(volume);
- assert.deepEqual(volume.lessons.map(chapter=>chapter.id),[
-  'ts-unknown-boundaries','ts-discriminated-ui','ts-react-async'
- ]);
- for(const chapter of volume.lessons){
-  assert.ok(chapter.chapter.objectives.length>=3);
-  assert.ok(chapter.chapter.sections.length>=4);
-  assert.ok(chapter.chapter.sections.filter(section=>section.code).length>=3);
-  assert.ok(chapter.chapter.sections.reduce((n,section)=>n+section.paragraphs.join(' ').length,0)>2400);
-  assert.ok(chapter.chapter.checkpoints.length>=3);
-  assert.ok(chapter.chapter.transfer.prompt.length>=100);
-  assert.ok(chapter.chapter.transfer.answer.length>=100);
- }
-});
-
-test('Rust practice volume covers ownership, references and error paths without runtime AI',()=>{
- const volume=publishedBook('checkmate-rust-practice-v1');
- assert.ok(volume);
- assert.deepEqual(volume.lessons.map(chapter=>chapter.id),[
-  'rust-ownership-traces','rust-borrowing-lifetimes','rust-results-iterators'
- ]);
- for(const lesson of volume.lessons){
-  assert.ok(lesson.chapter.objectives.length>=3);
-  assert.ok(lesson.chapter.sections.length>=4);
-  assert.ok(lesson.chapter.sections.filter(section=>section.code).length>=3);
-  assert.ok(lesson.chapter.sections.reduce((n,section)=>n+section.paragraphs.join(' ').length,0)>2400);
-  assert.ok(lesson.chapter.checkpoints.length>=3);
-  assert.ok(lesson.chapter.transfer.prompt.length>=100);
-  assert.ok(lesson.chapter.transfer.answer.length>=100);
-  assert.equal(lesson.implementation.language,'rust');
- }
+test('a book cannot be labelled editorially complete while planned chapters are absent',()=>{
+ const java=publishedBook('checkmate-java-basics-v1');
+ assert.ok(java);
+ assert.deepEqual(validatePublishedBooks([{...java,editorialStatus:'complete'}])
+  .filter(message=>message.includes('fälschlich als fertig')),[
+   'Unvollständiger Band fälschlich als fertig bezeichnet: checkmate-java-basics-v1'
+  ]);
 });
