@@ -10,6 +10,7 @@ import {CONTROL_FLOW_LESSONS} from '../src/content/control-flow-expansion.ts';
 import {NEW_LANGUAGE_CHAPTERS} from '../src/content/seven-language-chapters.ts';
 import {SECOND_LANGUAGE_CHAPTERS} from '../src/content/seven-language-second-chapters.ts';
 import {THIRD_LANGUAGE_CHAPTERS} from '../src/content/ten-language-third-chapters.ts';
+import {PYTHON_FOUNDATIONS_VOLUME} from '../src/content/python-foundations-volume.ts';
 test('published books are complete original editorial content, not model placeholders',()=>{
  assert.deepEqual(validateTextbook(),[]);
  assert.deepEqual(validatePublishedBooks(),[]);
@@ -20,7 +21,7 @@ test('published books are complete original editorial content, not model placeho
  for(const book of PUBLISHED_TEXTBOOKS){
   assert.ok(book.lessons.length>=2,book.id);
   for(const lesson of book.lessons){
-   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS,...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].some(chapter=>chapter.id===lesson.id));
+   assert.ok(TEXTBOOK.some(chapter=>chapter.conceptId===lesson.id)||JAVA_ADVANCED_LESSONS.some(chapter=>chapter.id===lesson.id)||TYPESCRIPT_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||RUST_PRACTICE_LESSONS.some(chapter=>chapter.id===lesson.id)||[...JAVA_NEW_CHAPTERS,...TYPESCRIPT_NEW_CHAPTERS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS,...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS,...PYTHON_FOUNDATIONS_VOLUME].some(chapter=>chapter.id===lesson.id));
    assert.equal(lesson.implementation.language,book.language.id);
    assert.ok(lesson.chapter.sections.length>=4);
    assert.ok(lesson.chapter.checkpoints.length>=2);
@@ -178,5 +179,25 @@ test('third authored manuscript pass adds real chapters to all ten language book
    assert.ok(chapter.chapter.transfer.answer.length>100);
    assert.ok(chapter.implementation.docs.startsWith('https://'));
   }
+ }
+});
+
+test('source-grounded Python foundations volume adds five complete original chapters',()=>{
+ const book=publishedBook('checkmate-python-basics-v1');
+ assert.ok(book);
+ assert.equal(book.editorialStatus,'in-progress');
+ assert.deepEqual(PYTHON_FOUNDATIONS_VOLUME.map(ch=>ch.id),[
+  'py-sequences-mappings','py-modules-packages','py-dataclasses-model','py-typing-boundaries','py-pathlib-files'
+ ]);
+ for(const ch of PYTHON_FOUNDATIONS_VOLUME){
+  assert.equal(book.lessons.filter(item=>item.id===ch.id).length,1);
+  assert.equal(ch.chapter.sections.length,4);
+  assert.ok(ch.chapter.sections.every(s=>s.paragraphs.length===2&&!!s.code&&!!s.annotation));
+  assert.ok(ch.chapter.sections.reduce((n,s)=>n+s.paragraphs.join(' ').length,0)>3000);
+  assert.equal(ch.chapter.objectives.length,3);
+  assert.equal(ch.chapter.checkpoints.length,3);
+  assert.ok(ch.chapter.transfer.prompt.length>140);
+  assert.ok(ch.chapter.transfer.answer.length>150);
+  assert.ok(ch.implementation.docs.startsWith('https://docs.python.org/3/'));
  }
 });
