@@ -5,6 +5,7 @@ import {COMPLETE_CONCEPTS as CONCEPTS} from '../content/complete-concepts';
 import {searchConcepts,recommendedConcepts,compareLanguages} from '../content/concept-library';
 import type {Stage} from '../shared/types';
 import {DocumentationLibrary} from './documentation-library';
+import {PublishedTextbookLibrary} from './published-textbook-library';
 import {DocumentationInstaller} from './documentation-installer';
 import {RepositoryWorkspace} from './repository-workspace';
 import {TextbookReader} from './textbook-reader';
@@ -17,7 +18,7 @@ import './style.css';
 import './checkmate-desktop.css';
 
 type View='textbook'|'compare'|'practice';
-type LibraryMode='concepts'|'handbooks'|'repositories'|'setup';
+type LibraryMode='concepts'|'books'|'handbooks'|'repositories'|'setup';
 type Knowledge='unknown'|'learning'|'understood';
 type StudyState={version:1;progress:Record<string,Knowledge>;notes:Record<string,string>};
 const STORAGE_KEY='checkmate:concept-library:v1';
@@ -79,7 +80,8 @@ function App():React.JSX.Element{
    <div className="brand"><span className="brand-crown" aria-hidden="true">♚</span><div><strong>CHECKMATE</strong><small>learn the logic</small></div></div>
    <div className="sidebar-section"><span className="eyebrow">LEARNING OS</span>
     <Button variant="ghost" className={libraryMode==='concepts'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('concepts')}><Boxes size={16} aria-hidden="true"/><span>Konzeptbibliothek</span><small>{CONCEPTS.length}</small></Button>
-    <Button variant="ghost" className={libraryMode==='handbooks'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('handbooks')}><BookOpenText size={16} aria-hidden="true"/><span>Sprachenhandbücher</span></Button>
+    <Button variant="ghost" className={libraryMode==='books'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('books')}><BookOpenText size={16} aria-hidden="true"/><span>Lehrbücher</span><small>Offline</small></Button>
+    <Button variant="ghost" className={libraryMode==='handbooks'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('handbooks')}><BookOpenText size={16} aria-hidden="true"/><span>Originaldokumentationen</span></Button>
     <Button variant="ghost" className={libraryMode==='setup'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('setup')}><Download size={16} aria-hidden="true"/><span>Dokumentationen einrichten</span></Button>
     <Button variant="ghost" className={libraryMode==='repositories'?'active-nav':'nav-secondary'} onClick={()=>setLibraryMode('repositories')}><Command size={16} aria-hidden="true"/><span>Repository Lab</span><small>AI</small></Button>
     <div className="nav-secondary"><GraduationCap size={16} aria-hidden="true"/><span>Lernpfad</span><small>{recommended.length} offen</small></div>
@@ -143,7 +145,7 @@ function App():React.JSX.Element{
       </>}
     </article>
    </div>
-   </>:libraryMode==='handbooks'?<DocumentationLibrary openSetup={()=>setLibraryMode('setup')}/>:libraryMode==='setup'?<DocumentationInstaller openLibrary={()=>setLibraryMode('handbooks')}/>:<RepositoryWorkspace/>}
+   </>:libraryMode==='books'?<PublishedTextbookLibrary/>:libraryMode==='handbooks'?<DocumentationLibrary openSetup={()=>setLibraryMode('setup')}/>:libraryMode==='setup'?<DocumentationInstaller openLibrary={()=>setLibraryMode('handbooks')}/>:<RepositoryWorkspace/>}
    <footer className="footnote"><span>CHECKMATE · Die Idee verstehen, nicht die Syntax auswendig lernen.</span><span>Wissensbasis v0.1 · {languageIds.length} Sprachen · {CONCEPTS.length} Konzepte</span></footer>
   </main>
  </div>;

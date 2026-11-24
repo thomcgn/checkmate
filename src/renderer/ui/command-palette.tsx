@@ -3,11 +3,12 @@ import * as Dialog from '@radix-ui/react-dialog';
 import {BookOpenText,Boxes,Command,Download,FlaskConical,Search,X} from 'lucide-react';
 import {Button} from './primitives';
 
-export type Destination='concepts'|'handbooks'|'setup'|'repositories';
+export type Destination='concepts'|'books'|'handbooks'|'setup'|'repositories';
 interface Item{readonly id:Destination;readonly title:string;readonly description:string;readonly icon:React.JSX.Element}
 const options:readonly Item[]=[
  {id:'concepts',title:'Konzeptbibliothek',description:'Begriffe, Sprachvergleiche und Übungen',icon:<Boxes size={17}/>},
- {id:'handbooks',title:'Sprachenhandbücher',description:'Offline-Sprachreferenzen durchsuchen',icon:<BookOpenText size={17}/>},
+ {id:'books',title:'Lehrbücher',description:'Fertige Offline-Fachbücher lesen und lernen',icon:<BookOpenText size={17}/>},
+ {id:'handbooks',title:'Originaldokumentationen',description:'Offizielle Sprachreferenzen nachschlagen',icon:<BookOpenText size={17}/>},
  {id:'setup',title:'Dokumentationen einrichten',description:'Referenzpakete installieren und verwalten',icon:<Download size={17}/>},
  {id:'repositories',title:'Repository Lab',description:'Echten Quellcode analysieren und verstehen',icon:<FlaskConical size={17}/>}
 ];

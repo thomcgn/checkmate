@@ -7,14 +7,15 @@ Checkmate ist eine eigenständige Desktop-Lernsoftware, mit der man Programmierk
 ## Heute im Entwicklungsstand vorhanden
 
 - **Sprachübergreifende Konzeptbibliothek:** Von Variablen, Listen und Maps bis Generics, Records, Streams, Ownership, Fehlerbehandlung und Nebenläufigkeit.
-- **Offline-Sprachenhandbücher:** Bereits importierte Originalreferenzen für Python, JavaScript, TypeScript, Java, C#, C++, PHP, Go, Rust und Kotlin erscheinen in der Handbuchbibliothek. Dort sind sie ohne Browserwechsel lesbar und durchsuchbar.
+- **Fertige Offline-Lehrbücher:** Checkmate liefert eigenständig verfasste Buchkapitel und sprachspezifische Beispiele direkt mit der Anwendung aus. Kein ChatGPT-Konto, kein API-Key und keine Modellgenerierung erforderlich.
+- **Originaldokumentationen zum Nachschlagen:** Bereits importierte Originalreferenzen für Python, JavaScript, TypeScript, Java, C#, C++, PHP, Go, Rust und Kotlin erscheinen in der Handbuchbibliothek. Dort sind sie ohne Browserwechsel lesbar und durchsuchbar.
 - **Vergleich statt bloßer Syntaxübersetzung:** Beispielsweise Java `HashMap`, Python `dict`, Rust `HashMap` und JavaScript `Map` – mit ausdrücklichen Unterschieden bei Semantik und Laufzeitverhalten.
 - **Suche und Lernpfad:** Konzeptfilter, Suchbegriffe, Voraussetzungen und Lernstufen.
 - **Offline-Nachschlagen:** Die benötigten Erklärungen stehen in Checkmate selbst. Externe Dokumentationen sind nur redaktionelle Quellen, keine Voraussetzung zum Lernen.
 - **Eigene Notizen und Lernstand:** Werden in der Desktop-Anwendung lokal gespeichert.
 - **Repository Lab:** Öffentliche GitHub-Repositories gezielt prüfen, per ChatGPT-Login begrenzt analysieren und die didaktischen Ergebnisse als lokale Lernbücher wieder öffnen. Die Übertragung erfolgt ausschließlich nach sichtbarer Zustimmung.
 
-**Konzeptlektionen** und **importierte Originaldokumentationen** sind getrennte Inhaltsarten. Die Originalreferenzen werden vollständig pro definiertem Quellpaket offline übernommen; zusätzliche Sprach- und Standardbibliothekspakete lassen sich im Einrichtungsbereich installieren. Die inhaltliche Vollständigkeit je Sprache muss paketübergreifend geprüft werden.
+**Redaktionelle Lehrbücher**, **Konzeptlektionen** und **importierte Originaldokumentationen** sind getrennte Inhaltsarten. Die Originalreferenzen werden vollständig pro definiertem Quellpaket offline übernommen; zusätzliche Sprach- und Standardbibliothekspakete lassen sich im Einrichtungsbereich installieren. Die inhaltliche Vollständigkeit je Sprache muss paketübergreifend geprüft werden.
 
 ## Installation aus dem Quellcode
 
@@ -29,7 +30,7 @@ npm run desktop
 
 ## Offline-Dokumentationsbibliothek
 
-Unter **Dokumentationen einrichten** verwaltest du ausschließlich Downloads und Aktualisierungen. Erfolgreich installierte Dokumentationspakete erscheinen automatisch unter **Sprachenhandbücher**. Die Handbuchansicht gruppiert sie nach Sprache und bietet Kapitel-Navigation sowie Suche im lokal gespeicherten Volltext. Der Import speichert Quellstände und prüft Dateien mit SHA-256. Zum Installieren ist Git für Quellarchive und einmalig eine Netzwerkverbindung nötig; die Handbücher sind danach offline nutzbar.
+Unter **Dokumentationen einrichten** verwaltest du ausschließlich Downloads und Aktualisierungen. Erfolgreich installierte Dokumentationspakete erscheinen automatisch unter **Originaldokumentationen**. Die Handbuchansicht gruppiert sie nach Sprache und bietet Kapitel-Navigation sowie Suche im lokal gespeicherten Volltext. Der Import speichert Quellstände und prüft Dateien mit SHA-256. Zum Installieren ist Git für Quellarchive und einmalig eine Netzwerkverbindung nötig; die Handbücher sind danach offline nutzbar.
 
 ## Repository Lab mit ChatGPT
 
@@ -39,15 +40,13 @@ Die erste Version analysiert pro Anfrage eine begrenzte Stichprobe statt alle Co
 
 Mehr Details zu Anmeldung, Datenschutz und Grenzen: [Repository Lab](docs/REPOSITORY_LAB.md).
 
-## Lehrbücher aus vollständigen Offline-Dokumentationen
+## Vorgefertigte Checkmate-Lehrbücher
 
-Unter **Sprachenhandbücher** lässt sich ein installiertes **gesamtes Referenzpaket** in eine deutschsprachige didaktische Lehrbuchreihe aufbereiten, nicht nur ein einzeln geöffnetes Kapitel. Checkmate liest den vollständigen lokal installierten Textbestand, bildet daraus begrenzte Quelleneinheiten, erstellt für jede Einheit ein Lehrbuchkapitel mit Erklärungen, Beispielen, Übungen und Lösungen und bündelt diese in nummerierte Bände in der lokalen Lernbuchbibliothek. Die Originaldokumentation wird dabei nicht verändert. Zeilenbelege werden gegen die tatsächlich gelesenen Ausschnitte geprüft. Vor der Veröffentlichung eines neu erzeugten Kapitels führt Checkmate eine separate, quellengebundene Modellprüfung durch. Der Reviewer kontrolliert die Erklärungen, Beispiele und Musterlösungen kritisch, muss überprüfbare Originalzitate für konkrete Kapitelbehauptungen liefern und kann Kapitel ablehnen. Dies ist ein zusätzliches LLM-Review, keine unabhängige formale Wahrheitsgarantie; es benötigt mindestens einen zusätzlichen Modellaufruf pro Lerneinheit. Der globale, deterministische Lehrplan sortiert den gesamten Quellenindex didaktisch nach Grundlagen, Sprachkonzepten, Anwendungen und weiterführendem Wissen, ohne Quelldokumente auszulassen. Kapitel müssen ausführliche Erklärungen, Beispiele, typische Fehler, Übungen, Lösungen, individuelle Lernziele, ein Glossar mit Begriffserklärungen, Verständnisfragen samt Antworten und Originalbelege enthalten; oberflächliche Zusammenfassungen werden zurückgewiesen. Die neuen Bausteine werden als strukturierte, validierte Daten gespeichert und bleiben bei älteren Büchern optional.
+Unter **Lehrbücher** findest du die bereits veröffentlichten, eigenständig redaktionell verfassten Inhalte. Die Anwendung liefert diese im Renderer-Bundle direkt aus. Eine Generierung durch die Benutzer, ein Modellkonto und ein Download sind zum Lesen nicht erforderlich. Die Buchkapitel enthalten zusammenhängende Erläuterungen, Lernziele, Codebeispiele, Verständnisfragen mit aufklappbaren Antworten und Transferaufgaben. Sprachspezifische Beispiele werden passend zum Buch ausgewählt. Lokaler Lernfortschritt bleibt beim Neustart erhalten.
 
-**Lizenzvoraussetzung:** Die KI-Verarbeitung ist nur für bekannte, in den offiziellen Paketdefinitionen hinterlegte freie Lizenzfamilien freigegeben. Pakete mit eingeschränkter Nutzung oder unklaren, seiten- bzw. dateibezogenen Ausnahmen werden vorsorglich blockiert. Bücher tragen Quell- und Lizenzhinweise; die automatische Prüfung ersetzt keine rechtliche Bewertung individueller Inhalte.
+**Ausbaustand:** Die erste veröffentlichte Reihe basiert auf den 13 bereits im Checkmate-Quellcode ausgearbeiteten Konzeptkapiteln und den dafür vorhandenen Sprachvarianten. Es handelt sich um eine **fertige Grundlagenreihe**, nicht um die vollständige Sprach- oder Standardbibliotheksreferenz. Weitere redaktionell geprüfte Kapitel und Bände werden als Checkmate-Updates ausgeliefert, statt auf dem Benutzergerät per KI geschrieben zu werden. Die Kapitel und Beispiele haben von uns verfasste Inhalte; externe Dokumentationslinks sind weiterführende Originalquellen, nicht Bestandteile fremder Lehrbücher.
 
-**Vor jeder Generierung** zeigt Checkmate die Gesamtzahl der Originaldokumente und zu verarbeitenden Einheiten an. Erst nach ausdrücklicher Freigabe werden diese Quelltexte über den bereits vorhandenen ChatGPT-Login übertragen. Für sehr große Handbücher können zahlreiche separate Modellaufrufe und erhebliche Laufzeiten entstehen; es gibt keine pauschale Kosten- oder Laufzeitzusage. Fertig geprüfte Einheiten bleiben als lokale Checkpoints erhalten, falls eine Generierung unterbrochen wird, und werden beim nächsten Start desselben Quellstands und Modells wiederverwendet. Die laufende Lehrbuchgenerierung kann direkt aus der Bibliotheksansicht abgebrochen werden; Checkmate beendet die aktive ChatGPT-Anfrage und startet keine weiteren Einheiten. Fertige Checkpoints bleiben erhalten, sodass kein kompletter Neustart nötig ist. Gespeicherte Bände sind offline lesbar. Der Lernfortschritt wird pro Buch-ID und Kapitel lokal und atomar gespeichert; du kannst jedes Kapitel im bestehenden Reader als „offen“, „in Bearbeitung“ oder „verstanden“ markieren. Die Fortschrittsdaten werden nicht an ChatGPT übermittelt. Verändert sich der installierte Quellstand, muss die Generierung neu überprüft werden.
-
-**Grenze:** Ein vollständig *eingelesener* Quellenbestand bedeutet nicht, dass jede Originalaussage in ein einziges Kompendium ohne Abstraktion übernommen wird. Die erzeugten Lehrbuchkapitel sind didaktische Darstellungen mit überprüften Textzitaten; ihre Interpretation wird noch nicht automatisch semantisch verifiziert.
+**Klare Trennung:** Die optional unter **Originaldokumentationen** installierbaren offiziellen Quellen bleiben Referenzmaterial. Sie werden nicht heimlich an ChatGPT gesendet. **ChatGPT wird ausschließlich im ausdrücklich aktivierten Repository Lab** genutzt, um fremden Quellcode auf Nutzeranforderung zu analysieren. Bereits lokal vorhandene, früher generierte Bücher bleiben im Repository Lab lesbar.
 
 ## Entwicklung und Qualität
 
@@ -57,7 +56,7 @@ npm run check
 
 Dieser Aufruf prüft TypeScript, die Inhaltstests und den Renderer-/Electron-Build. Die CI führt diese Prüfungen auf **Linux, Windows und macOS** aus.
 
-Technologie: **Electron · React · TypeScript**, streng typisiert. Die Handbuchinhalte sind versionierte Projektdateien, persönliche Notizen und Lernstände liegen derzeit im lokalen App-Speicher. Eine zusätzliche Datenbank ist für die gebündelte Wissensbasis nicht nötig.
+Technologie: **Electron · React · TypeScript**, streng typisiert. Die vorgefertigten Lehrbuchinhalte sind versionierte Projektdateien, persönliche Notizen und Lernstände liegen derzeit im lokalen App-Speicher. Eine zusätzliche Datenbank ist für die gebündelte Wissensbasis nicht nötig.
 
 ## Weitere Entwicklung
 

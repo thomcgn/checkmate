@@ -2,7 +2,6 @@ import React,{useEffect,useMemo,useState} from 'react';
 import {OFFICIAL_PACKS,type InstalledDocumentPack,type DocumentPackStatus,type DocumentView,type DocumentationBridge} from '../shared/documentation';
 import {LANGUAGE_SPECS} from '../content/language-reference';
 import {OfflineMarkdown} from './offline-markdown';
-import type {RepoProgress,DocumentationCoursePreview} from '../shared/repository';
 import './documentation-library.css';
 declare global{interface Window{checkmateDocs?:DocumentationBridge}}
 function PlainText({source}:{source:string}):React.JSX.Element{
@@ -19,12 +18,6 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
  const [query,setQuery]=useState('');
  const [matches,setMatches]=useState<readonly string[]|null>(null);
  const [error,setError]=useState('');
- const [creating,setCreating]=useState(false);
- const [generating,setGenerating]=useState(false);
- const [cancelRequested,setCancelRequested]=useState(false);
- const [created,setCreated]=useState('');
- const [coursePreview,setCoursePreview]=useState<DocumentationCoursePreview|null>(null);
- const [courseProgress,setCourseProgress]=useState<RepoProgress|null>(null);
  useEffect(()=>{
   if(!api)return;
   void api.packs().then(setStatuses).catch(e=>setError(String(e)));
@@ -35,7 +28,7 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
  const packs=available.filter(p=>p.language===currentLanguage);
  const current=selected&&packs.some(p=>p.id===selected)?selected:packs[0]?.id??null;
  useEffect(()=>{
-  setPack(null);setPath('');setArticle(null);setQuery('');setMatches(null);setCoursePreview(null);setCourseProgress(null);
+  setPack(null);setPath('');setArticle(null);setQuery('');setMatches(null);
   if(!api||!current)return;
   let alive=true;
   void api.loadPack(current).then(data=>{
@@ -63,56 +56,12 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
    .catch(e=>{if(alive)setError(String(e));});
   return()=>{alive=false;};
  },[api,pack,currentPath]);
- useEffect(()=>{
-  const teaching=window.checkmateRepos;
-  return teaching?.onProgress(setCourseProgress);
- },[]);
- const prepareFullTextbook=async():Promise<void>=>{
-  const teaching=window.checkmateRepos;
-  if(!teaching||!pack||creating)return;
-  setError('');setCreated('');
-  try{
-   setCreating(true);
-   const summary=await teaching.previewCourse(pack.id);
-   setCoursePreview(summary);
-  }catch(e){setError(e instanceof Error?e.message:String(e));}
-  finally{setCreating(false);}
- };
- const createFullTextbook=async():Promise<void>=>{
-  const teaching=window.checkmateRepos;
-  if(!teaching||!pack||!coursePreview||creating)return;
-  setError('');setCreated('');
-  try{
-   const account=await teaching.chatgptStatus();
-   if(!account.connected||!account.sharing)throw Error('Bitte zuerst im Repository Lab mit ChatGPT anmelden.');
-   const models=await teaching.models();
-   const model=models[0]?.slug;
-   if(!model)throw Error('Für das verbundene ChatGPT-Konto ist kein Modell verfügbar.');
-   const summary=coursePreview;
-   if(summary.packId!==pack.id||summary.sourceCommit!==pack.sourceCommit)
-    throw Error('Die Dokumentation wurde geändert. Bitte erneut prüfen.');
-   if(!window.confirm('GESAMTES REFERENZWERK in didaktische Lehrbuchbände umwandeln?\\n\\n'+summary.title+
-    '\\n'+summary.documents+' Originaldokumente, '+summary.units+' KI-Lerneinheiten, '+summary.characters+' Zeichen Quelltext.\\n\\nJede Einheit wird über deinen ChatGPT-Login verarbeitet. Pro neuem Kapitel sind mindestens zwei Modellanfragen vorgesehen (Erstellung plus getrenntes Fachreview). Das kann viel Kontingent und erhebliche Zeit erfordern. Bereits geprüfte Einheiten werden gespeichert und bei erneutem Start verwendet. Die Originaldokumentation bleibt unverändert.'))return;
-   setCreating(true);setGenerating(true);setCancelRequested(false);
-   const result=await teaching.generateCourse(pack.id,summary.sourceCommit,true,model);
-   setCreated(result.volumes+' Lehrbuchbände aus '+result.documents+' Dokumenten erstellt. Du findest sie in der Lernbuchbibliothek im Repository Lab.');
-   setCoursePreview(null);
-  }catch(e){setError(e instanceof Error?e.message:String(e));}
-  finally{setCreating(false);setGenerating(false);setCancelRequested(false);}
- };
- const cancelFullTextbook=async():Promise<void>=>{
-  const teaching=window.checkmateRepos;
-  if(!teaching||!generating||cancelRequested)return;
-  setCancelRequested(true);
-  try{await teaching.cancelCourse();}
-  catch(e){setError(e instanceof Error?e.message:String(e));setCancelRequested(false);}
- };
  const installed=statuses.filter(s=>s.installed).length;
  return <section className="documentation-library documentation-handbooks" aria-label="Installierte Sprachenhandbücher">
   <header className="documentation-header">
-   <span className="eyebrow">CHECKMATE / BIBLIOTHEK</span>
-   <h2>Sprachenhandbücher</h2>
-   <p>Deine installierten Referenzwerke: Kapitel und Volltextsuche sind lokal verfügbar, ohne Browserwechsel. Weitere Sprachreferenzen fügst du über die Einrichtung hinzu.</p>
+   <span className="eyebrow">CHECKMATE / ORIGINALQUELLEN</span>
+   <h2>Offizielle Referenzdokumentationen</h2>
+   <p>Die unveränderten offiziellen Originaldokumentationen dienen zum Nachschlagen. Die fertigen Checkmate-Lehrbücher findest du separat unter „Lehrbücher“. Für diese Quellen ist keine KI-Generierung vorgesehen.</p>
    <div className="documentation-reader-toolbar"><span>{availableLanguages.length} Sprachen · {installed} Referenzpakete installiert</span><button className="secondary-btn" onClick={openSetup}>Dokumentationen verwalten</button></div>
   </header>
   {error&&<div className="documentation-error" role="alert">{error}</div>}
@@ -136,15 +85,7 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
       })}
      </aside>
      <div className="documentation-main">
-      {pack?<><div className="documentation-reader-toolbar">
-       <button className="primary-btn" disabled={creating||!window.checkmateRepos} onClick={()=>void prepareFullTextbook()}>{creating?'Verarbeitung läuft …':'Gesamte Dokumentation als Lehrbücher aufbereiten'}</button>
-       {generating&&<button className="secondary-btn" disabled={cancelRequested} onClick={()=>void cancelFullTextbook()}>{cancelRequested?'Abbruch angefordert …':'Lehrbuchgenerierung abbrechen'}</button>}
-       {coursePreview&&<div role="status">{coursePreview.documents} Originalkapitel · {coursePreview.units} didaktische Einheiten · vollständiger Quellenbestand geprüft
-        <button className="secondary-btn" disabled={creating} onClick={()=>void createFullTextbook()}>Lehrbuchreihe jetzt generieren</button>
-       </div>}
-       {created&&<small role="status">{created}</small>}
-       {courseProgress&&<small role="status">{courseProgress.detail} · {courseProgress.done}/{courseProgress.total}</small>}
-      </div><div className="documentation-reader documentation-reader-standalone">
+      {pack?<><div className="documentation-reader-toolbar"><span>Originalreferenz · ausschließlich zum Nachschlagen · offline</span></div><div className="documentation-reader documentation-reader-standalone">
        <aside className="documentation-toc">
         <label className="documentation-toc-label" htmlFor="offline-search">IN DIESEM HANDBUCH SUCHEN</label>
         <input id="offline-search" aria-label="Offline-Dokumentation durchsuchen" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Begriff, API, Klasse, Funktion …"/>

@@ -26,8 +26,8 @@ test('official documentation is searched and navigated without opening a browser
   }});
  });
  await page.goto('/');
- await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
- await expect(page.getByRole('heading',{name:'Sprachenhandbücher'})).toBeVisible();
+ await page.getByRole('button',{name:/Originaldokumentationen/}).click();
+ await expect(page.getByRole('heading',{name:'Offizielle Referenzdokumentationen'})).toBeVisible();
  await expect(page.getByRole('button',{name:'Rust',exact:true})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Willkommen'})).toBeVisible();
  await page.getByRole('button',{name:'Zur zweiten Lektion'}).click();
@@ -54,7 +54,7 @@ test('successful setup import moves into installed-language handbooks and is not
   }});
  });
  await page.goto('/');
- await page.getByRole('button',{name:/Sprachenhandbücher/}).click();
+ await page.getByRole('button',{name:/Originaldokumentationen/}).click();
  await expect(page.getByRole('heading',{name:'Deine Handbuchbibliothek ist noch leer'})).toBeVisible();
  await page.getByRole('button',{name:'Zur Einrichtung'}).click();
  await expect(page.getByRole('heading',{name:'Sprachreferenzen installieren'})).toBeVisible();
