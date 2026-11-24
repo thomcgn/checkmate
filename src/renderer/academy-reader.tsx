@@ -1,19 +1,29 @@
 import React,{useState} from 'react';
+import type {BeginnerBook} from '../content/pizzeria-book.ts';
 import {PIZZERIA_BOOK} from '../content/pizzeria-book.ts';
 import {PIZZERIA_OPERATIONS_BOOK} from '../content/pizzeria-operations.ts';
+import {PIZZERIA_GO_BOOK} from '../content/pizzeria-go-book.ts';
+import {PIZZERIA_GO_OPERATIONS_BOOK} from '../content/pizzeria-go-operations.ts';
 import './academy.css';
 
-type VolumeId='band1'|'band2';
-const VOLUMES:Readonly<Record<VolumeId,{label:string;key:string;book:typeof PIZZERIA_BOOK}>>={
+type VolumeId='band1'|'band2'|'go-band1'|'go-band2';
+const VOLUMES:Readonly<Record<VolumeId,{label:string;key:string;book:BeginnerBook}>>={
  band1:{label:'Band 1 · Die Pizzeria',key:'checkmate:pizzeria-book:v1',book:PIZZERIA_BOOK},
- band2:{label:'Band 2 · In Betrieb',key:'checkmate:pizzeria-operations:v1',book:PIZZERIA_OPERATIONS_BOOK}
+ band2:{label:'Band 2 · In Betrieb',key:'checkmate:pizzeria-operations:v1',book:PIZZERIA_OPERATIONS_BOOK},
+ 'go-band1':{label:'Go · Band 1',key:'checkmate:pizzeria-go-book:v1',book:PIZZERIA_GO_BOOK},
+ 'go-band2':{label:'Go · Band 2',key:'checkmate:pizzeria-go-operations:v1',book:PIZZERIA_GO_OPERATIONS_BOOK}
+};
+const VOLUME_TAG:Readonly<Record<VolumeId,string>>={
+ band1:'BAND 1',band2:'BAND 2','go-band1':'GO · BAND 1','go-band2':'GO · BAND 2'
 };
 function readCompleted(key:string):readonly string[]{
  try{
   const value:unknown=JSON.parse(localStorage.getItem(key)??'[]');
   if(!Array.isArray(value))return [];
   const known=new Set(PIZZERIA_BOOK.chapters.map(chapter=>chapter.id)
-   .concat(PIZZERIA_OPERATIONS_BOOK.chapters.map(chapter=>chapter.id)));
+   .concat(PIZZERIA_OPERATIONS_BOOK.chapters.map(chapter=>chapter.id))
+   .concat(PIZZERIA_GO_BOOK.chapters.map(chapter=>chapter.id))
+   .concat(PIZZERIA_GO_OPERATIONS_BOOK.chapters.map(chapter=>chapter.id)));
   return value.filter((id):id is string=>typeof id==='string'&&known.has(id));
  }catch{return [];}
 }
@@ -48,7 +58,7 @@ export function AcademyReader():React.JSX.Element{
     onClick={()=>switchVolume(id)}>{VOLUMES[id].label}</button>)}
   </div>
   <header className="documentation-header">
-   <span className="eyebrow">CHECKMATE / EINSTEIGERBUCH · {volume==='band1'?'BAND 1':'BAND 2'}</span>
+   <span className="eyebrow">CHECKMATE / EINSTEIGERBUCH · {VOLUME_TAG[volume]}</span>
    <h2>{book.title}</h2>
    <p>{book.scenario}</p>
    <small>{book.audience} · {book.chapters.length} Kapitel · {completed.length} als verstanden markiert</small>
