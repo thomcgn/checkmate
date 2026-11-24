@@ -53,7 +53,7 @@ test('all units become checked textbook chapters with persistent resume',async()
   let calls=0;
   const generate=async(prompt:string,model:string):Promise<{text:string;model:string}>=>{
    calls++;
-   const match=/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| ([^\n]+)/.exec(prompt);
+   const match=/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \\(\\d+ ff\\.\\)\\n1 \\| [^\\n]+\\n2 \\| ([^\\n]+)/.exec(prompt);
    assert.ok(match);
    const evidence={path:match[1],startLine:2,endLine:2,quote:match[2]};
    return {model,text:JSON.stringify({title:'Ein nachvollziehbares Programmierkonzept',explanation:'Du lernst Grundlagen schrittweise mit Erklärung und Praxis. '.repeat(10),
