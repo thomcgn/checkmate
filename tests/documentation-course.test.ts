@@ -61,6 +61,14 @@ test('all units become checked textbook chapters with persistent resume',async()
   let calls=0;
   const generate=async(prompt:string,model:string):Promise<{text:string;model:string}>=>{
    calls++;
+   if(prompt.startsWith('KAPITEL-REVIEW:')){
+    const pathMatch=/DATEI "([^"]+)" ZEILE \d+\n([^\n]+)\n([^\n]+)/.exec(prompt);
+    assert.ok(pathMatch);
+    return {model,text:JSON.stringify({verdict:'pass',findings:[],claims:[{
+     claim:'Wir untersuchen den Ablauf im Code und begründen die Wirkung.',
+     path:pathMatch[1],quote:pathMatch[3]
+    }]})};
+   }
    const matches=[...prompt.matchAll(/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| [^\n]+\n2 \| ([^\n]+)/g)];
    assert.ok(matches.length>0);
    const evidence=matches.map(match=>({path:match[1],startLine:2,endLine:2,quote:match[2]}));
@@ -74,13 +82,13 @@ test('all units become checked textbook chapters with persistent resume',async()
     reviewQuestions:[{question:'Welche Funktion hat die dargestellte Syntax im Quellbeispiel?',answer:'Sie beschreibt die Auswertung eines Ausdrucks innerhalb des Programms.'},{question:'Wie lässt sich der dargestellte Ansatz überprüfen?',answer:'Durch eine eigene kleine Implementierung mit überprüfbarer Ausgabe.'}]})};
   };
   await assert.rejects(generateDocumentationCourse(plan,'model-a',async(prompt,model)=>{
-   if(calls>=1)throw Error('Netzwerk unterbrochen');
+   if(calls>=2)throw Error('Netzwerk unterbrochen');
    return generate(prompt,model);
   },store,()=>{}),/Netzwerk unterbrochen/);
   const initialCalls=calls;
   const finished=await generateDocumentationCourse(plan,'model-a',generate,store,()=>{});
   assert.equal(finished.lessons.length,plan.units.length);
-  assert.equal(calls-initialCalls,plan.units.length-1);
+  assert.equal(calls-initialCalls,(plan.units.length-1)*2);
   assert.equal((await store.read(finished.fingerprint,0))?.title,'Ein nachvollziehbares Programmierkonzept');
   const books=createCourseVolumes(pack,plan,finished.lessons,finished.fingerprint,'model-a');
   assert.ok(books.length>=1);
@@ -165,6 +173,14 @@ test('cancellation stops subsequent model requests and preserves checked chapter
    assert.equal(chosen,'test-model');
    assert.equal(signal,controller.signal);
    calls++;
+   if(prompt.startsWith('KAPITEL-REVIEW:')){
+    const pathMatch=/DATEI "([^"]+)" ZEILE \d+\n([^\n]+)\n([^\n]+)/.exec(prompt);
+    assert.ok(pathMatch);
+    return {model:chosen,text:JSON.stringify({verdict:'pass',findings:[],claims:[{
+     claim:'Wichtige Grundlagen strukturiert erläutern.',
+     path:pathMatch[1],quote:pathMatch[3]
+    }]})};
+   }
    const matches=[...prompt.matchAll(/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| [^\n]+\n2 \| ([^\n]+)/g)];
    const evidence=matches.map(m=>({path:m[1],startLine:2,endLine:2,quote:m[2]}));
    return {model:chosen,text:JSON.stringify({title:'Strukturiertes Programmieren verstehen',
@@ -185,7 +201,7 @@ test('cancellation stops subsequent model requests and preserves checked chapter
   await assert.rejects(generateDocumentationCourse(plan,'test-model',model,store,(done)=>{
    if(done===1)controller.abort();
   },{signal:controller.signal}),/abgebrochen/);
-  assert.equal(calls,1);
+  assert.equal(calls,2);
   const fingerprint=courseFingerprint(plan,'test-model');
   assert.ok(await store.read(fingerprint,0));
   assert.equal(await store.read(fingerprint,1),null);
