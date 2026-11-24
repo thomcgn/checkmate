@@ -73,3 +73,19 @@ test('published books are bundled and readable entirely without desktop backend,
  await expect(page.getByText(/1 \/ \d+ Kapitel als verstanden/)).toBeVisible();
  await expect(page.locator('body')).toHaveJSProperty('scrollWidth',1024);
 });
+
+test('old Java practice progress migrates once into the unified textbook',async({page})=>{
+ await page.goto('/');
+ await page.evaluate(()=>localStorage.setItem('checkmate:published-textbooks:study:v1',JSON.stringify({
+  'checkmate-java-practice-v1':['java-type-relationships']
+ })));
+ await page.reload();
+ await page.getByRole('button',{name:/Lehrbücher/}).click();
+ await expect(page.getByText(/1 \/ \d+ Kapitel als verstanden/)).toBeVisible();
+ await page.getByRole('button',{name:/Invarianz, Bounds, Wildcards und PECS/}).click();
+ await page.getByRole('button',{name:'Als noch offen markieren'}).click();
+ await expect(page.getByText(/0 \/ \d+ Kapitel als verstanden/)).toBeVisible();
+ await page.reload();
+ await page.getByRole('button',{name:/Lehrbücher/}).click();
+ await expect(page.getByText(/0 \/ \d+ Kapitel als verstanden/)).toBeVisible();
+});
