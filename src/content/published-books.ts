@@ -5,8 +5,9 @@ import type {LanguageVariant} from './concepts.ts';
 import {JAVA_ADVANCED_LESSONS} from './java-advanced.ts';
 import {TYPESCRIPT_PRACTICE_LESSONS} from './typescript-practice.ts';
 import {RUST_PRACTICE_LESSONS} from './rust-practice.ts';
+import {bookCurriculum,validateBookCurricula,type BookCurriculum} from './book-curricula.ts';
 
-/** Published, editorial content shipped inside Checkmate. Never invokes ChatGPT. */
+/** Original learning material shipped in the application; never generated on the user's device. */
 export type PublishedLesson={
  readonly id:string;readonly title:string;readonly chapter:TextbookChapter;
  readonly implementation:LanguageVariant;
@@ -14,56 +15,51 @@ export type PublishedLesson={
 export type PublishedTextbook={
  readonly id:string;readonly title:string;readonly description:string;
  readonly language:LanguageSpec;readonly edition:string;readonly lessons:readonly PublishedLesson[];
- readonly copyrightNotice:string;
+ readonly copyrightNotice:string;readonly curriculum?:BookCurriculum;
+ readonly editorialStatus:'in-progress'|'complete';
 };
-export const PUBLISHED_TEXTBOOKS:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
- const lessons:PublishedLesson[]=TEXTBOOK.flatMap(chapter=>{
+const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
+ java:JAVA_ADVANCED_LESSONS,
+ typescript:TYPESCRIPT_PRACTICE_LESSONS,
+ rust:RUST_PRACTICE_LESSONS
+};
+const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
+ const original:PublishedLesson[]=TEXTBOOK.flatMap(chapter=>{
   const concept=COMPLETE_CONCEPT_BY_ID.get(chapter.conceptId);
   const implementation=concept?.variants.find(item=>item.language===language.id);
   return concept&&implementation?[{id:chapter.conceptId,title:concept.title,chapter,implementation}]:[];
  });
+ const lessons=[...original,...(authoredExtensions[language.id]??[])];
+ const curriculum=bookCurriculum(language.id);
+ const plan=curriculum?.parts.flatMap(part=>part.chapters)??[];
+ const published=new Map(lessons.map(chapter=>[chapter.id,chapter]));
+ const ordered=curriculum?plan.flatMap(chapter=>{
+  const found=published.get(chapter.id);return found?[found]:[];
+ }):lessons;
+ const complete=!!curriculum&&plan.length===ordered.length&&
+  plan.every(chapter=>published.has(chapter.id));
  return {
   id:'checkmate-'+language.id+'-basics-v1',
-  title:language.name+' verstehen – Grundlagen und Sprachkonzepte',
-  description:'Redaktionell ausgearbeitete Kapitel mit Lernzielen, Schritt-für-Schritt-Erklärungen, eigenen Codebeispielen, Verständnisfragen und Übungen.',
-  language,edition:'Checkmate Originalausgabe 1.0',lessons,
-  copyrightNotice:'Eigenständige Checkmate-Lehrtexte. Verweise auf offizielle Dokumentationen sind Quellenhinweise; fremde Lehrbücher werden nicht übernommen.'
+  title:language.name+' verstehen – das Checkmate-Fachbuch',
+  description:curriculum?
+   'Systematisch von den Grundlagen bis zu fortgeschrittenen Anwendungen. Fertige Kapitel sind sofort offline lesbar; weitere Kapitel werden redaktionell ergänzt.':
+   'Redaktionell ausgearbeitete Grundlagen mit Lernzielen, Erklärungen, Codebeispielen und Übungen.',
+  language,edition:'Checkmate · Redaktioneller Ausbau 1',
+  lessons:ordered,curriculum,editorialStatus:complete?'complete' as const:'in-progress' as const,
+  copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Codebeispiele. Offizielle Dokumentationen werden als weiterführende Quellen verlinkt, nicht als fremde Bücher kopiert.'
  };
-}).filter(book=>book.lessons.length>0).concat([{
- id:'checkmate-java-practice-v1',
- title:'Java verstehen – Typsicherheit, Datenverarbeitung und Tests',
- description:'Vertiefungsband mit durchgehenden EventService-Beispielen: Generics, Collections, Stream-Pipelines und fachliche JUnit-Tests.',
- language:LANGUAGE_SPECS.find(spec=>spec.id==='java')!,
- edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
- lessons:[...JAVA_ADVANCED_LESSONS],
- copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Beispiele. Fachliche Grundlagen anhand frei zugänglicher offizieller Java-Dokumentation erläutert; keine Übernahme fremder Buchtexte.'
-},{
- id:'checkmate-typescript-practice-v1',
- title:'TypeScript verstehen – sichere Daten und React-Architektur',
- description:'Drei aufeinander aufbauende Praxislektionen über unbekannte Laufzeitdaten, gültige UI-Zustände und asynchrone React-Abläufe.',
- language:LANGUAGE_SPECS.find(spec=>spec.id==='typescript')!,
- edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
- lessons:[...TYPESCRIPT_PRACTICE_LESSONS],
- copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Codebeispiele. Fachliche Weiterführungen anhand offizieller TypeScript- und React-Dokumentation, ohne fremde Buchtexte.'
-},{
- id:'checkmate-rust-practice-v1',
- title:'Rust verstehen – Ownership, Borrowing und Fehlerbehandlung',
- description:'Drei aufeinander aufbauende Praxislektionen über Moves, Referenzen und Lifetimes sowie Result, Option und Iteratoren.',
- language:LANGUAGE_SPECS.find(spec=>spec.id==='rust')!,
- edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
- lessons:[...RUST_PRACTICE_LESSONS],
- copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Codebeispiele. Verweise auf The Rust Programming Language dienen als externe Originalquellen, nicht als kopierter Buchinhalt.'
-}]);
+}).filter(book=>book.lessons.length>0);
+export const PUBLISHED_TEXTBOOKS:readonly PublishedTextbook[]=originalBooks;
 export function publishedBook(id:string):PublishedTextbook|undefined{
  return PUBLISHED_TEXTBOOKS.find(book=>book.id===id);
 }
 export function validatePublishedBooks(books:readonly PublishedTextbook[]=PUBLISHED_TEXTBOOKS):readonly string[]{
- const errors:string[]=[];
+ const errors=[...validateBookCurricula()];
  const ids=new Set<string>();
  for(const book of books){
   if(ids.has(book.id))errors.push('Doppeltes Buch: '+book.id);
   ids.add(book.id);
-  if(book.lessons.length<2)errors.push('Zu wenig Inhalte für ein Lehrbuch: '+book.id);
+  if(book.lessons.length<2)errors.push('Zu wenig Inhalte: '+book.id);
   const chapters=new Set<string>();
   for(const lesson of book.lessons){
    if(chapters.has(lesson.id))errors.push('Doppeltes Kapitel: '+book.id+'/'+lesson.id);
@@ -75,6 +71,21 @@ export function validatePublishedBooks(books:readonly PublishedTextbook[]=PUBLIS
     errors.push('Unvollständiges redaktionelles Kapitel: '+book.id+'/'+lesson.id);
    if(!lesson.implementation.code.trim()||!lesson.implementation.explanation.trim()||
       !lesson.implementation.differences.trim())errors.push('Sprachbeispiel unvollständig: '+book.id+'/'+lesson.id);
+  }
+  if(book.curriculum){
+   const planned=book.curriculum.parts.flatMap(part=>part.chapters);
+   const known=new Set(planned.map(item=>item.id));
+   for(const lesson of book.lessons)
+    if(!known.has(lesson.id))errors.push('Lehrbuchkapitel fehlt im Inhaltsplan: '+book.id+'/'+lesson.id);
+   for(const item of planned.filter(item=>chapters.has(item.id)))
+    if(!item.title.trim())errors.push('Veröffentlichtes Kapitel ohne Titel: '+book.id+'/'+item.id);
+   const trulyComplete=book.lessons.length===planned.length;
+   if(book.editorialStatus==='complete'&&!trulyComplete)
+    errors.push('Unvollständiger Band fälschlich als fertig bezeichnet: '+book.id);
+   if(book.editorialStatus==='in-progress'&&trulyComplete)
+    errors.push('Fertige Kapitelreihe nicht als vollständig markiert: '+book.id);
+  }else if(book.editorialStatus==='complete'){
+   errors.push('Abgeschlossene Buchausgabe ohne überprüfbares Gesamtcurriculum: '+book.id);
   }
  }
  return errors;
