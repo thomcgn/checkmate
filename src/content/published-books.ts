@@ -6,6 +6,7 @@ import {JAVA_ADVANCED_LESSONS} from './java-advanced.ts';
 import {TYPESCRIPT_PRACTICE_LESSONS} from './typescript-practice.ts';
 import {RUST_PRACTICE_LESSONS} from './rust-practice.ts';
 import {bookCurriculum,validateBookCurricula,type BookCurriculum} from './book-curricula.ts';
+import {JAVA_NEW_CHAPTERS,TYPESCRIPT_NEW_CHAPTERS,RUST_NEW_CHAPTERS} from './book-expansion-v1.ts';
 
 /** Original learning material shipped in the application; never generated on the user's device. */
 export type PublishedLesson={
@@ -19,9 +20,9 @@ export type PublishedTextbook={
  readonly editorialStatus:'in-progress'|'complete';
 };
 const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
- java:JAVA_ADVANCED_LESSONS,
- typescript:TYPESCRIPT_PRACTICE_LESSONS,
- rust:RUST_PRACTICE_LESSONS
+ java:[...JAVA_ADVANCED_LESSONS,...JAVA_NEW_CHAPTERS],
+ typescript:[...TYPESCRIPT_PRACTICE_LESSONS,...TYPESCRIPT_NEW_CHAPTERS],
+ rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS]
 };
 const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
  const original:PublishedLesson[]=TEXTBOOK.flatMap(chapter=>{
