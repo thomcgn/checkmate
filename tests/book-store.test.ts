@@ -57,3 +57,16 @@ test('books with invalid or mismatched IDs fail closed',async()=>{
   await assert.rejects(store.list(),/Beschädigtes Lehrbuch/);
  }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test('textbook volumes are ordered in reading order, not by random document UUIDs',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'checkmate-course-library-'));
+ try{
+  const store=new BookStore(root);
+  const series=(volume:number)=>({
+   title:'Python Programming',volume,totalVolumes:2,documentsInVolume:4,totalDocuments:8,totalUnits:16,complete:true
+  });
+  await store.add({...makeBook(a),teachingBook:{...makeBook(a).teachingBook!,series:series(2)}});
+  await store.add({...makeBook(b),teachingBook:{...makeBook(b).teachingBook!,series:series(1)}});
+  assert.deepEqual((await store.list()).map(b=>b.teachingBook?.series?.volume),[1,2]);
+ }finally{await rm(root,{recursive:true,force:true});}
+});
