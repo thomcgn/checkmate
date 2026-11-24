@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {TEXTBOOK,validateTextbook} from '../src/content/textbook.ts';
-import {PUBLISHED_TEXTBOOKS,publishedBook,validatePublishedBooks} from '../src/content/published-books.ts';
+import {PUBLISHED_TEXTBOOKS,publishedBook,validatePublishedBooks,localizeSharedChapter} from '../src/content/published-books.ts';
 import {JAVA_ADVANCED_LESSONS} from '../src/content/java-advanced.ts';
 import {TYPESCRIPT_PRACTICE_LESSONS} from '../src/content/typescript-practice.ts';
 import {RUST_PRACTICE_LESSONS} from '../src/content/rust-practice.ts';
@@ -314,4 +314,49 @@ test('professional manuscripts add grounded material to C#, C++, PHP, Go and Kot
   assert.ok(chapter.chapter.transfer.answer.length>140);
   assert.ok(chapter.implementation.docs.startsWith('https://'));
  }
+});
+
+
+test('each common chapter renders only its selected language implementation throughout all ten textbooks',()=>{
+ for(const book of PUBLISHED_TEXTBOOKS){
+  for(const lesson of book.lessons.filter(item=>item.exampleInline)){
+   const original=TEXTBOOK.find(chapter=>chapter.conceptId===lesson.id);
+   assert.ok(original,'shared chapter must derive from the canonical conceptual source: '+lesson.id);
+   const codeSections=lesson.chapter.sections.filter(section=>!!section.code);
+   assert.equal(codeSections.length,1,book.language.id+'/'+lesson.id+' must show one contextual example');
+   assert.equal(codeSections[0]?.code,lesson.implementation.code,
+    book.language.id+'/'+lesson.id+' must render the actual '+book.language.name+' implementation');
+   assert.ok(codeSections[0]?.annotation?.includes(lesson.implementation.differences));
+   assert.equal(lesson.chapter.sections.length,original.sections.length);
+   for(let index=0;index<original.sections.length;index++){
+    assert.deepEqual(lesson.chapter.sections[index]?.paragraphs,original.sections[index]?.paragraphs);
+    assert.equal(lesson.chapter.sections[index]?.title,original.sections[index]?.title);
+   }
+  }
+ }
+});
+
+test('Java-only shared snippets cannot leak to Python, Rust, C#, JavaScript and other languages',()=>{
+ const original=TEXTBOOK.find(chapter=>chapter.conceptId==='variables');
+ assert.ok(original);
+ assert.ok(original.sections.some(section=>section.code?.includes('System.out.println')));
+ for(const book of PUBLISHED_TEXTBOOKS){
+  const lesson=book.lessons.find(chapter=>chapter.id==='variables');
+  if(!lesson)continue;
+  const snippets=lesson.chapter.sections.flatMap(section=>section.code?[section.code]:[]);
+  assert.deepEqual(snippets,[lesson.implementation.code]);
+  if(book.language.id!=='java')assert.ok(snippets.every(code=>!code.includes('System.out.println')),
+    'Java example in '+book.language.name+' book');
+ }
+});
+
+test('shared section without any original code still gets one correct language sample',()=>{
+ const example=TEXTBOOK[0];
+ assert.ok(example);
+ const variant=publishedBook('checkmate-python-basics-v1')?.lessons.find(lesson=>lesson.id==='variables')?.implementation;
+ assert.ok(variant);
+ const stripped={...example,sections:example.sections.map(section=>({...section,code:undefined,annotation:undefined}))};
+ const localized=localizeSharedChapter(stripped,variant);
+ assert.deepEqual(localized.sections.flatMap(section=>section.code?[section.code]:[]),[variant.code]);
+ assert.ok(stripped.sections.every(section=>!section.code),'source must remain untouched');
 });

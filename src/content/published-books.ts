@@ -22,6 +22,8 @@ import {FIVE_LANGUAGE_PROFESSIONAL_VOLUME} from './five-language-professional-vo
 export type PublishedLesson={
  readonly id:string;readonly title:string;readonly chapter:TextbookChapter;
  readonly implementation:LanguageVariant;
+ /** True when a shared concept chapter already embeds its language-specific example inline. */
+ readonly exampleInline?:boolean;
 };
 export type PublishedTextbook={
  readonly id:string;readonly title:string;readonly description:string;
@@ -44,11 +46,24 @@ const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
 };
 /** A complete table of contents is not proof of verified documentation coverage. No approvals exist yet. */
 const SOURCE_AUDIT_APPROVALS:Readonly<Record<string,boolean>>={};
+/** Shared conceptual prose is language-neutral, but its original illustrative snippets are Java.
+ * Replace those snippets at publication time: exactly one example from the selected language
+ * appears in the appropriate section, never a Java sample in a different language book.
+ */
+export function localizeSharedChapter(chapter:TextbookChapter,variant:LanguageVariant):TextbookChapter{
+ const exampleIndex=chapter.sections.findIndex(section=>Boolean(section.code));
+ const insertionIndex=exampleIndex>=0?exampleIndex:0;
+ return {...chapter,sections:chapter.sections.map((section,index)=>({
+  ...section,
+  code:index===insertionIndex?variant.code:undefined,
+  annotation:index===insertionIndex?variant.explanation+' '+variant.differences:undefined
+ }))};
+}
 const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
  const original:PublishedLesson[]=TEXTBOOK.flatMap(chapter=>{
   const concept=COMPLETE_CONCEPT_BY_ID.get(chapter.conceptId);
   const implementation=concept?.variants.find(item=>item.language===language.id);
-  return concept&&implementation?[{id:chapter.conceptId,title:concept.title,chapter,implementation}]:[];
+  return concept&&implementation?[{id:chapter.conceptId,title:concept.title,chapter:localizeSharedChapter(chapter,implementation),implementation,exampleInline:true}]:[];
  });
  const lessons=[...original,...(authoredExtensions[language.id]??[])];
  const curriculum=bookCurriculum(language.id);
@@ -87,6 +102,11 @@ export function validatePublishedBooks(books:readonly PublishedTextbook[]=PUBLIS
    if(chapters.has(lesson.id))errors.push('Doppeltes Kapitel: '+book.id+'/'+lesson.id);
    chapters.add(lesson.id);
    if(lesson.implementation.language!==book.language.id)errors.push('Falsche Sprachvariante: '+book.id+'/'+lesson.id);
+   if(lesson.exampleInline){
+    const snippets=lesson.chapter.sections.flatMap(section=>section.code?[section.code]:[]);
+    if(snippets.length!==1||snippets[0]!==lesson.implementation.code)
+     errors.push('Fremdsprachiger oder doppelter Code im Grundlagenkapitel: '+book.id+'/'+lesson.id);
+   }
    if(lesson.chapter.objectives.length<3||lesson.chapter.sections.length<4||
       lesson.chapter.checkpoints.length<2||!lesson.chapter.transfer.prompt||
       !lesson.chapter.transfer.answer||lesson.chapter.sections.reduce((n,s)=>n+s.paragraphs.join(' ').length,0)<1200)
