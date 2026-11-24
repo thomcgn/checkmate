@@ -92,7 +92,7 @@ export function DocumentationLibrary({openSetup}:{openSetup:()=>void}):React.JSX
    if(summary.packId!==pack.id||summary.sourceCommit!==pack.sourceCommit)
     throw Error('Die Dokumentation wurde geändert. Bitte erneut prüfen.');
    if(!window.confirm('GESAMTES REFERENZWERK in didaktische Lehrbuchbände umwandeln?\\n\\n'+summary.title+
-    '\\n'+summary.documents+' Originaldokumente, '+summary.units+' KI-Lerneinheiten, '+summary.characters+' Zeichen Quelltext.\\n\\nJede Einheit wird über deinen ChatGPT-Login verarbeitet. Das kann viele Modellanfragen und erhebliche Zeit erfordern. Bereits geprüfte Einheiten werden gespeichert und bei erneutem Start verwendet. Die Originaldokumentation bleibt unverändert.'))return;
+    '\\n'+summary.documents+' Originaldokumente, '+summary.units+' KI-Lerneinheiten, '+summary.characters+' Zeichen Quelltext.\\n\\nJede Einheit wird über deinen ChatGPT-Login verarbeitet. Pro neuem Kapitel sind mindestens zwei Modellanfragen vorgesehen (Erstellung plus getrenntes Fachreview). Das kann viel Kontingent und erhebliche Zeit erfordern. Bereits geprüfte Einheiten werden gespeichert und bei erneutem Start verwendet. Die Originaldokumentation bleibt unverändert.'))return;
    setCreating(true);setGenerating(true);setCancelRequested(false);
    const result=await teaching.generateCourse(pack.id,summary.sourceCommit,true,model);
    setCreated(result.volumes+' Lehrbuchbände aus '+result.documents+' Dokumenten erstellt. Du findest sie in der Lernbuchbibliothek im Repository Lab.');
