@@ -17,9 +17,15 @@ function readState():ReadState{
    'checkmate-rust-practice-v1':'checkmate-rust-basics-v1'
   };
   const combined:Record<string,readonly string[]>={...valid};
+  let migrated=false;
   for(const [oldId,newId] of Object.entries(additions)){
-   if(valid[oldId]?.length)combined[newId]=[...new Set([...(combined[newId]??[]),...valid[oldId]])];
+   if(oldId in valid){
+    combined[newId]=[...new Set([...(combined[newId]??[]),...(valid[oldId]??[])])];
+    delete combined[oldId];
+    migrated=true;
+   }
   }
+  if(migrated)localStorage.setItem(KEY,JSON.stringify(combined));
   return combined;
  }catch{return {};}
 }
