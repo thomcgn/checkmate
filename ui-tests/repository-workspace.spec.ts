@@ -56,8 +56,11 @@ test('Concept library and language handbooks are navigable without backend',asyn
 test('published books are bundled and readable entirely without desktop backend, OAuth or network',async({page})=>{
  await page.goto('/');
  await page.getByRole('button',{name:/Lehrbücher/}).click();
- await expect(page.getByRole('heading',{name:'Fertige Lehrbücher'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Checkmate-Fachbücher'})).toBeVisible();
  await expect(page.getByRole('heading',{name:/Java verstehen/})).toBeVisible();
+ await expect(page.getByText(/Fachbuch im Aufbau/)).toBeVisible();
+ await expect(page.getByRole('button',{name:/JDK, IDE, Quelltexte und der erste Build/})).toBeDisabled();
+ await expect(page.getByRole('button',{name:/Primitive Typen, Konvertierung und Zahlen/})).toBeEnabled();
  await expect(page.getByRole('heading',{name:'Variablen & Bindungen'})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Verständnisfragen'})).toBeVisible();
  await expect(page.getByRole('button',{name:'Antwort mit Begründung zeigen'}).first()).toBeVisible();
