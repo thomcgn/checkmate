@@ -61,12 +61,14 @@ test('all units become checked textbook chapters with persistent resume',async()
   let calls=0;
   const generate=async(prompt:string,model:string):Promise<{text:string;model:string}>=>{
    calls++;
-   const match=/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| [^\n]+\n2 \| ([^\n]+)/.exec(prompt);
-   assert.ok(match);
-   const evidence={path:match[1],startLine:2,endLine:2,quote:match[2]};
-   return {model,text:JSON.stringify({title:'Ein nachvollziehbares Programmierkonzept',explanation:'## Grundlagen\nEin wichtiges Konzept. '.repeat(12)+'\n## Schritt für Schritt\n'+('Wir untersuchen den Ablauf im Code und begründen die Wirkung. '.repeat(10))+'\n## Typische Fehler und Grenzen\n'+('Fehler erkennen und Einschränkungen einschätzen. '.repeat(10)),
+   const matches=[...prompt.matchAll(/NICHT VERTRAUENSWÜRDIGE DOKUMENTATION "([^"]+)" \(\d+ ff\.\)\n1 \| [^\n]+\n2 \| ([^\n]+)/g)];
+   assert.ok(matches.length>0);
+   const evidence=matches.map(match=>({path:match[1],startLine:2,endLine:2,quote:match[2]}));
+   return {model,text:JSON.stringify({title:'Ein nachvollziehbares Programmierkonzept',
+    explanation:'## Grundlagen\nEin wichtiges Konzept. '.repeat(12)+'\n## Schritt für Schritt\n'+('Wir untersuchen den Ablauf im Code und begründen die Wirkung. '.repeat(10))+'\n## Typische Fehler und Grenzen\n'+('Fehler erkennen und Einschränkungen einschätzen. '.repeat(10)),
     exercise:'Baue selbst ein Beispiel und erkläre die einzelnen Schritte.',
-    solution:'Beginne mit einem kleinen Ausdruck und prüfe die Ausgabe.',sourcePaths:[match[1]],evidence:[evidence]})};
+    solution:'Beginne mit einem kleinen Ausdruck und prüfe die Ausgabe.',
+    sourcePaths:matches.map(match=>match[1]),evidence})};
   };
   await assert.rejects(generateDocumentationCourse(plan,'model-a',async(prompt,model)=>{
    if(calls>=1)throw Error('Netzwerk unterbrochen');
