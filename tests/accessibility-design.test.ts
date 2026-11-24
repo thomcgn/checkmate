@@ -26,7 +26,7 @@ test('touch targets and focus rings survive component overrides',async()=>{
  assert.match(primitives,/h-11/);
  assert.doesNotMatch(primitives,/h-9 w-9/);
  const desktop=await readFile('src/renderer/checkmate-desktop.css','utf8');
- assert.match(desktop,/min-height:44px/);
+ assert.match(desktop,/min-height:(44|48)px/);
  assert.match(desktop,/focus-within|cm-command-search/);
 });
 

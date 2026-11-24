@@ -15,10 +15,12 @@ import {useRef} from 'react';
 import {BookOpenText,Boxes,Download,GraduationCap,Search,Command,Settings2,SlidersHorizontal,Sparkles} from 'lucide-react';
 import {Button} from './ui/primitives';
 import {CommandPalette} from './ui/command-palette';
+import {ThemeToggle} from './ui/theme-toggle';
 import './checkmate-theme.css';
 import './style.css';
 import './checkmate-desktop.css';
 import './a11y-responsive.css';
+import './theme-light.css';
 
 type View='textbook'|'compare'|'practice';
 const VIEWS:readonly View[]=['textbook','compare','practice'];
@@ -136,7 +138,7 @@ function App():React.JSX.Element{
    <header className="topbar">
     <div><span className="eyebrow">DEINE WISSENSZENTRALE</span><h1>Code verstehen. <em>Konzepte meistern.</em></h1>
      <p>Die Idee hinter dem Code lernen – und dieselbe Lösung in unterschiedlichen Sprachen erkennen.</p></div>
-    <div className="cm-topbar-actions"><CommandPalette onNavigate={setLibraryMode}/><div className="top-chip"><span className="chip-dot" aria-hidden="true"/> Offline-Wissensbasis <small>Kein KI-Zugang erforderlich</small></div><Button variant="ghost" size="icon" title="Dokumentationspakete verwalten" aria-label="Dokumentationspakete verwalten" onClick={()=>setLibraryMode('setup')}><Settings2 size={18} aria-hidden="true"/></Button></div>
+    <div className="cm-topbar-actions"><ThemeToggle/><CommandPalette onNavigate={setLibraryMode}/><div className="top-chip"><span className="chip-dot" aria-hidden="true"/> Offline-Wissensbasis <small>Kein KI-Zugang erforderlich</small></div><Button variant="ghost" size="icon" title="Dokumentationspakete verwalten" aria-label="Dokumentationspakete verwalten" onClick={()=>setLibraryMode('setup')}><Settings2 size={18} aria-hidden="true"/></Button></div>
    </header>
    {libraryMode==='concepts'?<>
    <section className="toolbar" aria-label="Konzeptbibliothek durchsuchen">

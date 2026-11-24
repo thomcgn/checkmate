@@ -40,7 +40,7 @@ test('Repository Lab workflow with mocked desktop transport at 10-inch viewport'
  await expect(page.getByRole('heading',{name:'Code verstehen: thomcgn/FassWerk'})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Generics'})).toBeVisible();
  await expect(page.getByText('Ein generischer Typ bewahrt Typzusammenhänge.')).toBeVisible();
- await expect(page.locator('body')).toHaveJSProperty('scrollWidth',1024);
+ await expect(page.locator('body')).toHaveJSProperty('scrollWidth',page.viewportSize()?.width);
 });
 test('Concept library and language handbooks are navigable without backend',async({page})=>{
  await page.goto('/');
@@ -71,7 +71,7 @@ test('published books are bundled and readable entirely without desktop backend,
  await page.reload();
  await page.getByRole('button',{name:/Lehrbücher/}).click();
  await expect(page.getByText(/1 \/ \d+ Kapitel als verstanden/)).toBeVisible();
- await expect(page.locator('body')).toHaveJSProperty('scrollWidth',1024);
+ await expect(page.locator('body')).toHaveJSProperty('scrollWidth',page.viewportSize()?.width);
 });
 
 test('old Java practice progress migrates once into the unified textbook',async({page})=>{

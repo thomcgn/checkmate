@@ -73,10 +73,15 @@ button.cm-button{min-width:44px;min-height:44px}
 }
 @media(max-width:900px){
  .main{padding:14px 18px}
+ .main>*{flex:none}
  .topbar p{max-width:none}
  .workspace,.published-reader-grid,.documentation-reader,.documentation-reader-standalone{grid-template-columns:minmax(0,1fr)}
  .concept-list,.reader{width:100%}
  .comparison{grid-template-columns:minmax(0,1fr)}
+ :where(.academy-library,.academy-shell,.published-library,.published-shell,.published-workspace,
+  .documentation-library,.documentation-shell,.documentation-main,.documentation-reader,
+  .repo-workspace,.repo-layout,.academy-chapters,.academy-article,.published-toc-items,
+  .published-article,.documentation-toc-list,.documentation-article,.repo-left,.repo-reader){height:auto;max-height:none;overflow:visible}
 }
 @media(max-width:790px){
  /* Die ältere Handbuch-Regel blendete die Navigation komplett aus – herstellen. */
@@ -122,14 +127,18 @@ button.cm-button{min-width:44px;min-height:44px}
 @media(max-height:520px){
  .mode-concepts{height:auto;min-height:100%;overflow:visible}
  .main{overflow-y:auto}
+ .main>*{flex:none}
  .mode-concepts .workspace{flex:none}
+ :where(.academy-library,.academy-shell,.published-library,.published-shell,.published-workspace,
+  .published-reader-grid,.documentation-library,.documentation-shell,.documentation-main,
+  .documentation-reader,.repo-workspace,.repo-layout,.repo-left,.repo-reader){height:auto;min-height:0;max-height:none;overflow:visible}
  .mode-concepts .concept-list,.mode-concepts .reader{height:auto;max-height:none;min-height:0;overflow:visible}
  .published-toc-items,.published-article,.documentation-pack-list,.documentation-main,
  .documentation-handbooks .documentation-main,.documentation-toc-list,
  .documentation-reader-standalone .documentation-toc-list,.documentation-article,
  .documentation-reader-standalone .documentation-article,.repo-left,.repo-reader,
- .repo-preview ul,.handbook-chapters,.handbook-page{
-  max-height:none;min-height:0;overflow:visible}
+ .academy-chapters,.academy-article,.repo-preview ul,.handbook-chapters,.handbook-page{
+  height:auto;max-height:none;min-height:0;overflow:visible}
  .documentation-reader-standalone .documentation-article{min-height:0}
 }
 

@@ -2,34 +2,80 @@
 @import "tailwindcss/utilities" layer(utilities);
 
 @theme {
- --color-ink: #10091d;
- --color-panel: #1d142e;
- --color-raised: #2f2044;
- --color-royal: #a76cff;
- --color-cyan: #39e1f1;
- --color-gold: #f8c16d;
- --font-interface: "Inter", "Segoe UI", system-ui, sans-serif;
- --font-reading: "Georgia", "Iowan Old Style", serif;
+  --color-ink: #10091d;
+  --color-panel: #1d142e;
+  --color-raised: #2f2044;
+  --color-royal: #a76cff;
+  --color-cyan: #39e1f1;
+  --color-gold: #f8c16d;
+  --font-interface: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-reading: "Georgia", "Iowan Old Style", serif;
 }
 
 /* Reference colors are sampled by eye from the supplied pixel-art artwork.
-   The backdrop stays dark; cyan and gold remain semantic highlights, not surfaces. */
+   The backdrop stays dark by default; cyan and gold remain semantic highlights, not surfaces. */
 :root {
- --cm-ink: #110b20;
- --cm-base: #171024;
- --cm-panel: #20152f;
- --cm-raised: #30203f;
- --cm-border: #513363;
- --cm-border-strong: #745090;
- --cm-text: #f3e9fa;
- --cm-muted: #c2afcf;
- --cm-violet: #c18af9;
- --cm-lilac: #eed5ff;
- --cm-cyan: #43e5ef;
- --cm-gold: #f9c675;
- --cm-glow: rgba(151,79,255,.18);
- color-scheme: dark;
+  --cm-ink: #110b20;
+  --cm-base: #171024;
+  --cm-panel: #20152f;
+  --cm-raised: #30203f;
+  --cm-border: #513363;
+  --cm-border-strong: #745090;
+  --cm-text: #f3e9fa;
+  --cm-muted: #c2afcf;
+  --cm-violet: #c18af9;
+  --cm-lilac: #eed5ff;
+  --cm-cyan: #43e5ef;
+  --cm-gold: #f9c675;
+  --cm-glow: rgba(151,79,255,.18);
+
+  /* Semantic layer. Components use these aliases so both themes need only one token set. */
+  --cm-background: var(--cm-ink);
+  --cm-foreground: var(--cm-text);
+  --cm-surface: var(--cm-panel);
+  --cm-surface-raised: var(--cm-raised);
+  --cm-accent: var(--cm-violet);
+  --cm-accent-foreground: #1b1027;
+  --cm-code-bg: #100d19;
+  --cm-code-fg: #b8e9de;
+  --cm-success: #50dba8;
+  --cm-warning: #f9c675;
+  --cm-danger: #ff9fb1;
+  --cm-info: var(--cm-cyan);
+  color-scheme: dark;
 }
+
+/* Explicit light mode: paper surfaces, deep ink text and accent colors with real contrast.
+   `--cm-violet` stays the brand constant; `--cm-accent` is the theme-aware interactive color. */
+[data-theme="light"] {
+  --cm-ink: #f7f4fb;
+  --cm-base: #efeaf6;
+  --cm-panel: #ffffff;
+  --cm-raised: #f1ebf8;
+  --cm-border: #d8cbe6;
+  --cm-border-strong: #b79dcc;
+  --cm-text: #251a31;
+  --cm-muted: #5c4b6b;
+  --cm-lilac: #3d2552;
+  --cm-cyan: #0d6c7c;
+  --cm-gold: #925d10;
+  --cm-glow: rgba(94,38,152,.10);
+
+  --cm-background: #f7f4fb;
+  --cm-foreground: #251a31;
+  --cm-surface: #ffffff;
+  --cm-surface-raised: #f1ebf8;
+  --cm-accent: #7b3fd4;
+  --cm-accent-foreground: #ffffff;
+  --cm-code-bg: #f3eef8;
+  --cm-code-fg: #1d5148;
+  --cm-success: #176b45;
+  --cm-warning: #8a5a12;
+  --cm-danger: #a32645;
+  --cm-info: #0d6c7c;
+  color-scheme: light;
+}
+
 .cm-button {cursor:pointer}
 .cm-scroll-region {overflow:auto; min-height:0; overscroll-behavior:contain; scrollbar-width:none}
 .cm-scroll-region::-webkit-scrollbar {display:none}

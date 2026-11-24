@@ -9,10 +9,10 @@ export function cn(...values:ClassValue[]):string{return twMerge(clsx(values));}
 export const buttonVariants=cva(
  'cm-button inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cm-cyan)] disabled:pointer-events-none disabled:opacity-50',
  {variants:{variant:{
-  default:'border-[var(--cm-violet)] bg-[var(--cm-violet)] text-[var(--cm-ink)] hover:bg-[var(--cm-lilac)]',
-  secondary:'border-[var(--cm-border)] bg-[var(--cm-raised)] text-[var(--cm-text)] hover:border-[var(--cm-violet)] hover:bg-[var(--cm-panel)]',
-  ghost:'border-transparent bg-transparent text-[var(--cm-muted)] hover:bg-[var(--cm-raised)] hover:text-[var(--cm-text)]',
-  accent:'border-[var(--cm-gold)] bg-[var(--cm-gold)] text-[var(--cm-ink)] hover:bg-[#ffe0a2]'
+  default:'border-[var(--cm-accent)] bg-[var(--cm-accent)] text-[var(--cm-accent-foreground)] hover:brightness-110',
+  secondary:'border-[var(--cm-border)] bg-[var(--cm-surface-raised)] text-[var(--cm-foreground)] hover:border-[var(--cm-accent)] hover:bg-[var(--cm-surface)]',
+  ghost:'border-transparent bg-transparent text-[var(--cm-muted)] hover:bg-[var(--cm-surface-raised)] hover:text-[var(--cm-foreground)]',
+  accent:'border-[var(--cm-gold)] bg-[var(--cm-gold)] text-[var(--cm-ink)] hover:brightness-110'
  },size:{default:'h-11 px-4',sm:'h-11 px-3 text-xs',icon:'h-11 w-11 p-0'}},defaultVariants:{variant:'default',size:'default'}}
 );
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>,VariantProps<typeof buttonVariants>{
