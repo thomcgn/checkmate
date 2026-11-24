@@ -38,12 +38,16 @@ test('splitting and planning covers every original document character, without a
  assert.ok(plan.units.every(u=>new Set(u.fragments.map(f=>f.path)).size===u.fragments.length));
  assert.notEqual(courseFingerprint(plan,'model-a'),courseFingerprint(plan,'model-b'));
 });
-test('splitting preserves long multiline documents and refuses unsplittable giant lines',()=>{
+test('splitting preserves long multiline documents and single very long source lines',()=>{
  const input={path:'sample.txt',title:'Sample',text:Array.from({length:30},(_,i)=>'line'+i+' '.repeat(30)).join('\n')};
  const fragments=splitDocument(input,120);
  assert.ok(fragments.length>1);
  assert.equal(fragments.map(x=>x.text).join('\n'),input.text);
- assert.throws(()=>splitDocument({path:'giant',title:'giant',text:'X'.repeat(130)},120),/einzelne Zeile/);
+ const huge={path:'giant',title:'Giant',text:'header\n'+'X'.repeat(510)+'\nfooter'};
+ const sections=splitDocument(huge,120);
+ assert.ok(sections.some(x=>x.continuation));
+ const reconstructed=sections.map((x,i)=>(i===0||x.continuation?'':'\n')+x.text).join('');
+ assert.equal(reconstructed,huge.text);
 });
 test('all units become checked textbook chapters with persistent resume',async()=>{
  const root=await mkdtemp(path.join(os.tmpdir(),'checkmate-course-test-'));
