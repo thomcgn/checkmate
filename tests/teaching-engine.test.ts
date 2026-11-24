@@ -54,3 +54,18 @@ test('generation refuses chapters that cite unverified claims as source quotatio
   return {model:'test-model',text:JSON.stringify(calls===1?outline:{title:'Records kennenlernen',explanation:'A'.repeat(350),exercise:'Implementiere einen einfachen Event Record.',solution:'Verwende public record Event(Long id, String title) {}.',sourcePaths:['src/Event.java'],evidence:[{path:'src/Event.java',startLine:1,endLine:1,quote:'Ein erfundenes Zitat ohne Quellbezug'}]})};
  },()=>{}),/stimmt nicht/);
 });
+
+test('structured didactic fields validate glossary uniqueness and assessment depth',()=>{
+ const lesson={title:'Records anwenden',explanation:'Grundlagen und Code. '.repeat(22),
+  exercise:'Erstelle eine eigene strukturierte Record Klasse.',solution:'Schreibe public record Event(String title) {} und teste accessor title().',
+  sourcePaths:['src/Event.java'],evidence:[{path:'src/Event.java',startLine:1,endLine:1,quote:'public record Event(Long id, String title) {}'}],
+  learningObjectives:['Java Records gezielt zur Datenmodellierung einsetzen','Wichtige Record-Beschränkungen anhand von Code erklären'],
+  glossary:[{term:'Record',definition:'Ein Datencontainer mit deklarativ definierten Komponenten.'},{term:'Accessor',definition:'Eine Methode zum Lesen des gespeicherten Komponentenwerts.'}],
+  reviewQuestions:[{question:'Wie kann ein Record eine Komponente auslesen?',answer:'Über die namensgleiche Accessor-Methode der entsprechenden Komponente.'},{question:'Welche Aufgabe übernimmt der Record-Konstruktor?',answer:'Er initialisiert die angegebenen Komponenten des neuen Datensatzes.'}]
+ };
+ const validated=validateLesson(JSON.stringify(lesson),['src/Event.java'],source.sources);
+ assert.equal(validated.reviewQuestions?.length,2);
+ assert.equal(validated.glossary?.length,2);
+ assert.throws(()=>validateLesson(JSON.stringify({...lesson,glossary:[lesson.glossary[0],lesson.glossary[0]]}),['src/Event.java'],source.sources),/Glossar/);
+ assert.throws(()=>validateLesson(JSON.stringify({...lesson,reviewQuestions:[{question:'Ja?',answer:'Nein.'}]}),['src/Event.java'],source.sources),/Verständnisfragen/);
+});

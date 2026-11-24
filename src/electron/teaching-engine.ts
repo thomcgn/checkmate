@@ -52,13 +52,36 @@ export function validateLesson(raw:string,allowedPaths:readonly string[],sources
  const solution=typeof value.solution==='string'?value.solution.trim():'';
  const sourcePaths=strings(value.sourcePaths).filter((p,i,a)=>allowedPaths.includes(p)&&a.indexOf(p)===i);
  if(title.length<4||explanation.length<300||exercise.length<25||solution.length<25||sourcePaths.length===0)throw Error('Kapitel unvollständig oder ohne überprüfbaren Quellpfad.');
+ const objectives=value.learningObjectives===undefined?undefined:strings(value.learningObjectives).map(x=>x.trim());
+ if(objectives&&(!Array.isArray(value.learningObjectives)||objectives.length!==value.learningObjectives.length||
+  objectives.length<2||objectives.length>6||objectives.some(x=>x.length<12||x.length>250)))
+  throw Error('Lernziele fehlen oder sind unvollständig.');
+ const glossary=value.glossary===undefined?undefined:Array.isArray(value.glossary)?
+  value.glossary.map(item=>{
+   const term=record(item);
+   return {term:typeof term.term==='string'?term.term.trim():'',
+    definition:typeof term.definition==='string'?term.definition.trim():''};
+  }):[];
+ if(glossary&&(glossary.length<2||glossary.length>8||
+  glossary.some(item=>item.term.length<2||item.term.length>90||item.definition.length<25||item.definition.length>800)||
+  new Set(glossary.map(item=>item.term.toLowerCase())).size!==glossary.length))
+  throw Error('Glossar ist unvollständig oder enthält Duplikate.');
+ const questions=value.reviewQuestions===undefined?undefined:Array.isArray(value.reviewQuestions)?
+  value.reviewQuestions.map(item=>{
+   const question=record(item);
+   return {question:typeof question.question==='string'?question.question.trim():'',
+    answer:typeof question.answer==='string'?question.answer.trim():''};
+  }):[];
+ if(questions&&(questions.length<2||questions.length>6||
+  questions.some(item=>item.question.length<20||item.answer.length<25)))
+  throw Error('Verständnisfragen benötigen konkrete Aufgaben und begründete Lösungen.');
  const evidence=sources?validateEvidence(value.evidence,sources):undefined;
  if(evidence&&evidence.some(e=>!sourcePaths.includes(e.path)))throw Error('Quellbeleg nicht in den Kapitelquellen aufgeführt.');
- return {title:title.slice(0,160),explanation:explanation.slice(0,24000),exercise:exercise.slice(0,6000),solution:solution.slice(0,6000),sourcePaths,...(evidence?{evidence}:{})};
+ return {title:title.slice(0,160),explanation:explanation.slice(0,24000),exercise:exercise.slice(0,6000),solution:solution.slice(0,6000),sourcePaths,...(evidence?{evidence}:{}),...(objectives?{learningObjectives:objectives}:{}),...(glossary?{glossary}:{}),...(questions?{reviewQuestions:questions}:{})};
 }
 const fenced=(text:string):string=>text.replace(/\n{3,}/g,'\n\n');
 export function renderTeachingBook(book:TeachingBook):string{
- return ['# '+book.title,'',book.series?'> Lehrbuchreihe aus dem vollständigen Dokumentationspaket: '+book.series.totalDocuments+' Originaldokumente in '+book.series.totalUnits+' didaktischen Einheiten. Band '+book.series.volume+'/'+book.series.totalVolumes+' verarbeitet '+book.series.documentsInVolume+' Originaldokumente. Originalquellen bleiben erhalten.':'> Abdeckung: '+book.coverage.included+' von '+book.coverage.total+' Repository-Dateien. '+(book.coverage.limited?'Begrenzte Stichprobe, keine vollständige Projektanalyse.':'Alle erfassten Repository-Dateien ausgewählt.'),'','## Lernziele',...book.learningGoals.map(g=>'- '+g),...(book.series?.sourceUrl&&book.series.license?['','## Quellen und Lizenz','- Offizielle Quelle: '+book.series.sourceUrl,'- Lizenz: '+book.series.license+(book.series.licenseUrl?' ('+book.series.licenseUrl+')':'')]:[]),'','## Inhaltsverzeichnis',...book.chapters.map((c,i)=>'- '+(i+1)+'. '+c.title+(c.partTitle?' · '+c.partTitle:'')),...book.chapters.flatMap((c,i)=>[...(c.partTitle&&(i===0||book.chapters[i-1].partTitle!==c.partTitle)?['','## Teil: '+c.partTitle,'']:[]),'','## '+(i+1)+'. '+c.title,'',fenced(c.explanation),'','### Ausgewertete Quellen',...(c.evidence?.length?c.evidence.flatMap(e=>['- `'+e.path+':'+e.startLine+(e.endLine!==e.startLine?'-'+e.endLine:'')+'` · Originalzitat','', '```text',e.quote,'```','']):c.sourcePaths.map(p=>'- `'+p+'`')),'','### Übung',c.exercise,'','### Musterlösung',c.solution])].join('\n');
+ return ['# '+book.title,'',book.series?'> Lehrbuchreihe aus dem vollständigen Dokumentationspaket: '+book.series.totalDocuments+' Originaldokumente in '+book.series.totalUnits+' didaktischen Einheiten. Band '+book.series.volume+'/'+book.series.totalVolumes+' verarbeitet '+book.series.documentsInVolume+' Originaldokumente. Originalquellen bleiben erhalten.':'> Abdeckung: '+book.coverage.included+' von '+book.coverage.total+' Repository-Dateien. '+(book.coverage.limited?'Begrenzte Stichprobe, keine vollständige Projektanalyse.':'Alle erfassten Repository-Dateien ausgewählt.'),'','## Lernziele',...book.learningGoals.map(g=>'- '+g),...(book.series?.sourceUrl&&book.series.license?['','## Quellen und Lizenz','- Offizielle Quelle: '+book.series.sourceUrl,'- Lizenz: '+book.series.license+(book.series.licenseUrl?' ('+book.series.licenseUrl+')':'')]:[]),'','## Inhaltsverzeichnis',...book.chapters.map((c,i)=>'- '+(i+1)+'. '+c.title+(c.partTitle?' · '+c.partTitle:'')),...book.chapters.flatMap((c,i)=>[...(c.partTitle&&(i===0||book.chapters[i-1].partTitle!==c.partTitle)?['','## Teil: '+c.partTitle,'']:[]),'','## '+(i+1)+'. '+c.title,'',fenced(c.explanation),'','### Ausgewertete Quellen',...(c.evidence?.length?c.evidence.flatMap(e=>['- `'+e.path+':'+e.startLine+(e.endLine!==e.startLine?'-'+e.endLine:'')+'` · Originalzitat','', '```text',e.quote,'```','']):c.sourcePaths.map(p=>'- `'+p+'`')),...(c.learningObjectives?.length?['','### Das kannst du nach diesem Kapitel',...c.learningObjectives.map(objective=>'- '+objective)]:[]),...(c.glossary?.length?['','### Glossar',...c.glossary.map(item=>'- **'+item.term+'**: '+item.definition)]:[]),...(c.reviewQuestions?.length?['','### Selbstkontrolle',...c.reviewQuestions.flatMap((item,index)=>['**Frage '+(index+1)+':** '+item.question,'*Antwort:* '+item.answer])]:[]),'','### Übung',c.exercise,'','### Musterlösung',c.solution])].join('\n');
 }
 export type TeachingResume={resume?:TeachingCheckpoint|null;saveCheckpoint?:(checkpoint:TeachingCheckpoint)=>Promise<void>};
 export async function generateTeachingBook(snapshot:RepositorySnapshot,model:string,generate:TeachingModel,progress:TeachingProgress,options:TeachingResume={}):Promise<{book:TeachingBook;model:string}>{

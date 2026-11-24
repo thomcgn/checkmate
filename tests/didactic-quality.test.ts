@@ -9,7 +9,10 @@ const example:LessonSection={
  '\n## Typische Fehler und Grenzen\n'+('Records sind nicht in jedem Anwendungsfall geeignet und haben Einschränkungen. '.repeat(7)),
  exercise:'Definiere einen Record und überprüfe seine Zugriffsmethoden anhand eigener Werte.',
  solution:'Nutze public record Event(String title) {} und rufe title() auf einer Instanz auf.',
- sourcePaths:['src/Event.java'],evidence:[{path:'src/Event.java',startLine:1,endLine:1,quote:'public record Event(String title) {}'}]
+ sourcePaths:['src/Event.java'],evidence:[{path:'src/Event.java',startLine:1,endLine:1,quote:'public record Event(String title) {}'}],
+ learningObjectives:['Einen Java Record anhand des Quellcodes erklären','Den Unterschied zu einer klassischen Datenklasse benennen'],
+ glossary:[{term:'Record',definition:'Eine kompakte Schreibweise für einen unveränderlichen Datencontainer.'},{term:'Accessor',definition:'Eine Zugriffsmethode für eine Komponente eines Records.'}],
+ reviewQuestions:[{question:'Welche Zugriffsmethode erzeugt ein Record für seine Komponente?',answer:'Eine gleichnamige Methode gibt den Wert der Komponente zurück.'},{question:'Worin liegt der Unterschied zwischen Record und veränderlicher Klasse?',answer:'Ein Record hat unveränderliche Komponenten und generierte Methoden.'}]
 };
 test('professional textbook chapter must contain multiple explained sections and checked evidence',()=>{
  const audit=auditDidacticChapter(example);
@@ -22,4 +25,10 @@ test('shallow summaries, unsupported claims and missing exercises fail determini
  assert.throws(()=>auditDidacticChapter({...example,evidence:[]}),/Qualitätsminimum/);
  assert.throws(()=>auditDidacticChapter({...example,exercise:'Do it.'}),/Qualitätsminimum/);
  assert.throws(()=>auditDidacticChapter({...example,explanation:example.explanation.replace('## Typische Fehler und Grenzen','## Noch mehr Details')}),/Qualitätsminimum/);
+});
+
+test('mandatory didactic metadata rejects chapters without self-check or glossary',()=>{
+ assert.throws(()=>auditDidacticChapter({...example,learningObjectives:[]}),/Qualitätsminimum/);
+ assert.throws(()=>auditDidacticChapter({...example,glossary:[]}),/Qualitätsminimum/);
+ assert.throws(()=>auditDidacticChapter({...example,reviewQuestions:[]}),/Qualitätsminimum/);
 });
