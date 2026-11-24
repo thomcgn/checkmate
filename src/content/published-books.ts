@@ -7,6 +7,7 @@ import {TYPESCRIPT_PRACTICE_LESSONS} from './typescript-practice.ts';
 import {RUST_PRACTICE_LESSONS} from './rust-practice.ts';
 import {bookCurriculum,validateBookCurricula,type BookCurriculum} from './book-curricula.ts';
 import {JAVA_NEW_CHAPTERS,TYPESCRIPT_NEW_CHAPTERS,RUST_NEW_CHAPTERS} from './book-expansion-v1.ts';
+import {CONTROL_FLOW_LESSONS} from './control-flow-expansion.ts';
 
 /** Original learning material shipped in the application; never generated on the user's device. */
 export type PublishedLesson={
@@ -20,9 +21,9 @@ export type PublishedTextbook={
  readonly editorialStatus:'in-progress'|'complete';
 };
 const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
- java:[...JAVA_ADVANCED_LESSONS,...JAVA_NEW_CHAPTERS],
- typescript:[...TYPESCRIPT_PRACTICE_LESSONS,...TYPESCRIPT_NEW_CHAPTERS],
- rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS]
+ java:[...JAVA_ADVANCED_LESSONS,...JAVA_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='java')],
+ typescript:[...TYPESCRIPT_PRACTICE_LESSONS,...TYPESCRIPT_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='typescript')],
+ rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='rust')]
 };
 const originalBooks:readonly PublishedTextbook[]=LANGUAGE_SPECS.map(language=>{
  const original:PublishedLesson[]=TEXTBOOK.flatMap(chapter=>{
