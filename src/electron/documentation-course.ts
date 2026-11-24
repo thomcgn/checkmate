@@ -126,6 +126,10 @@ export class DocumentationCourseStore{
   await fs.mkdir(this.location(key),{recursive:true,mode:0o700});
   await this.atomicWrite(path.join(this.location(key),String(index).padStart(7,'0')+'.json'),data);
  }
+ async removeEntry(key:string,index:number):Promise<void>{
+  if(!Number.isSafeInteger(index)||index<0)throw Error('Ungültige Kapitelnummer.');
+  await fs.rm(path.join(this.location(key),String(index).padStart(7,'0')+'.json'),{force:true});
+ }
  async remove(key:string):Promise<void>{await fs.rm(this.location(key),{recursive:true,force:true});}
 }
 export function createCourseVolumes(pack:InstalledDocumentPack,plan:CoursePlan,lessons:readonly LessonSection[],fingerprint:string,model:string):RepositoryAnalysis[]{
@@ -158,19 +162,24 @@ export async function generateDocumentationCourse(plan:CoursePlan,model:string,g
   const unit=plan.units[index];
   const cached=await checkpoint.read(fingerprint,index);
   if(cached){
-   // Every stored excerpt must still match this exact immutable source version.
-   if(!Array.isArray(cached.evidence)||cached.evidence.length===0)throw Error('Checkpoint ohne Originalbelege.');
-   for(const evidence of cached.evidence){
-    const fragment=unit.fragments.find(f=>f.path===evidence.path&&evidence.startLine>=f.startLine);
-    if(!fragment)throw Error('Checkpoint verweist auf fremde Quelle.');
-    const start=evidence.startLine-fragment.startLine+1,end=evidence.endLine-fragment.startLine+1;
-    const slice=fragment.text.split('\n').slice(start-1,end).join('\n').trim();
-    if(slice!==evidence.quote.trim())throw Error('Checkpoint-Zitat weicht von der Originalquelle ab.');
+   try{
+    if(!Array.isArray(cached.evidence)||cached.evidence.length===0)throw Error('Checkpoint ohne Originalbelege.');
+    for(const evidence of cached.evidence){
+     const fragment=unit.fragments.find(f=>f.path===evidence.path&&evidence.startLine>=f.startLine);
+     if(!fragment)throw Error('Checkpoint verweist auf fremde Quelle.');
+     const start=evidence.startLine-fragment.startLine+1,end=evidence.endLine-fragment.startLine+1;
+     const slice=fragment.text.split('\\n').slice(start-1,end).join('\\n').trim();
+     if(slice!==evidence.quote.trim())throw Error('Checkpoint-Zitat weicht von der Originalquelle ab.');
+    }
+    auditDidacticChapter(cached);
+    lessons.push({...cached,partTitle:titleFor(index)});
+    report(index+1,total,'Bereits geprüfte Einheit übernommen');
+    continue;
+   }catch{
+    // Old, invalid or incomplete chapters are never reused as valid learning material.
+    await checkpoint.removeEntry(fingerprint,index);
+    report(index,total,'Ungültigen Checkpoint verworfen, Einheit neu erstellen');
    }
-   auditDidacticChapter(cached);
-   lessons.push({...cached,partTitle:titleFor(index)});
-   report(index+1,total,'Bereits geprüfte Einheit übernommen');
-   continue;
   }
   report(index,total,'Lehrbuch-Einheit '+(index+1)+'/'+total+': '+unit.title);
   const sources=unit.fragments.map(fragment=>
