@@ -16,6 +16,7 @@ import {JAVASCRIPT_CORE_VOLUME} from './javascript-core-volume.ts';
 import {JAVA_PLATFORM_VOLUME} from './java-platform-volume.ts';
 import {TYPESCRIPT_TYPE_SYSTEM_VOLUME} from './typescript-type-system-volume.ts';
 import {RUST_STANDARD_LIBRARY_VOLUME} from './rust-standard-library-volume.ts';
+import {FIVE_LANGUAGE_PROFESSIONAL_VOLUME} from './five-language-professional-volume.ts';
 
 /** Original learning material shipped in the application; never generated on the user's device. */
 export type PublishedLesson={
@@ -35,11 +36,11 @@ const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
  rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='rust'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='rust'),...RUST_STANDARD_LIBRARY_VOLUME],
  python:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='python'),...PYTHON_FOUNDATIONS_VOLUME],
  javascript:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='javascript'),...JAVASCRIPT_CORE_VOLUME],
- csharp:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='csharp'),
- cpp:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='cpp'),
- php:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='php'),
- go:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='go'),
- kotlin:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='kotlin')
+ csharp:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='csharp'),...FIVE_LANGUAGE_PROFESSIONAL_VOLUME.filter(item=>item.implementation.language==='csharp')],
+ cpp:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='cpp'),...FIVE_LANGUAGE_PROFESSIONAL_VOLUME.filter(item=>item.implementation.language==='cpp')],
+ php:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='php'),...FIVE_LANGUAGE_PROFESSIONAL_VOLUME.filter(item=>item.implementation.language==='php')],
+ go:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='go'),...FIVE_LANGUAGE_PROFESSIONAL_VOLUME.filter(item=>item.implementation.language==='go')],
+ kotlin:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='kotlin'),...FIVE_LANGUAGE_PROFESSIONAL_VOLUME.filter(item=>item.implementation.language==='kotlin')]
 };
 /** A complete table of contents is not proof of verified documentation coverage. No approvals exist yet. */
 const SOURCE_AUDIT_APPROVALS:Readonly<Record<string,boolean>>={};
