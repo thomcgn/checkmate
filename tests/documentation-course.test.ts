@@ -207,3 +207,30 @@ test('cancellation stops subsequent model requests and preserves checked chapter
   assert.equal(await store.read(fingerprint,1),null);
  }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test('source text identifies concepts even with opaque filenames, and orders prerequisites',()=>{
+ const topics=[
+  {title:'Lesson C',fragments:[{path:'topic/c.md',text:'# Generics\nGeneric type parameters enable reusable containers.'}]},
+  {title:'Lesson A',fragments:[{path:'topic/a.md',text:'# Variables\nA variable can hold a value.'}]},
+  {title:'Lesson B',fragments:[{path:'topic/b.md',text:'# Types\nTypes classify values.'}]},
+  {title:'Lesson D',fragments:[{path:'topic/d.md',text:'# Collections\nA collection stores values.'}]}
+ ];
+ const curriculum=buildCurriculum(topics);
+ const order=curriculumOrder(curriculum);
+ assert.equal(curriculum.units[0].concepts.includes('generics'),true);
+ assert.equal(curriculum.units[1].concepts.includes('variables'),true);
+ assert.deepEqual(new Set(order),new Set([0,1,2,3]));
+ assert.ok(order.indexOf(1)<order.indexOf(2));
+ assert.ok(order.indexOf(2)<order.indexOf(3));
+ assert.ok(order.indexOf(3)<order.indexOf(0));
+ assert.ok(curriculum.links.some(link=>link.from===2&&link.to===0&&link.concept==='types'));
+ assert.ok(curriculum.links.some(link=>link.from===3&&link.to===0&&link.concept==='collections'));
+});
+test('course curriculum indexes all source fragments and keeps evidence mappings',async()=>{
+ const plan=await planDocumentationCourse(pack,read);
+ assert.equal(plan.curriculum.coveredUnits,plan.units.length);
+ assert.equal(plan.curriculum.totalUnits,plan.units.length);
+ assert.deepEqual([...new Set(plan.curriculum.units.map(u=>u.index))].sort((a,b)=>a-b),
+  Array.from({length:plan.units.length},(_,i)=>i));
+ assert.ok(plan.curriculum.units.every(u=>u.concepts.length<=12));
+});
