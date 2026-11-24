@@ -3,6 +3,7 @@ import {COMPLETE_CONCEPT_BY_ID} from './complete-concepts.ts';
 import {LANGUAGE_SPECS,type LanguageSpec} from './language-reference.ts';
 import type {LanguageVariant} from './concepts.ts';
 import {JAVA_ADVANCED_LESSONS} from './java-advanced.ts';
+import {TYPESCRIPT_PRACTICE_LESSONS} from './typescript-practice.ts';
 
 /** Published, editorial content shipped inside Checkmate. Never invokes ChatGPT. */
 export type PublishedLesson={
@@ -35,6 +36,14 @@ export const PUBLISHED_TEXTBOOKS:readonly PublishedTextbook[]=LANGUAGE_SPECS.map
  edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
  lessons:[...JAVA_ADVANCED_LESSONS],
  copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Beispiele. Fachliche Grundlagen anhand frei zugänglicher offizieller Java-Dokumentation erläutert; keine Übernahme fremder Buchtexte.'
+},{
+ id:'checkmate-typescript-practice-v1',
+ title:'TypeScript verstehen – sichere Daten und React-Architektur',
+ description:'Drei aufeinander aufbauende Praxislektionen über unbekannte Laufzeitdaten, gültige UI-Zustände und asynchrone React-Abläufe.',
+ language:LANGUAGE_SPECS.find(spec=>spec.id==='typescript')!,
+ edition:'Checkmate Originalausgabe · Vertiefungsband 1.0',
+ lessons:[...TYPESCRIPT_PRACTICE_LESSONS],
+ copyrightNotice:'Eigenständige Checkmate-Lehrtexte und Codebeispiele. Fachliche Weiterführungen anhand offizieller TypeScript- und React-Dokumentation, ohne fremde Buchtexte.'
 }]);
 export function publishedBook(id:string):PublishedTextbook|undefined{
  return PUBLISHED_TEXTBOOKS.find(book=>book.id===id);
