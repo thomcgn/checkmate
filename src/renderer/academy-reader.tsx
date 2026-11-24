@@ -6,16 +6,20 @@ import {PIZZERIA_TYPESCRIPT_BOOK} from '../content/pizzeria-typescript-book.ts';
 import {PIZZERIA_TYPESCRIPT_OPERATIONS_BOOK} from '../content/pizzeria-typescript-operations.ts';
 import {PIZZERIA_RUST_BOOK} from '../content/pizzeria-rust-book.ts';
 import {PIZZERIA_RUST_OPERATIONS_BOOK} from '../content/pizzeria-rust-operations.ts';
+import {PIZZERIA_GO_BOOK} from '../content/pizzeria-go-book.ts';
+import {PIZZERIA_GO_OPERATIONS_BOOK} from '../content/pizzeria-go-operations.ts';
 import './academy.css';
 
-type VolumeId='band1'|'band2'|'ts-band1'|'ts-band2'|'rust1'|'rust2';
+type VolumeId='band1'|'band2'|'ts-band1'|'ts-band2'|'rust1'|'rust2'|'go-band1'|'go-band2';
 const VOLUMES:Readonly<Record<VolumeId,{label:string;eyebrow:string;key:string;book:BeginnerBook}>>={
  band1:{label:'Band 1 · Die Pizzeria',eyebrow:'BAND 1',key:'checkmate:pizzeria-book:v1',book:PIZZERIA_BOOK},
  band2:{label:'Band 2 · In Betrieb',eyebrow:'BAND 2',key:'checkmate:pizzeria-operations:v1',book:PIZZERIA_OPERATIONS_BOOK},
  'ts-band1':{label:'TypeScript · Band 1',eyebrow:'TYPESCRIPT · BAND 1',key:'checkmate:pizzeria-typescript-book:v1',book:PIZZERIA_TYPESCRIPT_BOOK},
  'ts-band2':{label:'TypeScript · Band 2',eyebrow:'TYPESCRIPT · BAND 2',key:'checkmate:pizzeria-typescript-operations:v1',book:PIZZERIA_TYPESCRIPT_OPERATIONS_BOOK},
  rust1:{label:'Rust · Band 1',eyebrow:'RUST · BAND 1',key:'checkmate:pizzeria-rust-book:v1',book:PIZZERIA_RUST_BOOK},
- rust2:{label:'Rust · Band 2',eyebrow:'RUST · BAND 2',key:'checkmate:pizzeria-rust-operations:v1',book:PIZZERIA_RUST_OPERATIONS_BOOK}
+ rust2:{label:'Rust · Band 2',eyebrow:'RUST · BAND 2',key:'checkmate:pizzeria-rust-operations:v1',book:PIZZERIA_RUST_OPERATIONS_BOOK},
+ 'go-band1':{label:'Go · Band 1',eyebrow:'GO · BAND 1',key:'checkmate:pizzeria-go-book:v1',book:PIZZERIA_GO_BOOK},
+ 'go-band2':{label:'Go · Band 2',eyebrow:'GO · BAND 2',key:'checkmate:pizzeria-go-operations:v1',book:PIZZERIA_GO_OPERATIONS_BOOK}
 };
 const KNOWN_CHAPTER_IDS:ReadonlySet<string>=new Set(
  Object.values(VOLUMES).flatMap(volume=>volume.book.chapters.map(chapter=>chapter.id)));
