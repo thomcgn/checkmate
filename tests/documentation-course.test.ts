@@ -75,6 +75,8 @@ test('all units become checked textbook chapters with persistent resume',async()
   assert.equal((await store.read(finished.fingerprint,0))?.title,'Ein nachvollziehbares Programmierkonzept');
   const books=createCourseVolumes(pack,plan,finished.lessons,finished.fingerprint,'model-a');
   assert.ok(books.length>=1);
+  assert.ok(books.every((b,i)=>b.teachingBook?.series?.volume===i+1&&b.teachingBook.series.complete));
+  assert.ok(books.every(b=>b.markdown.includes('vollständigen Dokumentationspaket')&&!b.markdown.includes('Begrenzte Stichprobe')));
   assert.equal(books.reduce((sum,b)=>sum+b.teachingBook!.chapters.length,0),plan.units.length);
   assert.deepEqual([...new Set(books.flatMap(b=>b.includedPaths))].sort(),pack.documents.map(d=>d.path).sort());
   await store.remove(finished.fingerprint);
