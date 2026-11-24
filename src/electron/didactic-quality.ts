@@ -11,7 +11,8 @@ export function auditDidacticChapter(chapter:LessonSection):DidacticAudit{
  const hasPitfalls=section(explanation,/fehler|grenzen|fallstrick|trade.off|limitations/i);
  if(explanation.length<800||headings<3||!hasWalkthrough||!hasPitfalls||
   chapter.exercise.trim().length<40||chapter.solution.trim().length<40||
-  !chapter.evidence?.length)
-  throw Error('Didaktisches Qualitätsminimum nicht erreicht: ausführliche Grundlagen, Beispiele, typische Fehler, Aufgabe, Lösung und Quellenbeleg erforderlich.');
+  !chapter.evidence?.length||!chapter.learningObjectives||chapter.learningObjectives.length<2||
+  !chapter.glossary||chapter.glossary.length<2||!chapter.reviewQuestions||chapter.reviewQuestions.length<2)
+  throw Error('Didaktisches Qualitätsminimum nicht erreicht: ausführliche Grundlagen, Beispiele, typische Fehler, Aufgabe, Lösung, Quellenbeleg, Lernziele, Glossar und Selbstkontrolle erforderlich.');
  return {sections:headings,characters:explanation.length,hasWalkthrough,hasPitfalls};
 }
