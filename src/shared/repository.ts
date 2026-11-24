@@ -21,6 +21,7 @@ export type RepoBridge={
  models():Promise<ChatGPTModel[]>;
  previewCourse(packId:string):Promise<DocumentationCoursePreview>;
  generateCourse(packId:string,sourceCommit:string,consent:boolean,model:string):Promise<DocumentationCourseResult>;
+ cancelCourse():Promise<boolean>;
  analyze(url:string,consent:boolean,model:string):Promise<RepositoryAnalysis>;
 
  saved():Promise<RepositoryAnalysis[]>;
