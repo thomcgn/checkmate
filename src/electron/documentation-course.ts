@@ -7,6 +7,7 @@ import {validateLesson,renderTeachingBook,type TeachingModel} from './teaching-e
 import {buildCurriculum,curriculumOrder,type Curriculum} from './curriculum.ts';
 import {assertFreeDocumentationLicense} from './documentation-license.ts';
 import {auditDidacticChapter} from './didactic-quality.ts';
+import {reviewChapter} from './chapter-review.ts';
 
 export type CourseFragment={path:string;startLine:number;text:string;continuation?:boolean};
 export type CourseUnit={fragments:CourseFragment[];title:string};
@@ -177,6 +178,8 @@ export async function generateDocumentationCourse(plan:CoursePlan,model:string,g
      if(slice!==evidence.quote.trim())throw Error('Checkpoint-Zitat weicht von der Originalquelle ab.');
     }
     auditDidacticChapter(cached);
+    if(cached.review?.verdict!=='pass'||!Number.isSafeInteger(cached.review.claimsReviewed)||cached.review.claimsReviewed<1)
+     throw Error('Checkpoint ohne gesonderte fachliche Prüfung.');
     const evidenced=new Set(cached.evidence.map(e=>e.path));
     if(unit.fragments.some(fragment=>!evidenced.has(fragment.path)))throw Error('Checkpoint ohne vollständige Quellabdeckung.');
     lessons.push({...cached,partTitle:titleFor(index)});
@@ -211,7 +214,10 @@ export async function generateDocumentationCourse(plan:CoursePlan,model:string,g
   }
   if(options.signal?.aborted)throw Error('Lehrbucherstellung abgebrochen. Bereits geprüfte Kapitel bleiben erhalten.');
   if(!verified)throw Error('Kapitel konnte nicht verifiziert werden.');
-  const chapter={...verified,partTitle:titleFor(index)};
+  report(index,total,'Fachreview anhand der Originalquellen: '+unit.title);
+  const review=await reviewChapter(verified,unit.fragments,model,generate,options.signal);
+  if(options.signal?.aborted)throw Error('Lehrbucherstellung abgebrochen. Bereits geprüfte Kapitel bleiben erhalten.');
+  const chapter={...verified,partTitle:titleFor(index),review:{verdict:'pass' as const,claimsReviewed:review.claims.length,minorFindings:review.findings.length}};
   await checkpoint.save(fingerprint,index,chapter);
   lessons.push(chapter);
   report(index+1,total,'Kapitel geprüft und gespeichert');
