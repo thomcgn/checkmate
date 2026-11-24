@@ -68,7 +68,10 @@ test('all units become checked textbook chapters with persistent resume',async()
     explanation:'## Grundlagen\nEin wichtiges Konzept. '.repeat(12)+'\n## Schritt für Schritt\n'+('Wir untersuchen den Ablauf im Code und begründen die Wirkung. '.repeat(10))+'\n## Typische Fehler und Grenzen\n'+('Fehler erkennen und Einschränkungen einschätzen. '.repeat(10)),
     exercise:'Baue selbst ein Beispiel und erkläre die einzelnen Schritte.',
     solution:'Beginne mit einem kleinen Ausdruck und prüfe die Ausgabe.',
-    sourcePaths:matches.map(match=>match[1]),evidence})};
+    sourcePaths:matches.map(match=>match[1]),evidence,
+    learningObjectives:['Das Konzept anhand des Quellenmaterials erläutern','Die verwendete Syntax in einem eigenen Beispiel anwenden'],
+    glossary:[{term:'Variable',definition:'Ein benannter Speicherort oder eine Referenz auf einen Wert.'},{term:'Funktion',definition:'Eine wiederverwendbare Einheit von Anweisungen mit optionalem Ergebnis.'}],
+    reviewQuestions:[{question:'Welche Funktion hat die dargestellte Syntax im Quellbeispiel?',answer:'Sie beschreibt die Auswertung eines Ausdrucks innerhalb des Programms.'},{question:'Wie lässt sich der dargestellte Ansatz überprüfen?',answer:'Durch eine eigene kleine Implementierung mit überprüfbarer Ausgabe.'}]})};
   };
   await assert.rejects(generateDocumentationCourse(plan,'model-a',async(prompt,model)=>{
    if(calls>=1)throw Error('Netzwerk unterbrochen');
@@ -82,6 +85,7 @@ test('all units become checked textbook chapters with persistent resume',async()
   const books=createCourseVolumes(pack,plan,finished.lessons,finished.fingerprint,'model-a');
   assert.ok(books.length>=1);
   assert.ok(books.every((b,i)=>b.teachingBook?.series?.volume===i+1&&b.teachingBook.series.complete));
+  assert.ok(books.every(b=>b.markdown.includes('### Glossar')&&b.markdown.includes('### Selbstkontrolle')));
   assert.ok(books.every(b=>b.markdown.includes('vollständigen Dokumentationspaket')&&!b.markdown.includes('Begrenzte Stichprobe')));
   assert.equal(books.reduce((sum,b)=>sum+b.teachingBook!.chapters.length,0),plan.units.length);
   assert.deepEqual([...new Set(books.flatMap(b=>b.includedPaths))].sort(),pack.documents.map(d=>d.path).sort());
