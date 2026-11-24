@@ -12,6 +12,7 @@ import {NEW_LANGUAGE_CHAPTERS} from './seven-language-chapters.ts';
 import {SECOND_LANGUAGE_CHAPTERS} from './seven-language-second-chapters.ts';
 import {THIRD_LANGUAGE_CHAPTERS} from './ten-language-third-chapters.ts';
 import {PYTHON_FOUNDATIONS_VOLUME} from './python-foundations-volume.ts';
+import {JAVASCRIPT_CORE_VOLUME} from './javascript-core-volume.ts';
 
 /** Original learning material shipped in the application; never generated on the user's device. */
 export type PublishedLesson={
@@ -29,7 +30,7 @@ const authoredExtensions:Readonly<Record<string,readonly PublishedLesson[]>>={
  typescript:[...TYPESCRIPT_PRACTICE_LESSONS,...TYPESCRIPT_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='typescript'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='typescript')],
  rust:[...RUST_PRACTICE_LESSONS,...RUST_NEW_CHAPTERS,...CONTROL_FLOW_LESSONS.filter(item=>item.implementation.language==='rust'),...THIRD_LANGUAGE_CHAPTERS.filter(item=>item.implementation.language==='rust')],
  python:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='python'),...PYTHON_FOUNDATIONS_VOLUME],
- javascript:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='javascript'),
+ javascript:[...[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='javascript'),...JAVASCRIPT_CORE_VOLUME],
  csharp:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='csharp'),
  cpp:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='cpp'),
  php:[...NEW_LANGUAGE_CHAPTERS,...SECOND_LANGUAGE_CHAPTERS,...THIRD_LANGUAGE_CHAPTERS].filter(item=>item.implementation.language==='php'),
